@@ -3,25 +3,21 @@
 <?php $__env->startSection('content'); ?>
 <?php
     $user = auth()->user();
-    // Cek alamat: relasi addresses harus pakai method (Eloquent)
     $hasAddress = $user && method_exists($user, 'addresses') && $user->addresses()->count();
     $promo_code = session('promo_code');
     $promo_type = session('promo_type');
     $promo_discount = session('promo_discount');
     $promo_discount_percent = ($promo_type === 'percent') ? 10.0 : null;
 
-    // Ambil data keranjang dari session
-    $cartItems = session('cart_items') ?? session('cartItems') ?? collect();
-
-    // Konversi ke collection jika bukan collection
-    if (!($cartItems instanceof \Illuminate\Support\Collection)) {
-        $cartItems = collect($cartItems);
-    }
-
-    // Hitung jumlah item di keranjang
-    $cartItemCount = 0;
-    foreach ($cartItems as $item) {
-        $cartItemCount += $item->quantity ?? 0;
+    // Hitung jumlah item di keranjang dari database jika login, dari session jika guest
+    if(auth()->check()) {
+        $cartItemCount = \App\Models\Cart::where('user_id', auth()->id())->sum('quantity');
+    } else {
+        $cartItems = session('cart_items') ?? session('cartItems') ?? collect();
+        if (!($cartItems instanceof \Illuminate\Support\Collection)) {
+            $cartItems = collect($cartItems);
+        }
+        $cartItemCount = $cartItems->sum('quantity');
     }
 
     // Prepare images for preloading to reduce lag
@@ -35,7 +31,6 @@
         asset('images/hero-7.jpg'),
     ];
 
-    // Current date and time for reference
     $currentDateTime = '2025-07-28 09:48:35';
     $currentUser = 'redeemself';
 ?>
@@ -717,14 +712,14 @@
 
                 <form method="POST" action="<?php echo e(route('promo.activate')); ?>" id="promoForm" class="flex flex-col">
                     <?php echo csrf_field(); ?>
-                    <div class="flex-1 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div class="flex-1 p-4 border border-green-200 rounded-lg bg-green-50">
                         <p class="mb-2 font-semibold text-green-800">Punya kode promo? Aktifkan disini:</p>
                         <div class="flex flex-wrap gap-2">
                             <input type="text" name="promo_code" value="<?php echo e(old('promo_code', session('promo_code'))); ?>"
                                    placeholder="Masukkan kode promo"
                                    class="flex-1 px-4 py-2 min-w-[150px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 promo-input" />
                             <button type="submit"
-                                    class="px-5 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all promo-button">
+                                    class="px-5 py-2 text-white transition-all bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 promo-button">
                                 Aktifkan
                             </button>
                         </div>
@@ -752,7 +747,7 @@
                 </div>
                 <form method="POST" action="<?php echo e(route('promo.deactivate')); ?>">
                     <?php echo csrf_field(); ?>
-                    <button type="submit" class="px-4 py-2 text-white bg-gray-800 rounded-lg hover:bg-gray-900 transition-all">Nonaktifkan</button>
+                    <button type="submit" class="px-4 py-2 text-white transition-all bg-gray-800 rounded-lg hover:bg-gray-900">Nonaktifkan</button>
                 </form>
             </div>
         <?php endif; ?>
@@ -768,7 +763,7 @@
             </div>
         </div>
 
-        <div class="product-grid mb-12">
+        <div class="mb-12 product-grid">
             <?php $__empty_1 = true; $__currentLoopData = $products; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $product): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                 <?php
                     $final_price = $product->price;
@@ -801,15 +796,15 @@
                         ->values();
                 ?>
 
-                <div class="product-card overflow-hidden rounded-xl">
+                <div class="overflow-hidden product-card rounded-xl">
                     <?php if($promo_active): ?>
                         <div class="discount-badge">DISKON <?php echo e($promo_label); ?></div>
                     <?php endif; ?>
 
-                    <div class="product-image-container p-2">
+                    <div class="p-2 product-image-container">
                         <div class="grid grid-cols-2 gap-2">
                             <?php $__currentLoopData = $displayImages->take(2); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $img): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <div class="aspect-square rounded-lg overflow-hidden bg-white">
+                                <div class="overflow-hidden bg-white rounded-lg aspect-square">
                                     <img
                                         src="<?php echo e(asset($img->image_url)); ?>"
                                         alt="<?php echo e($product->name); ?> <?php echo e($index + 1); ?>"
@@ -821,7 +816,7 @@
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             <?php if($displayImages->count() < 2): ?>
                                 <?php if($displayImages->count() == 1): ?>
-                                    <div class="aspect-square rounded-lg overflow-hidden bg-white">
+                                    <div class="overflow-hidden bg-white rounded-lg aspect-square">
                                         <img
                                             src="<?php echo e(asset($displayImages->first()->image_url)); ?>"
                                             alt="<?php echo e($product->name); ?> 1"
@@ -830,7 +825,7 @@
                                             onerror="this.onerror=null;this.src='<?php echo e(asset('images/produk/placeholder.png')); ?>';"
                                         >
                                     </div>
-                                    <div class="aspect-square rounded-lg overflow-hidden bg-white">
+                                    <div class="overflow-hidden bg-white rounded-lg aspect-square">
                                         <img
                                             src="<?php echo e(asset($product->image_url ?? 'images/produk/placeholder.png')); ?>"
                                             alt="<?php echo e($product->name); ?> 2"
@@ -839,7 +834,7 @@
                                         >
                                     </div>
                                 <?php else: ?>
-                                    <div class="aspect-square rounded-lg overflow-hidden bg-white">
+                                    <div class="overflow-hidden bg-white rounded-lg aspect-square">
                                         <img
                                             src="<?php echo e(asset($product->image_url ?? 'images/produk/placeholder.png')); ?>"
                                             alt="<?php echo e($product->name); ?> 1"
@@ -847,7 +842,7 @@
                                             loading="lazy"
                                         >
                                     </div>
-                                    <div class="aspect-square rounded-lg overflow-hidden bg-white">
+                                    <div class="overflow-hidden bg-white rounded-lg aspect-square">
                                         <img
                                             src="<?php echo e(asset('images/produk/placeholder.png')); ?>"
                                             alt="<?php echo e($product->name); ?> 2"
@@ -895,12 +890,10 @@
                                 Detail
                             </a>
                             <?php if(auth()->guard()->check()): ?>
-                                <form method="POST" action="<?php echo e(route('user.cart.add')); ?>">
+                                <form method="POST" action="<?php echo e(route('user.cart.add')); ?>" class="add-to-cart-form">
                                     <?php echo csrf_field(); ?>
                                     <input type="hidden" name="product_id" value="<?php echo e($product->id); ?>">
-                                    <?php if($promo_code): ?>
-                                    <input type="hidden" name="promo_code" value="<?php echo e($promo_code); ?>">
-                                    <?php endif; ?>
+                                    <input type="hidden" name="promo_code" value="<?php echo e(session('promo_code') ?? ''); ?>">
                                     <button type="submit"
                                         class="flex items-center justify-center w-full px-4 py-2.5 text-white bg-green-700 rounded-lg hover:bg-green-800 add-to-cart-btn transition-all">
                                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -923,7 +916,7 @@
                     </div>
                 </div>
             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-                <div class="col-span-full p-8 bg-white rounded-xl">
+                <div class="p-8 bg-white col-span-full rounded-xl">
                     <div class="flex flex-col items-center text-center">
                         <svg class="w-16 h-16 mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -1008,33 +1001,45 @@ document.addEventListener('DOMContentLoaded', function() {
         }, duration);
     }
 
-    // Update cart counter with actual count
     function updateCartCounter() {
         const counter = document.getElementById('cart-counter');
         if (counter) {
-            // Get the actual count from the initial PHP value or localStorage
-            const count = <?php echo e($cartItemCount); ?> || parseInt(localStorage.getItem('cartItemCount') || '0');
+            const count = <?php echo e($cartItemCount); ?>;
             counter.textContent = count;
-
-            // Store in localStorage for persistence
             localStorage.setItem('cartItemCount', count);
         }
     }
 
     // Add loading indicator for all cart forms
-    document.querySelectorAll('form[action="<?php echo e(route("user.cart.add")); ?>"]').forEach(form => {
-        form.addEventListener('submit', function() {
-            showLoadingOverlay();
+    document.querySelectorAll('.add-to-cart-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
 
-            // Increment cart counter
-            const counter = document.getElementById('cart-counter');
-            if (counter) {
-                const currentCount = parseInt(counter.textContent || '0');
-                counter.textContent = currentCount + 1;
+            const formData = new FormData(form);
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-                // Store in localStorage
-                localStorage.setItem('cartItemCount', currentCount + 1);
-            }
+            fetch(form.action, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Update cart counter badge
+                    const counter = document.getElementById('cart-counter');
+                    if (counter) counter.textContent = data.data.cart_count;
+
+                    // Redirect ke halaman keranjang
+                    window.location.href = "<?php echo e(route('user.cart.index')); ?>";
+                } else {
+                    alert(data.message || "Gagal menambah produk ke keranjang");
+                }
+            })
+            .catch(() => {
+                // Fallback: submit form biasa jika AJAX gagal
+                form.submit();
+            });
         });
     });
 

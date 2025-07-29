@@ -5,29 +5,21 @@
 @section('content')
 @php
     $user = auth()->user();
-    // Cek alamat: relasi addresses harus pakai method (Eloquent)
     $hasAddress = $user && method_exists($user, 'addresses') && $user->addresses()->count();
     $promo_code = session('promo_code');
     $promo_type = session('promo_type');
     $promo_discount = session('promo_discount');
     $promo_discount_percent = ($promo_type === 'percent') ? 10.0 : null;
 
-    // Ambil data keranjang dari session
-    $cartItems = session('cart_items') ?? session('cartItems') ?? collect();
-
-    // Konversi ke collection jika bukan collection
-    if (!($cartItems instanceof \Illuminate\Support\Collection)) {
-        $cartItems = collect($cartItems);
-    }
-
-    // Hitung jumlah item di keranjang
-    if ($cartItems->isEmpty()) {
-        $cartItemCount = 0;
+    // Hitung jumlah item di keranjang dari database jika login, dari session jika guest
+    if(auth()->check()) {
+        $cartItemCount = \App\Models\Cart::where('user_id', auth()->id())->sum('quantity');
     } else {
-        $cartItemCount = 0;
-        foreach ($cartItems as $item) {
-            $cartItemCount += $item->quantity ?? 0;
+        $cartItems = session('cart_items') ?? session('cartItems') ?? collect();
+        if (!($cartItems instanceof \Illuminate\Support\Collection)) {
+            $cartItems = collect($cartItems);
         }
+        $cartItemCount = $cartItems->sum('quantity');
     }
 
     // Prepare images for preloading to reduce lag
@@ -41,7 +33,6 @@
         asset('images/hero-7.jpg'),
     ];
 
-    // Current date and time for reference
     $currentDateTime = '2025-07-28 09:48:35';
     $currentUser = 'redeemself';
 @endphp
@@ -896,12 +887,10 @@
                                 Detail
                             </a>
                             @auth
-                                <form method="POST" action="{{ route('user.cart.add') }}">
+                                <form method="POST" action="{{ route('user.cart.add') }}" class="add-to-cart-form">
                                     @csrf
                                     <input type="hidden" name="product_id" value="{{ $product->id }}">
-                                    @if($promo_code)
-                                    <input type="hidden" name="promo_code" value="{{ $promo_code }}">
-                                    @endif
+                                    <input type="hidden" name="promo_code" value="{{ session('promo_code') ?? '' }}">
                                     <button type="submit"
                                         class="flex items-center justify-center w-full px-4 py-2.5 text-white bg-green-700 rounded-lg hover:bg-green-800 add-to-cart-btn transition-all">
                                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1008,7 +997,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }, duration);
     }
 
-    // Update cart counter with actual count
     function updateCartCounter() {
         const counter = document.getElementById('cart-counter');
         if (counter) {
@@ -1019,19 +1007,35 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Add loading indicator for all cart forms
-    document.querySelectorAll('form[action="{{ route("user.cart.add") }}"]').forEach(form => {
-        form.addEventListener('submit', function() {
-            showLoadingOverlay();
+    document.querySelectorAll('.add-to-cart-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
 
-            // Increment cart counter
-            const counter = document.getElementById('cart-counter');
-            if (counter) {
-                const currentCount = parseInt(counter.textContent || '0');
-                counter.textContent = currentCount + 1;
+            const formData = new FormData(form);
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-                // Store in localStorage
-                localStorage.setItem('cartItemCount', currentCount + 1);
-            }
+            fetch(form.action, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Update cart counter badge
+                    const counter = document.getElementById('cart-counter');
+                    if (counter) counter.textContent = data.data.cart_count;
+
+                    // Redirect ke halaman keranjang
+                    window.location.href = "{{ route('user.cart.index') }}";
+                } else {
+                    alert(data.message || "Gagal menambah produk ke keranjang");
+                }
+            })
+            .catch(() => {
+                // Fallback: submit form biasa jika AJAX gagal
+                form.submit();
+            });
         });
     });
 
