@@ -21,9 +21,13 @@
     }
 
     // Hitung jumlah item di keranjang
-    $cartItemCount = 0;
-    foreach ($cartItems as $item) {
-        $cartItemCount += $item->quantity ?? 0;
+    if ($cartItems->isEmpty()) {
+        $cartItemCount = 0;
+    } else {
+        $cartItemCount = 0;
+        foreach ($cartItems as $item) {
+            $cartItemCount += $item->quantity ?? 0;
+        }
     }
 
     // Prepare images for preloading to reduce lag
@@ -718,14 +722,14 @@
 
                 <form method="POST" action="{{ route('promo.activate') }}" id="promoForm" class="flex flex-col">
                     @csrf
-                    <div class="flex-1 p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div class="flex-1 p-4 border border-green-200 rounded-lg bg-green-50">
                         <p class="mb-2 font-semibold text-green-800">Punya kode promo? Aktifkan disini:</p>
                         <div class="flex flex-wrap gap-2">
                             <input type="text" name="promo_code" value="{{ old('promo_code', session('promo_code')) }}"
                                    placeholder="Masukkan kode promo"
                                    class="flex-1 px-4 py-2 min-w-[150px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 promo-input" />
                             <button type="submit"
-                                    class="px-5 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all promo-button">
+                                    class="px-5 py-2 text-white transition-all bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 promo-button">
                                 Aktifkan
                             </button>
                         </div>
@@ -752,7 +756,7 @@
                 </div>
                 <form method="POST" action="{{ route('promo.deactivate') }}">
                     @csrf
-                    <button type="submit" class="px-4 py-2 text-white bg-gray-800 rounded-lg hover:bg-gray-900 transition-all">Nonaktifkan</button>
+                    <button type="submit" class="px-4 py-2 text-white transition-all bg-gray-800 rounded-lg hover:bg-gray-900">Nonaktifkan</button>
                 </form>
             </div>
         @endif
@@ -768,7 +772,7 @@
             </div>
         </div>
 
-        <div class="product-grid mb-12">
+        <div class="mb-12 product-grid">
             @forelse($products as $product)
                 @php
                     $final_price = $product->price;
@@ -801,15 +805,15 @@
                         ->values();
                 @endphp
 
-                <div class="product-card overflow-hidden rounded-xl">
+                <div class="overflow-hidden product-card rounded-xl">
                     @if($promo_active)
                         <div class="discount-badge">DISKON {{ $promo_label }}</div>
                     @endif
 
-                    <div class="product-image-container p-2">
+                    <div class="p-2 product-image-container">
                         <div class="grid grid-cols-2 gap-2">
                             @foreach($displayImages->take(2) as $index => $img)
-                                <div class="aspect-square rounded-lg overflow-hidden bg-white">
+                                <div class="overflow-hidden bg-white rounded-lg aspect-square">
                                     <img
                                         src="{{ asset($img->image_url) }}"
                                         alt="{{ $product->name }} {{ $index + 1 }}"
@@ -821,7 +825,7 @@
                             @endforeach
                             @if($displayImages->count() < 2)
                                 @if($displayImages->count() == 1)
-                                    <div class="aspect-square rounded-lg overflow-hidden bg-white">
+                                    <div class="overflow-hidden bg-white rounded-lg aspect-square">
                                         <img
                                             src="{{ asset($displayImages->first()->image_url) }}"
                                             alt="{{ $product->name }} 1"
@@ -830,7 +834,7 @@
                                             onerror="this.onerror=null;this.src='{{ asset('images/produk/placeholder.png') }}';"
                                         >
                                     </div>
-                                    <div class="aspect-square rounded-lg overflow-hidden bg-white">
+                                    <div class="overflow-hidden bg-white rounded-lg aspect-square">
                                         <img
                                             src="{{ asset($product->image_url ?? 'images/produk/placeholder.png') }}"
                                             alt="{{ $product->name }} 2"
@@ -839,7 +843,7 @@
                                         >
                                     </div>
                                 @else
-                                    <div class="aspect-square rounded-lg overflow-hidden bg-white">
+                                    <div class="overflow-hidden bg-white rounded-lg aspect-square">
                                         <img
                                             src="{{ asset($product->image_url ?? 'images/produk/placeholder.png') }}"
                                             alt="{{ $product->name }} 1"
@@ -847,7 +851,7 @@
                                             loading="lazy"
                                         >
                                     </div>
-                                    <div class="aspect-square rounded-lg overflow-hidden bg-white">
+                                    <div class="overflow-hidden bg-white rounded-lg aspect-square">
                                         <img
                                             src="{{ asset('images/produk/placeholder.png') }}"
                                             alt="{{ $product->name }} 2"
@@ -920,7 +924,7 @@
                     </div>
                 </div>
             @empty
-                <div class="col-span-full p-8 bg-white rounded-xl">
+                <div class="p-8 bg-white col-span-full rounded-xl">
                     <div class="flex flex-col items-center text-center">
                         <svg class="w-16 h-16 mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -1008,11 +1012,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateCartCounter() {
         const counter = document.getElementById('cart-counter');
         if (counter) {
-            // Get the actual count from the initial PHP value or localStorage
-            const count = {{ $cartItemCount }} || parseInt(localStorage.getItem('cartItemCount') || '0');
+            const count = {{ $cartItemCount }};
             counter.textContent = count;
-
-            // Store in localStorage for persistence
             localStorage.setItem('cartItemCount', count);
         }
     }

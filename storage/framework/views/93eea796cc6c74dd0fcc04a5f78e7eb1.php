@@ -1278,11 +1278,11 @@
         max-width: none;
         width: auto;
     }
-    
+
     .cart-empty {
         min-height: 300px;
     }
-    
+
     .cart-empty-icon svg {
         width: 80px;
         height: 80px;
@@ -1376,7 +1376,7 @@
                             $grand_total = 0;
                             $total_discount = 0;
                         ?>
-                        <?php $__currentLoopData = $cartItems; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <?php $__currentLoopData = $cartItems; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <?php
                                 $promo = $item->promo_code ?? $promo_code;
                                 $promotion = $promo ? \App\Models\Promotion::where('promo_code', $promo)->first() : null;
@@ -1399,6 +1399,7 @@
                                 $total_discount += $discount * $qty;
                             ?>
                             <tr data-item-row="<?php echo e($item->id); ?>" data-unit-price="<?php echo e($unit_price); ?>" data-discounted-price="<?php echo e($discounted_price); ?>">
+                                <td><?php echo e($index + 1); ?></td> <!-- Penomoran item -->
                                 <td>
                                     <div class="flex items-center">
                                         <img src="<?php echo e(asset($item->product->image_url ?? 'images/no-image.png')); ?>" alt="<?php echo e($item->product->name); ?>" class="cart-item-image">
@@ -2077,12 +2078,12 @@ const loadingOverlay = {
 function ensureCsrfToken() {
     // Check for meta tag
     let token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    
+
     // If not found, check for input
     if (!token) {
         token = document.querySelector('input[name="_token"]')?.value;
     }
-    
+
     // If still not found, create one
     if (!token) {
         const tokenInput = document.createElement('input');
@@ -2090,23 +2091,23 @@ function ensureCsrfToken() {
         tokenInput.name = '_token';
         tokenInput.value = '<?php echo e(csrf_token()); ?>';
         document.body.appendChild(tokenInput);
-        
+
         // Add meta tag too
         const metaToken = document.createElement('meta');
         metaToken.name = 'csrf-token';
         metaToken.content = '<?php echo e(csrf_token()); ?>';
         document.head.appendChild(metaToken);
-        
+
         token = '<?php echo e(csrf_token()); ?>';
     }
-    
+
     // Add to default fetch headers
     window.fetchDefaults = window.fetchDefaults || {};
     window.fetchDefaults.headers = {
         'X-CSRF-TOKEN': token,
         'Accept': 'application/json'
     };
-    
+
     return token;
 }
 
@@ -2138,27 +2139,27 @@ async function deleteCartItem(itemId) {
 
         // Get item information for notification
         const itemName = itemElements[0].querySelector('.cart-item-name, .mobile-cart-item-name')?.textContent || 'Produk';
-        
+
         // Get CSRF token - PERBAIKAN: mencoba dari beberapa sumber
         const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
         const inputToken = document.querySelector('input[name="_token"]')?.value;
         const csrfToken = metaToken || inputToken;
-        
+
         if (!csrfToken) {
             throw new Error('CSRF token tidak ditemukan. Silakan refresh halaman.');
         }
-        
+
         // Show loading overlay
         loadingOverlay.show();
-        
+
         // Add deleting animation class
         itemElements.forEach(el => el.classList.add('deleting'));
-        
+
         // PERBAIKAN: Gunakan FormData dengan _method=DELETE untuk kompatibilitas
         const formData = new FormData();
         formData.append('_method', 'DELETE');
         formData.append('_token', csrfToken);
-        
+
         // Send DELETE request - PERBAIKAN: Gunakan endpoint yang benar
         const response = await fetch(`/user/cart/delete/${itemId}`, {
             method: 'POST',  // Gunakan POST dengan _method=DELETE untuk kompatibilitas
@@ -2168,7 +2169,7 @@ async function deleteCartItem(itemId) {
             },
             body: formData
         });
-        
+
         if (!response.ok) {
             // Handle HTTP errors
             if (response.status === 401) {
@@ -2179,21 +2180,21 @@ async function deleteCartItem(itemId) {
                 throw new Error(`Terjadi kesalahan server (${response.status}). Silakan coba lagi.`);
             }
         }
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             // Remove from cart state
             cartState.removeItem(itemId);
-            
+
             // Smoothly remove from UI with animation
             itemElements.forEach(el => {
                 el.classList.add('deleted');
-                
+
                 // Remove from DOM after animation completes
                 el.addEventListener('transitionend', () => {
                     el.remove();
-                    
+
                     // Check if cart is empty after removal
                     if (cartState.items.length === 0) {
                         showEmptyCart();
@@ -2202,25 +2203,25 @@ async function deleteCartItem(itemId) {
                     }
                 }, { once: true });
             });
-            
+
             // Show success notification
             toastSystem.success('Berhasil', 'Produk berhasil dihapus dari keranjang');
-            
+
             return data;
         } else {
             throw new Error(data.message || 'Gagal menghapus produk dari keranjang');
         }
     } catch (error) {
         console.error('Error deleting cart item:', error);
-        
+
         // Remove deleting animation from items
         document.querySelectorAll(`[data-item-row="${itemId}"]`).forEach(el => {
             el.classList.remove('deleting');
         });
-        
+
         // Show error notification with retry button
         const errorToast = toastSystem.error('Gagal Menghapus', error.message || 'Gagal menghapus produk dari keranjang.', 0);
-        
+
         // Add retry button to error toast
         const toastContent = errorToast.querySelector('.toast-content');
         const retryBtn = document.createElement('button');
@@ -2232,12 +2233,12 @@ async function deleteCartItem(itemId) {
             setTimeout(() => handleDeleteItem(itemId), 300);
         });
         toastContent.appendChild(retryBtn);
-        
+
         // Initialize feather icons in retry button
         if (window.feather) {
             feather.replace();
         }
-        
+
         throw error;
     } finally {
         loadingOverlay.hide();
@@ -2253,13 +2254,13 @@ async function handleDeleteItem(itemId) {
         // Find the item elements
         const itemElements = document.querySelectorAll(`[data-item-row="${itemId}"]`);
         if (itemElements.length === 0) return;
-        
+
         // Get product information for confirmation dialog
         const firstElement = itemElements[0];
         const itemName = firstElement.querySelector('.cart-item-name, .mobile-cart-item-name')?.textContent || 'Produk';
         const itemImage = firstElement.querySelector('.cart-item-image, .mobile-cart-item-image')?.src || '';
         const itemPrice = firstElement.querySelector('.cart-price, .mobile-cart-item-price')?.textContent || '';
-        
+
         // Show confirmation dialog
         const confirmed = await confirmDialog.show({
             title: 'Konfirmasi Hapus',
@@ -2274,7 +2275,7 @@ async function handleDeleteItem(itemId) {
                 price: itemPrice
             }
         });
-        
+
         // If confirmed, proceed with deletion
         if (confirmed) {
             await deleteCartItem(itemId);
@@ -2290,10 +2291,10 @@ async function handleDeleteItem(itemId) {
 function showEmptyCart() {
     const cartContent = document.getElementById('cart-content');
     if (!cartContent) return;
-    
+
     // Animate fade out
     cartContent.classList.add('fade-out');
-    
+
     setTimeout(() => {
         cartContent.innerHTML = `
             <div class="cart-empty">
@@ -2316,9 +2317,9 @@ function showEmptyCart() {
                 </a>
             </div>
         `;
-        
+
         cartContent.classList.remove('fade-out');
-        
+
         // Initialize feather icons
         if (window.feather) {
             feather.replace();
@@ -2332,32 +2333,32 @@ function showEmptyCart() {
 function calculateTotals() {
     let subtotal = 0;
     let discount = 0;
-    
+
     cartState.items.forEach(item => {
         const itemElements = document.querySelectorAll(`[data-item-row="${item.id}"]`);
         if (itemElements.length === 0) return;
-        
+
         const unitPrice = parseFloat(itemElements[0].getAttribute('data-unit-price')) || 0;
         const discountedPrice = parseFloat(itemElements[0].getAttribute('data-discounted-price')) || unitPrice;
         const quantityInput = itemElements[0].querySelector('.cart-quantity-input');
         const quantity = parseInt(quantityInput?.value || 1);
-        
+
         subtotal += unitPrice * quantity;
         discount += (unitPrice - discountedPrice) * quantity;
     });
-    
+
     const shipping = cartState.shippingCost || 0;
     const total = subtotal - discount + shipping;
-    
+
     // Update UI
     const subtotalEl = document.getElementById('cart-subtotal');
     const discountEl = document.getElementById('cart-discount');
     const totalEl = document.getElementById('cart-total');
-    
+
     if (subtotalEl) subtotalEl.textContent = `Rp ${formatCurrency(subtotal)}`;
     if (discountEl) discountEl.textContent = `-Rp ${formatCurrency(discount)}`;
     if (totalEl) totalEl.textContent = `Rp ${formatCurrency(total)}`;
-    
+
     // Show/hide discount row
     const discountRow = document.getElementById('cart-discount-row');
     if (discountRow) {
@@ -2387,7 +2388,7 @@ function updateItemDisplay(itemId, newQuantity) {
     // Get unit price and discounted price
     const unitPrice = parseFloat(itemElements[0].getAttribute('data-unit-price')) || 0;
     const discountedPrice = parseFloat(itemElements[0].getAttribute('data-discounted-price')) || unitPrice;
-    
+
     // Calculate new total
     const itemTotal = discountedPrice * newQuantity;
 
@@ -2395,7 +2396,7 @@ function updateItemDisplay(itemId, newQuantity) {
     itemElements.forEach(element => {
         const quantityInput = element.querySelector('.cart-quantity-input');
         if (quantityInput) quantityInput.value = newQuantity;
-        
+
         // Update total display
         const totalElement = element.querySelector('.item-total, .mobile-item-total');
         if (totalElement) {
@@ -2404,7 +2405,7 @@ function updateItemDisplay(itemId, newQuantity) {
             setTimeout(() => totalElement.classList.remove('flash-update'), 500);
         }
     });
-    
+
     // Recalculate cart totals
     calculateTotals();
 
@@ -2419,17 +2420,17 @@ function updateItemQuantity(itemId) {
     // Get all elements with this item ID
     const itemElements = document.querySelectorAll(`[data-item-row="${itemId}"]`);
     if (itemElements.length === 0) return;
-    
+
     // Get input element and new quantity
     const quantityInput = itemElements[0].querySelector('.cart-quantity-input');
     if (!quantityInput) return;
-    
+
     const newQuantity = parseInt(quantityInput.value);
     if (isNaN(newQuantity) || newQuantity < 1) {
         quantityInput.value = 1;
         return;
     }
-    
+
     // Convert itemId to integer
     itemId = parseInt(itemId);
 
@@ -2447,7 +2448,7 @@ function updateItemQuantity(itemId) {
         quantityInput.value = 1;
         return;
     }
-    
+
     // Maximum quantity check
     const maxStock = parseInt(quantityInput.getAttribute('max')) || 100;
     if (newQuantity > maxStock) {
@@ -2505,7 +2506,7 @@ function updateItemQuantity(itemId) {
             // Update item price from response if available
             if (data.data) {
                 cartState.items[itemIndex].quantity = data.data.quantity;
-                
+
                 // Flash the total price to show it's been updated
                 const cartTotal = document.getElementById('cart-total');
                 if (cartTotal) {
@@ -2514,11 +2515,11 @@ function updateItemQuantity(itemId) {
                         cartTotal.classList.remove('flash-update');
                     }, 500);
                 }
-                
+
                 // Recalculate totals with the updated data
                 calculateTotals();
             }
-            
+
             // Show success toast
             toastSystem.success('Berhasil', 'Jumlah produk berhasil diubah');
         } else {
@@ -2527,10 +2528,10 @@ function updateItemQuantity(itemId) {
     })
     .catch(error => {
         console.error('Error updating quantity:', error);
-        
+
         // Revert to old quantity in state and display
         updateItemDisplay(itemId, oldQuantity);
-        
+
         // Show error toast
         toastSystem.error('Gagal', 'Gagal mengubah jumlah produk. Silakan coba lagi.');
     })
@@ -2539,11 +2540,11 @@ function updateItemQuantity(itemId) {
         quantityContainers.forEach(container => {
             container.classList.remove('updating');
         });
-        
+
         // Remove this update from pending list
         const nextQuantity = cartState.pendingQuantityUpdates[itemId]?.nextQuantity;
         delete cartState.pendingQuantityUpdates[itemId];
-        
+
         // Check if there's another pending update for this item
         if (nextQuantity !== null) {
             // Process the next update
@@ -2553,11 +2554,11 @@ function updateItemQuantity(itemId) {
                 inputs.forEach(input => {
                     input.value = nextQuantity;
                 });
-                
+
                 updateItemQuantity(itemId);
             }, 100);
         }
-        
+
         // Check if there are no more pending updates
         if (Object.keys(cartState.pendingQuantityUpdates).length === 0) {
             cartState.updating = false;
@@ -2572,7 +2573,7 @@ function updateItemQuantity(itemId) {
 function saveShippingMethod(methodCode) {
     // Get CSRF token
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || document.querySelector('input[name="_token"]')?.value;
-    
+
     fetch('/user/cart/save-shipping', {
         method: 'POST',
         headers: {
@@ -2600,7 +2601,7 @@ function saveShippingMethod(methodCode) {
 function savePaymentMethod(methodCode) {
     // Get CSRF token
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || document.querySelector('input[name="_token"]')?.value;
-    
+
     fetch('/user/cart/save-payment', {
         method: 'POST',
         headers: {
@@ -2630,17 +2631,17 @@ function setupFormSubmissions() {
     if (promoForm) {
         promoForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            
+
             const formData = new FormData(this);
             const promoCode = formData.get('promo_code');
-            
+
             if (!promoCode) {
                 toastSystem.error('Error', 'Masukkan kode promo terlebih dahulu');
                 return;
             }
-            
+
             loadingOverlay.show();
-            
+
             fetch(this.action, {
                 method: 'POST',
                 body: formData
@@ -2655,7 +2656,7 @@ function setupFormSubmissions() {
                 if (data.success) {
                     // Show success toast
                     toastSystem.success('Berhasil', 'Kode promo berhasil diterapkan');
-                    
+
                     // Reload page to reflect promo after a slight delay
                     setTimeout(() => {
                         window.location.reload();
@@ -2671,15 +2672,15 @@ function setupFormSubmissions() {
             });
         });
     }
-    
+
     // Handle promo code removal
     const promoRemoveForm = document.getElementById('promo-remove-form');
     if (promoRemoveForm) {
         promoRemoveForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            
+
             loadingOverlay.show();
-            
+
             fetch(this.action, {
                 method: 'POST',
                 body: new FormData(this)
@@ -2694,7 +2695,7 @@ function setupFormSubmissions() {
                 if (data.success) {
                     // Show success toast
                     toastSystem.success('Berhasil', 'Kode promo berhasil dihapus');
-                    
+
                     // Reload page to reflect promo removal after a slight delay
                     setTimeout(() => {
                         window.location.reload();
@@ -2710,7 +2711,7 @@ function setupFormSubmissions() {
             });
         });
     }
-    
+
     // Handle checkout form
     const checkoutForm = document.getElementById('form-checkout');
     if (checkoutForm) {
@@ -2722,7 +2723,7 @@ function setupFormSubmissions() {
                 toastSystem.error('Perhatian', 'Silakan pilih metode pengiriman terlebih dahulu');
                 return;
             }
-            
+
             // Make sure a payment method is selected
             const selectedPayment = document.querySelector('input[name="payment_method"]:checked');
             if (!selectedPayment) {
@@ -2730,14 +2731,14 @@ function setupFormSubmissions() {
                 toastSystem.error('Perhatian', 'Silakan pilih metode pembayaran terlebih dahulu');
                 return;
             }
-            
+
             // Check if there are any pending updates
             if (Object.keys(cartState.pendingQuantityUpdates).length > 0 || cartState.updating) {
                 e.preventDefault();
                 toastSystem.error('Perhatian', 'Sedang mengupdate keranjang, mohon tunggu sebentar');
                 return;
             }
-            
+
             // All checks passed, show loading overlay
             loadingOverlay.show();
         });
@@ -2760,67 +2761,67 @@ function setupQuantityHandlers() {
             timeout = setTimeout(later, wait);
         };
     }
-    
+
     // Decrease quantity buttons
     document.querySelectorAll('.quantity-decrease').forEach(btn => {
         btn.addEventListener('click', function() {
             if (cartState.updating) return;
-            
+
             const container = this.closest('.cart-quantity, .mobile-cart-item-quantity');
             if (!container) return;
-            
+
             const itemId = parseInt(container.getAttribute('data-item-id'));
             const input = container.querySelector('.cart-quantity-input');
             if (!input) return;
-            
+
             const currentValue = parseInt(input.value);
-            
+
             if (currentValue > 1) {
                 const newQuantity = currentValue - 1;
                 input.value = newQuantity; // Update input immediately for better UX
-                
+
                 // Debounce the actual update to reduce rapid-fire API calls
                 debounce(() => updateItemQuantity(itemId), 300)();
             }
         });
     });
-    
+
     // Increase quantity buttons
     document.querySelectorAll('.quantity-increase').forEach(btn => {
         btn.addEventListener('click', function() {
             if (cartState.updating) return;
-            
+
             const container = this.closest('.cart-quantity, .mobile-cart-item-quantity');
             if (!container) return;
-            
+
             const itemId = parseInt(container.getAttribute('data-item-id'));
             const input = container.querySelector('.cart-quantity-input');
             if (!input) return;
-            
+
             const currentValue = parseInt(input.value);
             const maxValue = parseInt(input.getAttribute('max') || '100');
-            
+
             if (currentValue < maxValue) {
                 const newQuantity = currentValue + 1;
                 input.value = newQuantity; // Update input immediately for better UX
-                
+
                 // Debounce the actual update to reduce rapid-fire API calls
                 debounce(() => updateItemQuantity(itemId), 300)();
             }
         });
     });
-    
+
     // Manual quantity input
     document.querySelectorAll('.cart-quantity-input').forEach(input => {
         input.addEventListener('change', debounce(function() {
             if (cartState.updating) return;
-            
+
             const itemId = parseInt(this.getAttribute('data-item-id'));
             if (itemId) {
                 updateItemQuantity(itemId);
             }
         }, 500));
-        
+
         // Prevent manual editing with keyboard (optional, for better control)
         input.addEventListener('keydown', function(e) {
             if (e.key !== 'Tab' && e.key !== 'Enter') {
@@ -2843,13 +2844,13 @@ window.initAzkaCartShippingCalc = function() {
     function doEstimate() {
         try {
             let selectedShipping = document.querySelector('.shipping-method-radio:checked')?.value || 'KURIR_TOKO';
-            
+
             // Update hidden input and global state - PERBAIKAN: Check if element exists
             if (shippingMethodInput) {
                 shippingMethodInput.value = selectedShipping;
             }
             cartState.shippingMethod = selectedShipping;
-            
+
             // Update visual selection
             document.querySelectorAll('.shipping-method').forEach(method => {
                 method.classList.remove('selected');
@@ -2858,13 +2859,13 @@ window.initAzkaCartShippingCalc = function() {
             if (selectedMethod) {
                 selectedMethod.closest('.shipping-method').classList.add('selected');
             }
-            
+
             // Save to session
             saveShippingMethod(selectedShipping);
 
             // PERBAIKAN: Make sure shippingEstimateText exists
             if (!shippingEstimateText) return;
-            
+
             if(selectedShipping === 'KURIR_TOKO') {
                 shippingEstimateText.innerHTML = 'Menghitung ongkir...';
                 if(window.google && window.google.maps) {
@@ -2882,20 +2883,20 @@ window.initAzkaCartShippingCalc = function() {
                             let ongkir = 10000;
                             if(distanceKm > 10) ongkir = 20000;
                             else if(distanceKm > 5) ongkir = 15000;
-                            
+
                             // Store shipping cost in global state
                             cartState.shippingCost = ongkir;
-                            
+
                             // Update shipping cost in totals
                             const shippingEl = document.getElementById('cart-shipping');
                             if (shippingEl) {
                                 shippingEl.textContent = `Rp ${formatCurrency(ongkir)}`;
                                 shippingEl.setAttribute('data-value', ongkir);
                             }
-                            
+
                             // Recalculate total with shipping
                             calculateTotals();
-                            
+
                             let label = '';
                             if(distanceKm > 10) label = '&gt;10km';
                             else if(distanceKm > 5) label = '5-10km';
@@ -2979,20 +2980,20 @@ window.initAzkaCartShippingCalc = function() {
             }
         }
     }
-    
+
     // Add event listeners to shipping method radios
     radios.forEach(function(radio) {
         if (radio) {
             radio.addEventListener('change', doEstimate);
         }
     });
-    
+
     // Add event listeners to payment method radios
     document.querySelectorAll('.payment-method-radio').forEach(function(radio) {
         if (radio) {
             radio.addEventListener('change', function() {
                 cartState.paymentMethod = this.value;
-                
+
                 // Update visual selection
                 document.querySelectorAll('.payment-method').forEach(method => {
                     method.classList.remove('selected');
@@ -3001,12 +3002,12 @@ window.initAzkaCartShippingCalc = function() {
                 if (parent) {
                     parent.classList.add('selected');
                 }
-                
+
                 savePaymentMethod(this.value);
             });
         }
     });
-    
+
     // Run once on page load to initialize shipping estimate
     // PERBAIKAN: Wrap in try/catch to prevent errors
     try {
@@ -3025,7 +3026,7 @@ document.addEventListener('DOMContentLoaded', function() {
         toastSystem.init();
         confirmDialog.init();
         loadingOverlay.init();
-        
+
         // Store cart items data for client-side calculations
         const items = [
             <?php $__currentLoopData = $cartItems; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
@@ -3058,10 +3059,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         ];
-        
+
         // Initialize cart state
         cartState.init(items);
-        
+
         // Initialize Feather Icons
         if (typeof feather !== 'undefined') {
             feather.replace();
@@ -3074,28 +3075,28 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             document.head.appendChild(script);
         }
-        
+
         // Add event listeners to delete buttons
         document.querySelectorAll('.cart-remove').forEach(button => {
             button.addEventListener('click', function(e) {
                 e.preventDefault();
-                const itemId = this.getAttribute('data-item-id') || 
+                const itemId = this.getAttribute('data-item-id') ||
                                this.closest('[data-item-row]')?.getAttribute('data-item-row');
                 if (itemId) {
                     handleDeleteItem(parseInt(itemId));
                 }
             });
         });
-        
+
         // Setup quantity update handlers
         setupQuantityHandlers();
-        
+
         // Setup form submissions
         setupFormSubmissions();
-        
+
         // Calculate initial totals
         calculateTotals();
-        
+
         // Load Google Maps for shipping calculations if address is available
         if (<?php echo e($hasAddress && $primaryAddress ? 'true' : 'false'); ?>) {
             if (!window.google) {
@@ -3106,10 +3107,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         googleMapsScript.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyCTUfem9YaXy7FPguX6wa26V4lRuYOgF4w&libraries=places";
                         googleMapsScript.async = true;
                         googleMapsScript.defer = true;
-                        
+
                         // After script loads, initialize shipping calc
                         googleMapsScript.onload = window.initAzkaCartShippingCalc;
-                        
+
                         googleMapsScript.onerror = function() {
                             console.error('Failed to load Google Maps API');
                             // Run shipping calculation anyway without maps
@@ -3117,7 +3118,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         };
                         document.head.appendChild(googleMapsScript);
                     };
-                    
+
                     // Slight delay before loading to ensure DOM is ready
                     setTimeout(loadGoogleMaps, 100);
                 } catch (error) {
@@ -3130,7 +3131,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.initAzkaCartShippingCalc();
             }
         }
-        
+
         // Add hover effects to payment and shipping methods
         document.querySelectorAll('.payment-method, .shipping-method').forEach(method => {
             // Make entire label clickable
@@ -3139,7 +3140,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const radio = this.querySelector('input[type="radio"]');
                 if (radio && !radio.checked) {
                     radio.checked = true;
-                    
+
                     // Trigger the change event manually
                     const event = new Event('change', { bubbles: true });
                     radio.dispatchEvent(event);
@@ -3155,12 +3156,12 @@ document.addEventListener('DOMContentLoaded', function() {
 window.addEventListener('error', function(e) {
     console.error('Global error caught:', e.error || e.message);
     loadingOverlay.hideAll();
-    
+
     // If there's an active spinner for quantity updates, remove it
     document.querySelectorAll('.updating').forEach(el => {
         el.classList.remove('updating');
     });
-    
+
     cartState.updating = false;
     cartState.pendingQuantityUpdates = {}; // Clear pending updates on global error
 });
@@ -3176,4 +3177,5 @@ window.addEventListener('beforeunload', function(e) {
 });
 </script>
 <?php $__env->stopSection(); ?>
+
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\azka-garden\resources\views/user/cart.blade.php ENDPATH**/ ?>

@@ -21,8 +21,6 @@ class CartController extends Controller
 {
     /**
      * Tampilkan isi keranjang user.
-     *
-     * @return View|RedirectResponse
      */
     public function index(): View|RedirectResponse
     {
@@ -42,19 +40,14 @@ class CartController extends Controller
             $activePromo = Promotion::where('promo_code', $promoCode)->first();
         }
 
-        // Tambahkan informasi alamat untuk pengiriman
         $primaryAddress = $user->addresses()->where('is_primary', true)->first();
         $hasAddress = !empty($primaryAddress);
 
-        // Tidak perlu hitung total di sini; perhitungan total dilakukan di Blade
         return view('user.cart', compact('cartItems', 'activePromo', 'primaryAddress', 'hasAddress'));
     }
 
     /**
      * Process checkout from cart
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return View|RedirectResponse
      */
     public function checkout(Request $request): View|RedirectResponse
     {
@@ -72,7 +65,6 @@ class CartController extends Controller
                 ->with('error', 'Keranjang Anda kosong. Silahkan tambahkan produk terlebih dahulu.');
         }
 
-        // Save shipping and payment method to session
         if ($request->has('shipping_method')) {
             session(['shipping_method' => $request->shipping_method]);
         }
@@ -85,13 +77,11 @@ class CartController extends Controller
             session(['shipping_address_id' => $request->shipping_address_id]);
         }
 
-        // Check if shipping method and payment method are set
         if (!session('shipping_method')) {
             session(['shipping_method' => 'KURIR_TOKO']);
         }
 
         if (!session('payment_method')) {
-            // Set default payment method from database if available
             $paymentMethod = \DB::table('local_payment_methods')
                 ->where('status', 1)
                 ->first();
@@ -107,22 +97,16 @@ class CartController extends Controller
     }
 
     /**
-     * Update jumlah produk di keranjang dengan improved error handling
-     *
-     * @param Request $request
-     * @param int $id ID cart item yang akan diupdate
-     * @return JsonResponse
+     * Update jumlah produk di keranjang
      */
     public function update(Request $request, $id): JsonResponse
     {
         try {
-            // Validate request
             $request->validate([
                 'quantity' => 'required|integer|min:1',
             ]);
 
             $user = Auth::user();
-
             if (!$user) {
                 return response()->json([
                     'success' => false,
@@ -130,7 +114,6 @@ class CartController extends Controller
                 ], 401);
             }
 
-            // Find the cart item with explicit user check
             $cartItem = Cart::where('id', $id)
                 ->where('user_id', $user->id)
                 ->first();
@@ -142,7 +125,6 @@ class CartController extends Controller
                 ], 404);
             }
 
-            // Validasi stok produk
             $product = Product::find($cartItem->product_id);
             if (!$product) {
                 return response()->json([
@@ -151,7 +133,6 @@ class CartController extends Controller
                 ], 404);
             }
 
-            // Check product stock
             if ($request->quantity > $product->stock) {
                 return response()->json([
                     'success' => false,
@@ -159,11 +140,9 @@ class CartController extends Controller
                 ], 400);
             }
 
-            // Update quantity
             $cartItem->quantity = $request->quantity;
             $cartItem->save();
 
-            // Hitung total dengan diskon
             $promo = $cartItem->promo_code ?? session('promo_code');
             $promotion = $promo ? Promotion::where('promo_code', $promo)->first() : null;
 
@@ -193,25 +172,21 @@ class CartController extends Controller
                     'formatted_total' => 'Rp ' . number_format($item_total, 0, ',', '.'),
                 ]
             ]);
-
         } catch (QueryException $e) {
             Log::error('Database error when updating cart item', [
                 'cart_item_id' => $id,
                 'error' => $e->getMessage(),
             ]);
-
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan database saat mengubah jumlah produk',
                 'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
-
         } catch (Exception $e) {
             Log::error('Error when updating cart item', [
                 'cart_item_id' => $id,
                 'error' => $e->getMessage(),
             ]);
-
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengubah jumlah produk',
@@ -221,18 +196,13 @@ class CartController extends Controller
     }
 
     /**
-     * Delete item from cart with improved error handling (JSON response)
-     * Supports both DELETE and POST methods for better compatibility
-     *
-     * @param int $id Cart item ID
-     * @return JsonResponse
+     * Delete item from cart (JSON)
      */
     public function delete($id): JsonResponse
     {
         try {
             $user = Auth::user();
 
-            // Log request for debugging
             Log::info('Delete cart item request received', [
                 'id' => $id,
                 'user_id' => $user ? $user->id : 'not authenticated',
@@ -251,7 +221,6 @@ class CartController extends Controller
                 ], 401);
             }
 
-            // Find the cart item with explicit user check
             $cartItem = Cart::where('id', $id)
                 ->where('user_id', $user->id)
                 ->first();
@@ -263,11 +232,9 @@ class CartController extends Controller
                 ], 404);
             }
 
-            // Get product details before deletion for logging
             $productId = $cartItem->product_id;
             $productName = $cartItem->product ? $cartItem->product->name : 'unknown';
 
-            // Log before deletion (optional but helpful for debugging)
             Log::info('Deleting cart item', [
                 'user_id' => $user->id,
                 'cart_item_id' => $id,
@@ -275,10 +242,8 @@ class CartController extends Controller
                 'product_name' => $productName
             ]);
 
-            // Perform the deletion
             $cartItem->delete();
 
-            // Get updated cart count for the user
             $cartCount = Cart::where('user_id', $user->id)->count();
 
             return response()->json([
@@ -289,27 +254,23 @@ class CartController extends Controller
                     'deleted_id' => $id
                 ]
             ]);
-
         } catch (QueryException $e) {
             Log::error('Database error when deleting cart item', [
                 'cart_item_id' => $id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan database saat menghapus produk',
                 'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
-
         } catch (Exception $e) {
             Log::error('Error when deleting cart item', [
                 'cart_item_id' => $id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menghapus produk dari keranjang: ' . $e->getMessage(),
@@ -320,10 +281,6 @@ class CartController extends Controller
 
     /**
      * Hapus produk dari keranjang (redirect response)
-     * Supports form submission with POST method
-     *
-     * @param int $id
-     * @return RedirectResponse
      */
     public function remove($id): RedirectResponse
     {
@@ -344,7 +301,6 @@ class CartController extends Controller
                     ->with('error', 'Produk tidak ditemukan di keranjang Anda.');
             }
 
-            // Log before deletion
             Log::info('Removing cart item (redirect)', [
                 'user_id' => $user->id,
                 'cart_item_id' => $id,
@@ -366,12 +322,7 @@ class CartController extends Controller
     }
 
     /**
-     * Alternative delete endpoint that accepts POST method for compatibility
-     * This helps with browsers or situations where DELETE method might not be supported
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
+     * POST delete for browsers
      */
     public function deletePost(Request $request, $id): JsonResponse
     {
@@ -380,15 +331,11 @@ class CartController extends Controller
             'csrf' => $request->header('X-CSRF-TOKEN') ? 'present' : 'missing'
         ]);
 
-        // Simply call the delete method
         return $this->delete($id);
     }
 
     /**
      * Simpan metode pengiriman ke session.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function saveShipping(Request $request): JsonResponse
     {
@@ -418,9 +365,6 @@ class CartController extends Controller
 
     /**
      * Simpan metode pembayaran ke session.
-     *
-     * @param Request $request
-     * @return JsonResponse
      */
     public function savePayment(Request $request): JsonResponse
     {
@@ -450,9 +394,6 @@ class CartController extends Controller
 
     /**
      * Tambah produk ke keranjang dengan validasi promo code dan diskon.
-     *
-     * @param Request $request
-     * @return RedirectResponse|JsonResponse
      */
     public function add(Request $request)
     {
@@ -482,7 +423,6 @@ class CartController extends Controller
             $discount = 0;
             $discountMsg = '';
 
-            // Pastikan $product adalah model, bukan Collection
             $product = Product::find($productId);
 
             if (!$product || !($product instanceof Product)) {
@@ -495,7 +435,6 @@ class CartController extends Controller
                 return back()->with('error', 'Produk tidak ditemukan.');
             }
 
-            // Check stock
             if ($quantity > $product->stock) {
                 if ($request->expectsJson()) {
                     return response()->json([
@@ -506,17 +445,15 @@ class CartController extends Controller
                 return back()->with('error', 'Jumlah melebihi stok yang tersedia.');
             }
 
-            // Validasi dan hitung diskon dari promo
+            // Validasi promo
             $promotion = null;
             if ($promoCode) {
                 $promotion = Promotion::where('promo_code', $promoCode)
                     ->where('active', true)
                     ->first();
 
-                // Pastikan $promotion tidak null sebelum akses property discount_type
                 if ($promotion && (method_exists($promotion, 'isValid') ? $promotion->isValid() : true)) {
                     if ($promotion->discount_type === 'fixed') {
-                        // Diskon fixed tidak boleh melebihi harga produk
                         $discount = min($promotion->discount_value ?? 0, $product->price);
                         $discountMsg = "Diskon Rp " . number_format($discount, 0, ',', '.');
                     } elseif ($promotion->discount_type === 'percent') {
@@ -525,7 +462,6 @@ class CartController extends Controller
                         $discountMsg = "Diskon {$percent}%";
                     }
                 } else {
-                    // Promo code dari newsletter?
                     $contact = Contact::where('email', $user->email)
                         ->where('promo_code', $promoCode)
                         ->first();
@@ -536,16 +472,12 @@ class CartController extends Controller
                 }
             }
 
-            // Cek dan update Cart dengan diskon yang benar
             $cartItem = Cart::where('user_id', $user->id)
                 ->where('product_id', $productId)
                 ->first();
 
             if ($cartItem) {
-                // Jika sudah ada, tambah quantity
                 $cartItem->quantity = ($cartItem->quantity ?? 0) + $quantity;
-
-                // Pastikan tidak melebihi stok
                 if ($cartItem->quantity > $product->stock) {
                     $cartItem->quantity = $product->stock;
                 }
@@ -561,7 +493,6 @@ class CartController extends Controller
                     'promo_code' => $promoCode
                 ]);
             } else {
-                // Jika belum ada, buat baru
                 $cartData = [
                     'user_id'    => $user->id,
                     'product_id' => $productId,
@@ -570,7 +501,6 @@ class CartController extends Controller
                     'discount'   => $discount,
                 ];
 
-                // Tambahkan interface_id jika model membutuhkannya
                 if (in_array('interface_id', (new Cart)->getFillable())) {
                     $cartData['interface_id'] = 1;
                 }
@@ -585,7 +515,6 @@ class CartController extends Controller
                 ]);
             }
 
-            // Simpan promo ke session
             session([
                 'promo_code' => $promoCode,
                 'promo_discount' => $discount
@@ -600,7 +529,6 @@ class CartController extends Controller
                 $message .= '.';
             }
 
-            // Return JSON response if requested
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => true,
@@ -637,9 +565,6 @@ class CartController extends Controller
 
     /**
      * Apply promo code to cart
-     *
-     * @param Request $request
-     * @return RedirectResponse|JsonResponse
      */
     public function redeemPromo(Request $request)
     {
@@ -648,7 +573,6 @@ class CartController extends Controller
                 'promo_code' => 'required|string|min:3|max:50',
             ]);
 
-            // Check if promo code exists
             $promotion = Promotion::where('promo_code', $request->promo_code)
                 ->where('active', true)
                 ->first();
@@ -663,7 +587,6 @@ class CartController extends Controller
                 return back()->with('error', 'Kode promo tidak valid atau sudah tidak aktif');
             }
 
-            // Store promo in session
             session([
                 'promo_code' => $promotion->promo_code,
                 'promo_type' => $promotion->discount_type,
