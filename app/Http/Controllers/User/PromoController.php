@@ -18,7 +18,6 @@ class PromoController extends Controller
         $user = Auth::user();
 
         if (!$user) {
-            // Untuk Ajax
             if ($request->expectsJson()) {
                 return response()->json(['success' => false, 'message' => 'Silakan login untuk menggunakan kode promo.'], 401);
             }
@@ -86,20 +85,10 @@ class PromoController extends Controller
         Session::put('promo_type', $promo_type);
         Session::put('promo_discount', $discount_value);
 
-        // Update cart
-        $cartItems = Cart::where('user_id', $user->id)->get();
-        foreach ($cartItems as $item) {
-            // Pakai promo code jika belum ada
-            if (!$item->promo_code) {
-                $item->promo_code = $promo_code;
-                if ($promo_type === 'percent') {
-                    $item->discount = round(($item->product->price ?? 0) * ($discount_value / 100));
-                } else {
-                    $item->discount = $discount_value;
-                }
-                $item->save();
-            }
-        }
+        // Perbaikan utama: Jangan update keranjang di sini!
+        // Hapus logika update keranjang di sini.
+        // Biarkan CartController yang update diskon saat produk ditambahkan,
+        // agar promo bisa berubah dinamis sesuai session saat checkout.
 
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'promo_code' => $promo_code, 'promo_type' => $promo_type, 'promo_discount' => $discount_value]);
@@ -113,16 +102,9 @@ class PromoController extends Controller
         Session::forget('promo_type');
         Session::forget('promo_discount');
 
-        // Update keranjang, hapus diskon
-        $user = Auth::user();
-        if ($user) {
-            $cartItems = Cart::where('user_id', $user->id)->get();
-            foreach ($cartItems as $item) {
-                $item->promo_code = null;
-                $item->discount = 0;
-                $item->save();
-            }
-        }
+        // Perbaikan utama: Jangan update keranjang di sini!
+        // Biarkan diskon tetap di cart, tapi tidak dipakai saat checkout jika promo nonaktif.
+        // Agar user tahu keranjangnya berisi produk yang pernah promo.
 
         if ($request->expectsJson()) {
             return response()->json(['success' => true, 'message' => 'Promo dinonaktifkan']);

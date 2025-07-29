@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $note
  * @property int $interface_id
  * @property int|null $discount
+ * @property int $price
  * @property string|null $promo_code
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -24,7 +25,14 @@ class Cart extends Model
     protected $table = 'carts'; // pastikan sesuai dengan nama tabel di database
 
     protected $fillable = [
-        'user_id', 'product_id', 'quantity', 'note', 'interface_id', 'promo_code', 'discount'
+        'user_id',
+        'product_id',
+        'quantity',
+        'note',
+        'interface_id',
+        'promo_code',
+        'discount',
+        'price' // <<< tambahkan ini agar tidak error pada akses property price
     ];
 
     // relasi ke user

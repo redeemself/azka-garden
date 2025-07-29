@@ -891,6 +891,7 @@
                                     @csrf
                                     <input type="hidden" name="product_id" value="{{ $product->id }}">
                                     <input type="hidden" name="promo_code" value="{{ session('promo_code') ?? '' }}">
+                                    <input type="hidden" name="price" value="{{ $final_price }}">
                                     <button type="submit"
                                         class="flex items-center justify-center w-full px-4 py-2.5 text-white bg-green-700 rounded-lg hover:bg-green-800 add-to-cart-btn transition-all">
                                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -939,35 +940,26 @@ document.addEventListener('DOMContentLoaded', function() {
     // CSRF Token for AJAX requests
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-    // Show loading overlay
     function showLoadingOverlay() {
         const overlay = document.querySelector('.loading-overlay');
-        if (overlay) {
-            overlay.classList.add('active');
-        }
+        if (overlay) overlay.classList.add('active');
     }
-
-    // Hide loading overlay
     function hideLoadingOverlay() {
         const overlay = document.querySelector('.loading-overlay');
-        if (overlay) {
-            overlay.classList.remove('active');
-        }
+        if (overlay) overlay.classList.remove('active');
     }
 
-    // Show toast notification
     function showToast(type, title, message, duration = 3000) {
         const toastContainer = document.getElementById('toastContainer');
-
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
-
         toast.innerHTML = `
             <div class="toast-icon">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     ${type === 'success'
-                        ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
-                        : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'}
+                        ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>'
+                        : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>'
+                    }
                 </svg>
             </div>
             <div class="toast-content">
@@ -976,43 +968,32 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <button class="toast-close">&times;</button>
         `;
-
         toastContainer.appendChild(toast);
 
         toast.querySelector('.toast-close').addEventListener('click', () => {
             toast.classList.remove('show');
             setTimeout(() => toast.remove(), 300);
         });
-
-        // Ensure proper animation timing
         requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                toast.classList.add('show');
-            });
+            requestAnimationFrame(() => { toast.classList.add('show'); });
         });
-
         setTimeout(() => {
             toast.classList.remove('show');
             setTimeout(() => toast.remove(), 300);
         }, duration);
     }
 
-    function updateCartCounter() {
-        const counter = document.getElementById('cart-counter');
-        if (counter) {
-            const count = {{ $cartItemCount }};
-            counter.textContent = count;
-            localStorage.setItem('cartItemCount', count);
-        }
-    }
-
-    // Add loading indicator for all cart forms
     document.querySelectorAll('.add-to-cart-form').forEach(form => {
         form.addEventListener('submit', function(e) {
             e.preventDefault();
 
+            showLoadingOverlay();
+
             const formData = new FormData(form);
-            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            // Pastikan promo_code tersimpan di form dan tidak kosong jika ada di session
+            if (!formData.get('promo_code')) {
+                formData.set('promo_code', '{{ session('promo_code') ?? '' }}');
+            }
 
             fetch(form.action, {
                 method: 'POST',
@@ -1021,25 +1002,27 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(res => res.json())
             .then(data => {
+                hideLoadingOverlay();
                 if (data.success) {
-                    // Update cart counter badge
                     const counter = document.getElementById('cart-counter');
                     if (counter) counter.textContent = data.data.cart_count;
 
-                    // Redirect ke halaman keranjang
-                    window.location.href = "{{ route('user.cart.index') }}";
+                    showToast('success', 'Berhasil', data.message);
+
+                    // Redirect ke halaman keranjang setelah sukses
+                    setTimeout(() => window.location.href = "/user/cart", 900);
                 } else {
-                    alert(data.message || "Gagal menambah produk ke keranjang");
+                    showToast('error', 'Gagal', data.message || "Gagal menambah produk ke keranjang");
                 }
             })
             .catch(() => {
-                // Fallback: submit form biasa jika AJAX gagal
-                form.submit();
+                hideLoadingOverlay();
+                showToast('error', 'Gagal', 'Server tidak merespon. Silakan coba lagi.');
             });
         });
     });
 
-    // Handle promo form with AJAX
+    // Promo form AJAX (tetap sama)
     const promoForm = document.getElementById('promoForm');
     if (promoForm) {
         promoForm.addEventListener('submit', function(e) {
@@ -1047,47 +1030,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const formData = new FormData(this);
             const promoCode = formData.get('promo_code');
-
             if (!promoCode) {
                 showToast('error', 'Error', 'Masukkan kode promo terlebih dahulu');
                 return;
             }
-
             showLoadingOverlay();
-
             fetch(this.action, {
                 method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken
-                },
+                headers: { 'X-CSRF-TOKEN': csrfToken },
                 body: formData
             })
-            .then(response => response.json().catch(() => {
-                if (response.ok) {
-                    return { success: true };
-                }
-                throw new Error('Network response was not ok');
-            }))
+            .then(response => response.json())
             .then(data => {
+                hideLoadingOverlay();
                 if (data.success) {
                     showToast('success', 'Berhasil', 'Kode promo berhasil diterapkan');
                     setTimeout(() => window.location.reload(), 1000);
                 } else {
-                    throw new Error(data.message || 'Gagal menerapkan kode promo');
+                    showToast('error', 'Gagal', data.message || 'Kode promo tidak valid atau tidak dapat diterapkan');
                 }
             })
-            .catch(error => {
-                console.error('Error applying promo code:', error);
+            .catch(() => {
                 hideLoadingOverlay();
                 showToast('error', 'Gagal', 'Kode promo tidak valid atau tidak dapat diterapkan');
             });
         });
     }
 
-    // Initialize cart counter with actual value
-    updateCartCounter();
-
-    // Automatically hide loading overlay when page is fully loaded
     window.addEventListener('load', function() {
         hideLoadingOverlay();
     });

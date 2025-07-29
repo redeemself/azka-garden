@@ -9,6 +9,7 @@ use App\Models\Promotion;
 use App\Models\Contact;
 use App\Models\Review;
 use App\Models\Category;
+use App\Models\Cart;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -36,23 +37,38 @@ class ProductController extends Controller
         // Pagination agar list produk tidak terlalu panjang
         $products = $query->paginate(12);
 
-        $promoCode = $request->input('promo_code') ?? session('promo_code');
+        // Perbaikan promo code: ambil dari session, bukan hanya dari input
+        $promoCode = $request->input('promo_code') ?: session('promo_code');
         $promo = null;
         if ($promoCode) {
             $promo = Promotion::where('promo_code', $promoCode)
                 ->where('status', true)
-                ->where('start_date', '<=', now())
-                ->where('end_date', '>=', now())
+                ->where(function($q){
+                    $q->whereNull('start_date')->orWhere('start_date', '<=', now());
+                })
+                ->where(function($q){
+                    $q->whereNull('end_date')->orWhere('end_date', '>=', now());
+                })
                 ->first();
             if ($promo) {
                 session(['promo_code' => $promoCode]);
+                session(['promo_type' => $promo->discount_type]);
+                session(['promo_discount' => $promo->discount_value]);
             } else {
                 session()->forget('promo_code');
+                session()->forget('promo_type');
+                session()->forget('promo_discount');
             }
         }
 
         $contacts = Contact::all();
         $banners = []; // Sesuaikan dengan query banner Anda jika ada
+
+        // Jumlah keranjang
+        $cartItemCount = 0;
+        if (Auth::check()) {
+            $cartItemCount = Cart::where('user_id', Auth::id())->sum('quantity');
+        }
 
         // Kirim semua data ke view
         return view('user.products.index', [
@@ -61,6 +77,7 @@ class ProductController extends Controller
             'promo' => $promo,
             'contacts' => $contacts,
             'banners' => $banners,
+            'cartItemCount' => $cartItemCount, // <-- PERBAIKAN: jumlah keranjang
         ]);
     }
 
@@ -72,18 +89,26 @@ class ProductController extends Controller
             return !empty($img->image_url) && preg_match('/\.(jpg|jpeg|png)$/i', $img->image_url);
         });
 
-        $promoCode = $request->input('promo_code') ?? session('promo_code');
+        $promoCode = $request->input('promo_code') ?: session('promo_code');
         $promo = null;
         if ($promoCode) {
             $promo = Promotion::where('promo_code', $promoCode)
                 ->where('status', true)
-                ->where('start_date', '<=', now())
-                ->where('end_date', '>=', now())
+                ->where(function($q){
+                    $q->whereNull('start_date')->orWhere('start_date', '<=', now());
+                })
+                ->where(function($q){
+                    $q->whereNull('end_date')->orWhere('end_date', '>=', now());
+                })
                 ->first();
             if ($promo) {
                 session(['promo_code' => $promoCode]);
+                session(['promo_type' => $promo->discount_type]);
+                session(['promo_discount' => $promo->discount_value]);
             } else {
                 session()->forget('promo_code');
+                session()->forget('promo_type');
+                session()->forget('promo_discount');
             }
         }
 
@@ -91,12 +116,19 @@ class ProductController extends Controller
 
         $comments = Review::where('product_id', $product->getKey())->with('user')->get();
 
+        // Jumlah keranjang
+        $cartItemCount = 0;
+        if (Auth::check()) {
+            $cartItemCount = Cart::where('user_id', Auth::id())->sum('quantity');
+        }
+
         return view('user.products.show', [
             'product' => $product,
             'productImages' => $productImages,
             'promo' => $promo,
             'contacts' => $contacts,
             'comments' => $comments,
+            'cartItemCount' => $cartItemCount, // <-- PERBAIKAN: jumlah keranjang
         ]);
     }
 

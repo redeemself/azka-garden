@@ -8,10 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Jika ingin migrasi baru, sebaiknya jangan drop dulu (kecuali memang ingin menghapus semua data lama)
-        // Schema::dropIfExists('carts'); // Hapus jika ingin menambah kolom ke tabel yang sudah ada
-
-        // Jika tabel sudah ada, cukup modify:
+        // Jika tabel belum ada, buat baru dengan kolom lengkap
         if (!Schema::hasTable('carts')) {
             Schema::create('carts', function (Blueprint $table) {
                 $table->id();
@@ -21,7 +18,10 @@ return new class extends Migration
                 $table->foreignId('product_id')
                       ->constrained('products')
                       ->onDelete('cascade');
-                $table->integer('quantity')->default(1); // Pastikan ada default!
+                $table->integer('quantity')->default(1);
+                $table->string('promo_code')->nullable();
+                $table->integer('discount')->default(0);
+                $table->integer('price')->default(0); // Kolom harga promo/final
                 $table->text('note')->nullable();
                 $table->foreignId('interface_id')
                       ->default(1)
@@ -29,8 +29,17 @@ return new class extends Migration
                 $table->timestamps();
             });
         } else {
-            // Jika tabel sudah ada, dan ingin menambah/mengubah kolom:
+            // Jika tabel sudah ada, tambahkan kolom jika belum ada
             Schema::table('carts', function (Blueprint $table) {
+                if (!Schema::hasColumn('carts', 'promo_code')) {
+                    $table->string('promo_code')->nullable();
+                }
+                if (!Schema::hasColumn('carts', 'discount')) {
+                    $table->integer('discount')->default(0);
+                }
+                if (!Schema::hasColumn('carts', 'price')) {
+                    $table->integer('price')->default(0);
+                }
                 if (!Schema::hasColumn('carts', 'quantity')) {
                     $table->integer('quantity')->default(1);
                 }
