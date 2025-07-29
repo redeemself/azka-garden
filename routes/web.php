@@ -21,6 +21,15 @@ use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\User\PromoController;
 use App\Http\Controllers\User\AddressController;
 
+/**
+ * ==================================
+ * AZKA GARDEN E-COMMERCE APPLICATION
+ * Routes Configuration
+ * Last updated: 2025-07-29 15:07:08
+ * Author: mulyadafa
+ * ==================================
+ */
+
 // -----------------------------
 // GLOBAL HOME ROUTE (WAJIB ADA)
 // -----------------------------
@@ -38,25 +47,21 @@ Route::controller(PublicController::class)->group(function () {
     Route::get('/services', 'services')->name('services.index');
 });
 
+// FAQ Route
+Route::get('/faq', [FaqController::class, 'index'])->name('faq');
+
 // Produk detail setelah kategori agar tidak bentrok
 Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
 
 // -----------------------------
-// LIKE & COMMENT PRODUCT ROUTES (auth middleware)
+// BLOG & ARTICLE ROUTES
 // -----------------------------
-Route::middleware(['auth'])->group(function () {
-    Route::post('/products/{id}/like', [ProductController::class, 'like'])->name('products.like');
-    Route::post('/products/{id}/comment', [ProductController::class, 'comment'])->name('products.comment');
+Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/search', [BlogController::class, 'search'])->name('blog.search');
 
-    // Address routes
-    Route::post('/user/address', [AddressController::class, 'store'])->name('user.address.store');
-    Route::post('/user/address/update-coords', [AddressController::class, 'updateCoords'])->name('user.address.updateCoords');
+Route::prefix('artikel')->group(function () {
+    Route::get('/', [ArticleController::class, 'index'])->name('artikel.index');
 });
-
-// -----------------------------
-// FAQ ROUTE
-// -----------------------------
-Route::get('/faq', [FaqController::class, 'index'])->name('faq');
 
 // -----------------------------
 // SITEMAP ROUTES
@@ -65,19 +70,9 @@ Route::get('sitemap', [PublicController::class, 'sitemapHtml'])->name('sitemap.h
 Route::get('sitemap.xml', [PublicController::class, 'sitemapXml'])->name('sitemap.xml');
 
 // -----------------------------
-// BLOG ROUTES
-// -----------------------------
-Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
-Route::get('/blog/search', [BlogController::class, 'search'])->name('blog.search');
-
-// -----------------------------
-// NEWSLETTER ROUTES
+// NEWSLETTER & MEMBERSHIP ROUTES
 // -----------------------------
 Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
-
-// -----------------------------
-// MEMBERSHIP ROUTE
-// -----------------------------
 Route::get('/membership', [MembershipController::class, 'index'])->name('membership.index');
 
 // -----------------------------
@@ -89,30 +84,31 @@ Route::view('/cookies', 'policies.cookies')->name('cookies');
 Route::view('/return-policy', 'policies.return')->name('return.policy');
 Route::view('/accessibility', 'policies.accessibility')->name('accessibility');
 
-// ---------------
+// -----------------------------
 // POLICY ACCEPT & RESET
-// ---------------
+// -----------------------------
 Route::post('/policy/accept', function(Request $request) {
     return redirect()->back()->with('success', 'Kebijakan privasi diterima.');
 })->name('policy.accept');
-
-Route::post('/policy/reset', function(Request $request) {
-    return redirect()->route('privacy')->with('success', 'Persetujuan kebijakan privasi telah direset.');
-})->name('policy.reset');
 
 Route::get('/policy/reset', function() {
     return view('policies.reset_confirmation');
 })->name('policy.reset.form');
 
+Route::post('/policy/reset', function(Request $request) {
+    return redirect()->route('privacy')->with('success', 'Persetujuan kebijakan privasi telah direset.');
+})->name('policy.reset');
+
 // -----------------------------
-// ARTICLE ROUTES
+// PROMO CODE ACTIVATION & DEACTIVATION
 // -----------------------------
-Route::prefix('artikel')->group(function () {
-    Route::get('/', [ArticleController::class, 'index'])->name('artikel.index');
+Route::middleware(['web'])->group(function() {
+    Route::post('/promo/activate', [PromoController::class, 'activate'])->name('promo.activate');
+    Route::post('/promo/deactivate', [PromoController::class, 'deactivate'])->name('promo.deactivate');
 });
 
 // -----------------------------
-// USER AUTH (guest middleware)
+// USER AUTH ROUTES (guest middleware)
 // -----------------------------
 Route::middleware('guest')->group(function () {
     Route::get('register', [UserAuthController::class, 'showRegister'])->name('register');
@@ -122,21 +118,45 @@ Route::middleware('guest')->group(function () {
 });
 
 // -----------------------------
-// USER LOGOUT (auth:web middleware)
+// USER LOGOUT ROUTE
 // -----------------------------
-Route::post('logout', [UserAuthController::class, 'logout'])->name('logout');
+Route::middleware('auth')->post('logout', [UserAuthController::class, 'logout'])->name('logout');
 
 // -----------------------------
-// USER DASHBOARD (prefix 'user', auth:web middleware)
+// AUTHENTICATED USER ROUTES
 // -----------------------------
-Route::middleware('auth:web')->prefix('user')->name('user.')->group(function () {
+Route::middleware(['auth'])->group(function () {
+    // Like & Comment Product Routes
+    Route::post('/products/{id}/like', [ProductController::class, 'like'])->name('products.like');
+    Route::post('/products/{id}/comment', [ProductController::class, 'comment'])->name('products.comment');
+
+    // Address routes (outside of user prefix for compatibility)
+    Route::post('/address', [AddressController::class, 'store'])->name('address.store');
+    Route::post('/address/update-coords', [AddressController::class, 'updateCoords'])->name('address.updateCoords');
+});
+
+// -----------------------------
+// USER DASHBOARD ROUTES
+// -----------------------------
+Route::middleware('auth')->prefix('user')->name('user.')->group(function () {
     Route::get('/', fn() => redirect()->route('user.profile.index'))->name('home');
 
     // Profile User
-    Route::get('profile', [ProfileController::class, 'index'])->name('profile.index');
-    Route::get('profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::post('confirm-roles', [ProfileController::class, 'confirmRoles'])->name('confirmRoles');
+    Route::controller(ProfileController::class)->group(function() {
+        Route::get('profile', 'index')->name('profile.index');
+        Route::get('profile/edit', 'edit')->name('profile.edit');
+        Route::put('profile', 'update')->name('profile.update');
+        Route::post('confirm-roles', 'confirmRoles')->name('confirmRoles');
+    });
+
+    // Address Management
+    Route::prefix('address')->name('address.')->controller(AddressController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::put('{address}', 'update')->name('update');
+        Route::delete('{address}', 'destroy')->name('destroy');
+        Route::patch('{address}/primary', 'setPrimary')->name('setPrimary');
+    });
 
     // Produk khusus user login
     Route::prefix('products')->name('products.')->controller(ProductController::class)->group(function () {
@@ -146,80 +166,50 @@ Route::middleware('auth:web')->prefix('user')->name('user.')->group(function () 
         Route::get('{id}', 'show')->name('show');
     });
 
-    // Keranjang User (cart) — pakai POST untuk update & delete supaya AJAX lancar
+    // Cart Routes - Improved with both POST and method spoofing support
     Route::prefix('cart')->name('cart.')->controller(CartController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('add', 'add')->name('add');
-        Route::post('update/{id}', 'update')->name('update');
-        Route::post('delete/{id}', 'delete')->name('delete');
-        // Perbaikan: redeem promo menggunakan route POST 'cart/redeem'
+        
+        // Supports both direct POST and method spoofing
+        Route::match(['post', 'put'], 'update/{id}', 'update')->name('update');
+        Route::match(['post', 'delete'], 'delete/{id}', 'delete')->name('delete');
+        
         Route::post('redeem', 'redeemPromo')->name('redeem');
         Route::post('save-shipping', 'saveShipping')->name('save-shipping');
         Route::post('save-payment', 'savePayment')->name('save-payment');
-        
-        // PERBAIKAN: Tambahkan dukungan untuk method spoofing PUT/DELETE
-        Route::put('update/{id}', 'update')->name('update.put');
-        Route::delete('delete/{id}', 'delete')->name('delete.delete');
     });
 
-    // Orders User
+    // Orders Routes - Improved with clear naming
     Route::prefix('orders')->name('orders.')->controller(OrderController::class)->group(function () {
+        // List views
         Route::get('/', 'index')->name('index');
         Route::get('history', 'history')->name('history.index');
-        Route::get('{order}', 'show')->name('show');
+        
+        // Order CRUD operations in logical order
         Route::post('create', 'create')->name('create');
-        Route::post('{order}/cancel', 'cancel')->name('cancel');
-        Route::patch('{order}/cancel', 'cancel')->name('cancelPatch');
+        Route::get('checkout/success/{order}', 'checkoutSuccess')->name('checkout.success');
         Route::get('{order}/confirm', 'confirm')->name('confirm');
         Route::post('{order}/pay', 'pay')->name('pay');
-        Route::post('cancel-confirm', 'cancelConfirm')->name('cancelConfirm');
-        Route::post('clear_expired', 'clearExpired')->name('clear_expired');
+        
+        // Order show detail always after confirm
+        Route::get('{order}', 'show')->name('show');
+        
+        // Order state change operations
+        Route::match(['post', 'patch'], '{order}/cancel', 'cancel')->name('cancel');
+        Route::match(['post', 'patch'], '{order}/expire', 'expire')->name('expire');
+        Route::match(['post', 'patch'], '{order}/complete', 'complete')->name('complete');
         Route::post('{order}/finish', 'finish')->name('finish');
+        
+        // Order management operations
+        Route::post('cancel-confirm', 'cancelConfirm')->name('cancelConfirm');
         Route::post('cancel-draft', 'cancelDraft')->name('cancel-draft');
-        Route::patch('{order}/expire', 'expire')->name('expire');
-        Route::patch('{order}/complete', 'complete')->name('complete');
-    });
-
-    // Address group for user
-    Route::prefix('address')->name('address.')->controller(AddressController::class)->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::post('/', 'store')->name('store');
-        Route::put('{address}', 'update')->name('update');
-        Route::delete('{address}', 'destroy')->name('destroy');
-        Route::patch('{address}/primary', 'setPrimary')->name('setPrimary');
+        Route::post('clear_expired', 'clearExpired')->name('clear_expired');
     });
 });
 
 // -----------------------------
-// CART FALLBACK ROUTES FOR METHOD SPOOFING COMPATIBILITY
-// -----------------------------
-Route::middleware('auth:web')->group(function() {
-    // These routes help with AJAX requests that try to use PUT/DELETE directly
-    Route::post('/user/cart/update/{id}', [CartController::class, 'update'])->name('user.cart.update.fallback');
-    Route::post('/user/cart/delete/{id}', [CartController::class, 'delete'])->name('user.cart.delete.fallback');
-    
-    // Direct fallbacks without prefix for browser compatibility
-    Route::post('cart/update/{id}', [CartController::class, 'update']);
-    Route::post('cart/delete/{id}', [CartController::class, 'delete']);
-});
-
-// -----------------------------
-// PATCH ROUTES AGAR BISA DIAKSES DARI NAMA DI BLADE (akses global, tidak dalam prefix user)
-// -----------------------------
-Route::middleware(['auth'])->group(function() {
-    Route::patch('user/orders/{order}/expire', [OrderController::class, 'expire'])->name('user.orders.expire');
-    Route::patch('user/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('user.orders.cancel');
-    Route::patch('user/orders/{order}/complete', [OrderController::class, 'complete'])->name('user.orders.complete');
-});
-
-// -----------------------------
-// PROMO CODE ACTIVATION & DEACTIVATION (untuk semua user)
-// -----------------------------
-Route::post('/promo/activate', [PromoController::class, 'activate'])->name('promo.activate');
-Route::post('/promo/deactivate', [PromoController::class, 'deactivate'])->name('promo.deactivate');
-
-// -----------------------------
-// ADMIN AUTH
+// ADMIN AUTH ROUTES
 // -----------------------------
 Route::prefix('admin')->name('admin.')->middleware('guest:admin')->group(function () {
     Route::get('login', [AdminAuthController::class, 'showLoginForm'])->name('login');
@@ -233,14 +223,20 @@ Route::prefix('admin')->name('admin.')->middleware('guest:admin')->group(functio
 // -----------------------------
 Route::prefix('admin')->name('admin.')->middleware(['auth:admin', 'admin'])->group(function () {
     Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
-    Route::get('profile', [AdminProfileController::class, 'index'])->name('profile');
-    Route::get('profile/edit', [AdminProfileController::class, 'edit'])->name('profile.edit');
-    Route::put('profile', [AdminProfileController::class, 'update'])->name('profile.update');
+    
+    // Admin Profile
+    Route::controller(AdminProfileController::class)->group(function() {
+        Route::get('profile', 'index')->name('profile');
+        Route::get('profile/edit', 'edit')->name('profile.edit');
+        Route::put('profile', 'update')->name('profile.update');
+    });
+    
+    // Admin Logout
     Route::post('logout', [AdminAuthController::class, 'logout'])->name('logout');
 });
 
 // -----------------------------
-// DEVELOPER AUTH
+// DEVELOPER AUTH & DASHBOARD
 // -----------------------------
 Route::prefix('dev')->name('dev.')->middleware('guest:developer')->group(function () {
     Route::get('register', [DevController::class, 'showRegister'])->name('register');
@@ -249,9 +245,6 @@ Route::prefix('dev')->name('dev.')->middleware('guest:developer')->group(functio
     Route::post('login', [DevController::class, 'login'])->name('login.submit');
 });
 
-// -----------------------------
-// DEVELOPER DASHBOARD
-// -----------------------------
 Route::prefix('dev')->name('dev.')->middleware(['auth:developer', 'developer'])->group(function () {
     Route::get('/', [DevController::class, 'dashboard'])->name('dashboard');
     Route::get('profile', [DevController::class, 'profile'])->name('profile');
@@ -260,7 +253,7 @@ Route::prefix('dev')->name('dev.')->middleware(['auth:developer', 'developer'])-
 });
 
 // -----------------------------
-// CUSTOM ERROR ROUTES (401-503)
+// CUSTOM ERROR ROUTES
 // -----------------------------
 foreach ([401, 403, 404, 419, 422, 429, 500, 503] as $code) {
     Route::get("/error/$code", function () use ($code) {
@@ -272,5 +265,5 @@ foreach ([401, 403, 404, 419, 422, 429, 500, 503] as $code) {
 // FALLBACK ROUTE (redirect to home)
 // -----------------------------
 Route::fallback(function() {
-    return redirect()->route('home');
+    return redirect()->route('home')->with('error', 'Halaman yang Anda cari tidak ditemukan.');
 });

@@ -21,8 +21,8 @@ use Illuminate\Contracts\View\View;
 /**
  * OrderController
  * 
- * Updated: 2025-07-29 14:19:25 UTC by mulyadafa
- * Fixed property access issues and improved code quality
+ * Updated: 2025-07-29 15:12:41 UTC by mulyadafa
+ * Fixed property access issues and improved checkout flow
  */
 class OrderController extends Controller
 {
@@ -171,7 +171,7 @@ class OrderController extends Controller
      * - Jika ada orderId, tampilkan detail order.
      * - Jika tidak ada orderId (checkout belum dilakukan), tampilkan isi keranjang.
      * 
-     * Updated: 2025-07-29 14:19:25 by mulyadafa - Fixed property access issues
+     * Updated: 2025-07-29 15:12:41 by mulyadafa - Fixed property access issues
      */
     public function confirm($orderId = null): View
     {
@@ -213,7 +213,7 @@ class OrderController extends Controller
                 'order_code' => $order->order_code ?? 'N/A',
                 'total_price' => $order->total_price ?? 0,
                 'user_id' => Auth::id(),
-                'timestamp' => '2025-07-29 14:19:25'
+                'timestamp' => now()->format('Y-m-d H:i:s')
             ]);
             
             return view('user.orders.confirm', compact('order'));
@@ -263,7 +263,7 @@ class OrderController extends Controller
                 'shipping_method' => $shipping_method,
                 'payment_method' => $payment_method,
                 'has_shipping_address' => !empty(session('shipping_address_id')),
-                'timestamp' => '2025-07-29 14:19:25',
+                'timestamp' => now()->format('Y-m-d H:i:s'),
                 'user' => 'mulyadafa'
             ]);
             
@@ -311,6 +311,25 @@ class OrderController extends Controller
 
         // Logika proses pembayaran, misal redirect ke gateway, tampil instruksi, dll
         return view('user.orders.pay', compact('order'));
+    }
+
+    /**
+     * Menampilkan halaman sukses setelah checkout dan redirect ke halaman konfirmasi
+     * 
+     * @param int $orderId
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function checkoutSuccess($orderId): RedirectResponse
+    {
+        // Log untuk tracking
+        Log::info('Checkout success page accessed', [
+            'user_id' => auth()->id(),
+            'order_id' => $orderId,
+            'timestamp' => now()->format('Y-m-d H:i:s')
+        ]);
+        
+        // Redirect ke halaman konfirmasi order
+        return redirect()->route('user.orders.confirm', $orderId);
     }
 
     /**
@@ -415,8 +434,9 @@ class OrderController extends Controller
             'discount' => $totalDiscount,
             'handling_fee' => $handlingFee,
             'payment_fee' => $paymentFee,
+            'shipping_cost' => $shippingCost,
             'tax_amount' => $taxAmount,
-            'final_total' => $finalTotal
+            'total' => $finalTotal
         ];
     }
 
@@ -486,14 +506,27 @@ class OrderController extends Controller
     /**
      * Proses checkout order dari keranjang dengan validasi shipping cost yang benar.
      * Refactored untuk mengatasi complexity issues
+     * 
+     * TROUBLESHOOTING: Beberapa penyebab checkout terlontar kembali:
+     * 1. Validasi form client-side gagal (shipping/payment method tidak dipilih)
+     * 2. Validasi server-side gagal (payment_method, shipping_method, dll)
+     * 3. Keranjang kosong
+     * 4. Alamat pengiriman tidak ada/tidak valid
+     * 5. Error saat pembuatan order (lihat logs)
+     * 6. Transaksi database gagal
+     * 
+     * @see docs/troubleshooting/checkout_issues.md untuk detail lengkap
+     * @updated 2025-07-29 15:12:41 by mulyadafa
      */
     public function create(Request $request): RedirectResponse
     {
         $user = Auth::user();
         $cartItems = Cart::where('user_id', $user->id)->with('product')->get();
 
+        // Validasi keranjang kosong
         if ($cartItems->isEmpty()) {
-            return redirect()->route('user.cart.index')->withErrors('Keranjang kosong!');
+            return redirect()->route('user.cart.index')
+                ->withErrors('Keranjang kosong! Silakan tambahkan produk terlebih dahulu.');
         }
 
         try {
@@ -501,37 +534,61 @@ class OrderController extends Controller
             $shippingMethod = $request->input('shipping_method', 'JNT');
             $validShippingCosts = $this->validateShippingMethod($shippingMethod);
 
-            // Get selected address for distance calculation (KURIR_TOKO)
+            // Validasi alamat pengiriman - PERBAIKAN: Tambah validasi alamat
             $selectedAddress = null;
             if ($request->has('shipping_address_id')) {
                 $selectedAddress = $user->addresses()->where('id', $request->shipping_address_id)->first();
+            }
+            
+            // PERBAIKAN: Tambahkan validasi alamat yang wajib kecuali untuk pickup
+            if (!$selectedAddress && $shippingMethod !== 'AMBIL_SENDIRI') {
+                Log::warning('Checkout failed: No shipping address', [
+                    'user_id' => $user->id,
+                    'shipping_method' => $shippingMethod,
+                    'timestamp' => now()->format('Y-m-d H:i:s')
+                ]);
+                return redirect()->route('user.addresses.index')
+                    ->withErrors('Alamat pengiriman wajib diisi. Silakan tambahkan alamat terlebih dahulu.');
             }
 
             // Calculate shipping cost dengan validasi
             $shippingCost = $this->calculateShippingCost($shippingMethod, $selectedAddress);
             
-            // Log untuk debugging
+            // Log untuk debugging - PERBAIKAN: Gunakan format waktu yang konsisten
             Log::info('Order creation with shipping cost', [
                 'user_id' => $user->id,
                 'shipping_method' => $shippingMethod,
                 'calculated_cost' => $shippingCost,
-                'expected_cost' => $validShippingCosts[$shippingMethod],
-                'timestamp' => '2025-07-29 14:19:25'
+                'expected_cost' => $validShippingCosts[$shippingMethod] ?? 0,
+                'address_id' => $selectedAddress ? $selectedAddress->id : null,
+                'timestamp' => now()->format('Y-m-d H:i:s')
             ]);
 
-            // Validate request
+            // Validate request - PERBAIKAN: Tambahkan validasi untuk shipping_address_id
             $validCodes = PaymentMethod::where('status', 1)->pluck('code')->toArray();
-            $request->validate([
+            $validationRules = [
                 'payment_method' => 'required|in:' . implode(',', $validCodes),
                 'shipping_method' => 'required|in:' . implode(',', array_keys($validShippingCosts)),
                 'shipping_cost' => 'nullable|numeric|min:0',
                 'subtotal' => 'required|numeric|min:0',
                 'tax_amount' => 'nullable|numeric|min:0',
                 'total' => 'required|numeric|min:0',
-            ]);
+            ];
+            
+            // PERBAIKAN: Alamat pengiriman wajib kecuali untuk AMBIL_SENDIRI
+            if ($shippingMethod !== 'AMBIL_SENDIRI') {
+                $validationRules['shipping_address_id'] = 'required|exists:addresses,id,user_id,' . $user->id;
+            }
+            
+            $validatedData = $request->validate($validationRules);
 
             $paymentCode = $request->payment_method;
             $paymentMethod = PaymentMethod::where('code', $paymentCode)->first();
+            
+            // PERBAIKAN: Validasi metode pembayaran ada di database
+            if (!$paymentMethod) {
+                throw new \Exception('Metode pembayaran tidak valid atau tidak tersedia.');
+            }
 
             // Validate shipping cost dari request vs calculated
             $requestShippingCost = (float) $request->input('shipping_cost', 0);
@@ -541,7 +598,8 @@ class OrderController extends Controller
                     'method' => $shippingMethod,
                     'calculated' => $shippingCost,
                     'request' => $requestShippingCost,
-                    'difference' => abs($requestShippingCost - $shippingCost)
+                    'difference' => abs($requestShippingCost - $shippingCost),
+                    'timestamp' => now()->format('Y-m-d H:i:s')
                 ]);
                 
                 // Use calculated cost instead of request cost for security
@@ -554,28 +612,66 @@ class OrderController extends Controller
 
             // Calculate totals
             $totals = $this->calculateOrderTotals($cartItems, $promotion, $shippingCost);
+            
+            // PERBAIKAN: Validasi total dari request vs calculated
+            $requestTotal = (float) $request->input('total', 0);
+            if (abs($requestTotal - $totals['total']) > 1) { // Allow for small rounding differences
+                Log::warning('Total mismatch detected', [
+                    'user_id' => $user->id,
+                    'calculated' => $totals['total'],
+                    'request' => $requestTotal,
+                    'difference' => abs($requestTotal - $totals['total']),
+                    'timestamp' => now()->format('Y-m-d H:i:s')
+                ]);
+                
+                // Use calculated totals for security
+                // Tidak throw exception agar user experience lebih baik
+            }
 
-            return $this->processOrderCreation(
-                $user,
-                $cartItems,
-                $shippingMethod,
-                $shippingCost,
-                $paymentCode,
-                $paymentMethod,
-                $selectedAddress,
-                $promotion,
-                $totals,
-                $request
-            );
+            // PERBAIKAN: Tambahkan transaksi database
+            DB::beginTransaction();
+            try {
+                $result = $this->processOrderCreation(
+                    $user,
+                    $cartItems,
+                    $shippingMethod,
+                    $shippingCost,
+                    $paymentCode,
+                    $paymentMethod,
+                    $selectedAddress,
+                    $promotion,
+                    $totals,
+                    $request
+                );
+                
+                DB::commit();
+                return $result;
+                
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('Order processing failed within transaction', [
+                    'user_id' => $user->id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                    'timestamp' => now()->format('Y-m-d H:i:s')
+                ]);
+                throw $e; // Re-throw untuk ditangkap oleh catch luar
+            }
 
         } catch (\Exception $e) {
             Log::error('Order creation failed', [
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
-                'timestamp' => '2025-07-29 14:19:25'
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'timestamp' => now()->format('Y-m-d H:i:s')
             ]);
             
-            return back()->withErrors('Checkout gagal: ' . $e->getMessage());
+            $errorMessage = app()->environment('production')
+                ? 'Checkout gagal. Silakan coba lagi atau hubungi layanan pelanggan.'
+                : 'Checkout gagal: ' . $e->getMessage();
+                
+            return back()->withErrors($errorMessage);
         }
     }
 
@@ -601,7 +697,7 @@ class OrderController extends Controller
             $subtotal = $totals['subtotal'] ?? 0;
             $taxAmount = $totals['tax_amount'] ?? 0;
             $discountAmount = $totals['discount'] ?? 0;
-            $finalTotal = $totals['final_total'] ?? 0;
+            $finalTotal = $totals['total'] ?? 0;
             
             // Create order with explicitly defined attributes
             $orderData = [
@@ -671,7 +767,7 @@ class OrderController extends Controller
                 'tax_amount' => $orderData['tax_amount'],
                 'shipping_cost' => $orderData['shipping_cost'],
                 'shipping_method' => $orderData['shipping_method'],
-                'timestamp' => '2025-07-29 14:26:26'
+                'timestamp' => now()->format('Y-m-d H:i:s')
             ]);
 
             // Process payment method
@@ -679,7 +775,8 @@ class OrderController extends Controller
                 return redirect()->route('stripe.checkout', ['order' => $order->id]);
             }
             
-            return redirect()->route('user.orders.confirm', $order->id)
+            // PERBAIKAN: Gunakan route baru yang lebih spesifik
+            return redirect()->route('user.orders.checkout.success', $order->id)
                 ->with('success', 'Order berhasil dibuat! Silakan konfirmasi pesanan Anda.');
 
         } catch (\Exception $e) {

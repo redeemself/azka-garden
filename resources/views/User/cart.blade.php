@@ -2813,31 +2813,26 @@ function setupFormSubmissions() {
     const checkoutForm = document.getElementById('form-checkout');
     if (checkoutForm) {
         checkoutForm.addEventListener('submit', function(e) {
-            // Make sure shipping method is set
-            const shippingMethodInput = document.getElementById('shipping_method_input');
+            // Validasi metode pengiriman tidak dipilih
             if (shippingMethodInput && !shippingMethodInput.value) {
                 e.preventDefault();
                 toastSystem.error('Perhatian', 'Silakan pilih metode pengiriman terlebih dahulu');
                 return;
             }
 
-            // Make sure a payment method is selected
-            const selectedPayment = document.querySelector('input[name="payment_method"]:checked');
+            // Validasi metode pembayaran tidak dipilih
             if (!selectedPayment) {
                 e.preventDefault();
                 toastSystem.error('Perhatian', 'Silakan pilih metode pembayaran terlebih dahulu');
                 return;
             }
 
-            // Check if there are any pending updates
+            // Validasi update keranjang masih dalam proses
             if (Object.keys(cartState.pendingQuantityUpdates).length > 0 || cartState.updating) {
                 e.preventDefault();
                 toastSystem.error('Perhatian', 'Sedang mengupdate keranjang, mohon tunggu sebentar');
                 return;
             }
-
-            // All checks passed, show loading overlay
-            loadingOverlay.show();
         });
     }
 }
