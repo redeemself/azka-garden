@@ -156,6 +156,10 @@ Route::middleware('auth:web')->prefix('user')->name('user.')->group(function () 
         Route::post('redeem', 'redeemPromo')->name('redeem');
         Route::post('save-shipping', 'saveShipping')->name('save-shipping');
         Route::post('save-payment', 'savePayment')->name('save-payment');
+        
+        // PERBAIKAN: Tambahkan dukungan untuk method spoofing PUT/DELETE
+        Route::put('update/{id}', 'update')->name('update.put');
+        Route::delete('delete/{id}', 'delete')->name('delete.delete');
     });
 
     // Orders User
@@ -184,6 +188,19 @@ Route::middleware('auth:web')->prefix('user')->name('user.')->group(function () 
         Route::delete('{address}', 'destroy')->name('destroy');
         Route::patch('{address}/primary', 'setPrimary')->name('setPrimary');
     });
+});
+
+// -----------------------------
+// CART FALLBACK ROUTES FOR METHOD SPOOFING COMPATIBILITY
+// -----------------------------
+Route::middleware('auth:web')->group(function() {
+    // These routes help with AJAX requests that try to use PUT/DELETE directly
+    Route::post('/user/cart/update/{id}', [CartController::class, 'update'])->name('user.cart.update.fallback');
+    Route::post('/user/cart/delete/{id}', [CartController::class, 'delete'])->name('user.cart.delete.fallback');
+    
+    // Direct fallbacks without prefix for browser compatibility
+    Route::post('cart/update/{id}', [CartController::class, 'update']);
+    Route::post('cart/delete/{id}', [CartController::class, 'delete']);
 });
 
 // -----------------------------

@@ -8,7 +8,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Models\Product;
 use App\Models\Cart;
+use App\Models\Contact;
 use App\Models\Promotion;
+use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Contracts\View\View;
@@ -31,10 +33,11 @@ class CartController extends Controller
 
         $cartItems = Cart::with('product')->where('user_id', $user->id)->get();
 
-        $promoCode = session('promo_code');
+        // Promo aktif di session
         $activePromo = null;
+        $promoCode = session('promo_code');
         if ($promoCode) {
-            $activePromo = Promotion::where('promo_code', $promoCode)->where('active', true)->first();
+            $activePromo = Promotion::where('promo_code', $promoCode)->first();
         }
 
         $primaryAddress = $user->addresses()->where('is_primary', true)->first();
@@ -83,7 +86,11 @@ class CartController extends Controller
                 ->where('status', 1)
                 ->first();
 
-            session(['payment_method' => $paymentMethod->code ?? 'CASH']);
+            if ($paymentMethod) {
+                session(['payment_method' => $paymentMethod->code]);
+            } else {
+                session(['payment_method' => 'CASH']);
+            }
         }
 
         return view('User.orders.confirm', compact('cartItems'));
@@ -95,6 +102,18 @@ class CartController extends Controller
     public function update(Request $request, $id): JsonResponse
     {
         try {
+            Log::info('Update cart item request received', [
+                'id' => $id,
+                'method' => $request->method(),
+                'has_quantity' => $request->has('quantity'),
+                'quantity' => $request->input('quantity'),
+                'headers' => [
+                    'accept' => $request->header('Accept'),
+                    'content-type' => $request->header('Content-Type'),
+                    'csrf' => $request->header('X-CSRF-TOKEN') ? 'present' : 'missing'
+                ]
+            ]);
+
             $request->validate([
                 'quantity' => 'required|integer|min:1',
             ]);
@@ -137,7 +156,7 @@ class CartController extends Controller
             $cartItem->save();
 
             $promo = $cartItem->promo_code ?? session('promo_code');
-            $promotion = $promo ? Promotion::where('promo_code', $promo)->where('active', true)->first() : null;
+            $promotion = $promo ? Promotion::where('promo_code', $promo)->first() : null;
 
             $discount = 0;
             $unit_price = $product->price ?? 0;
@@ -189,12 +208,39 @@ class CartController extends Controller
     }
 
     /**
+     * Process update via POST for browsers that don't support PUT
+     */
+    public function updatePost(Request $request, $id): JsonResponse
+    {
+        Log::info('Update POST method received', [
+            'id' => $id,
+            'method' => $request->method(),
+            'has_quantity' => $request->has('quantity'),
+            'quantity' => $request->input('quantity'),
+            'csrf' => $request->header('X-CSRF-TOKEN') ? 'present' : 'missing'
+        ]);
+
+        return $this->update($request, $id);
+    }
+
+    /**
      * Delete item from cart (JSON)
      */
     public function delete($id): JsonResponse
     {
         try {
             $user = Auth::user();
+
+            Log::info('Delete cart item request received', [
+                'id' => $id,
+                'user_id' => $user ? $user->id : 'not authenticated',
+                'method' => request()->method(),
+                'headers' => [
+                    'accept' => request()->header('Accept'),
+                    'content-type' => request()->header('Content-Type'),
+                    'csrf' => request()->header('X-CSRF-TOKEN') ? 'present' : 'missing'
+                ]
+            ]);
 
             if (!$user) {
                 return response()->json([
@@ -213,6 +259,16 @@ class CartController extends Controller
                     'message' => 'Produk tidak ditemukan di keranjang Anda'
                 ], 404);
             }
+
+            $productId = $cartItem->product_id;
+            $productName = $cartItem->product ? $cartItem->product->name : 'unknown';
+
+            Log::info('Deleting cart item', [
+                'user_id' => $user->id,
+                'cart_item_id' => $id,
+                'product_id' => $productId,
+                'product_name' => $productName
+            ]);
 
             $cartItem->delete();
 
@@ -273,6 +329,12 @@ class CartController extends Controller
                     ->with('error', 'Produk tidak ditemukan di keranjang Anda.');
             }
 
+            Log::info('Removing cart item (redirect)', [
+                'user_id' => $user->id,
+                'cart_item_id' => $id,
+                'product_id' => $cartItem->product_id,
+            ]);
+
             $cartItem->delete();
             return redirect()->back()->with('success', 'Produk berhasil dihapus dari keranjang.');
 
@@ -292,6 +354,12 @@ class CartController extends Controller
      */
     public function deletePost(Request $request, $id): JsonResponse
     {
+        Log::info('Delete POST method received', [
+            'id' => $id,
+            'method' => $request->method(),
+            'csrf' => $request->header('X-CSRF-TOKEN') ? 'present' : 'missing'
+        ]);
+
         return $this->delete($id);
     }
 
@@ -356,7 +424,7 @@ class CartController extends Controller
     /**
      * Tambah produk ke keranjang (versi minimal & stabil).
      */
-    public function add(Request $request): JsonResponse|RedirectResponse
+    public function add(Request $request)
     {
         try {
             $request->validate([
@@ -439,36 +507,31 @@ class CartController extends Controller
     /**
      * Apply promo code to cart
      */
-    public function redeemPromo(Request $request): JsonResponse|RedirectResponse
+    public function redeemPromo(Request $request)
     {
         try {
             $request->validate([
                 'promo_code' => 'required|string|min:3|max:50',
             ]);
 
-            $promoCode = trim($request->input('promo_code'));
-
-            // Cari promo aktif sesuai kode promo
-            $promotion = Promotion::where('promo_code', $promoCode)
-                ->where('active', true)
+            $promotion = Promotion::where('promo_code', $request->promo_code)
+                ->where('status', 1) // Using 'status' column instead of 'active'
                 ->first();
 
             if (!$promotion) {
-                $msg = 'Kode promo tidak valid atau sudah tidak aktif';
                 if ($request->expectsJson()) {
                     return response()->json([
                         'success' => false,
-                        'message' => $msg
+                        'message' => 'Kode promo tidak valid atau sudah tidak aktif'
                     ], 400);
                 }
-                return back()->with('error', $msg);
+                return back()->with('error', 'Kode promo tidak valid atau sudah tidak aktif');
             }
 
-            // Simpan promo ke session agar dipakai di CartController dan checkout
             session([
                 'promo_code' => $promotion->promo_code,
                 'promo_type' => $promotion->discount_type,
-                'promo_discount' => $promotion->discount_value,
+                'promo_discount' => $promotion->discount_value
             ]);
 
             if ($request->expectsJson()) {
@@ -478,8 +541,8 @@ class CartController extends Controller
                     'data' => [
                         'promo_code' => $promotion->promo_code,
                         'promo_type' => $promotion->discount_type,
-                        'promo_value' => $promotion->discount_value,
-                    ],
+                        'promo_value' => $promotion->discount_value
+                    ]
                 ]);
             }
 
@@ -494,12 +557,11 @@ class CartController extends Controller
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Gagal menerapkan kode promo: ' . $e->getMessage(),
+                    'message' => 'Gagal menerapkan kode promo: ' . $e->getMessage()
                 ], 500);
             }
 
             return back()->with('error', 'Gagal menerapkan kode promo');
         }
     }
-
 }

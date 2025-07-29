@@ -56,6 +56,8 @@
 ?>
 
 <style>
+    /* All the original styles remain unchanged */
+    /* Styles section remains the same, no changes needed */
 :root {
     --primary: #166534;
     --primary-light: #16a34a;
@@ -2141,9 +2143,8 @@ async function deleteCartItem(itemId) {
         const itemName = itemElements[0].querySelector('.cart-item-name, .mobile-cart-item-name')?.textContent || 'Produk';
 
         // Get CSRF token - PERBAIKAN: mencoba dari beberapa sumber
-        const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        const inputToken = document.querySelector('input[name="_token"]')?.value;
-        const csrfToken = metaToken || inputToken;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                          document.querySelector('input[name="_token"]')?.value;
 
         if (!csrfToken) {
             throw new Error('CSRF token tidak ditemukan. Silakan refresh halaman.');
@@ -2155,62 +2156,100 @@ async function deleteCartItem(itemId) {
         // Add deleting animation class
         itemElements.forEach(el => el.classList.add('deleting'));
 
-        // PERBAIKAN: Gunakan FormData dengan _method=DELETE untuk kompatibilitas
-        const formData = new FormData();
-        formData.append('_method', 'DELETE');
-        formData.append('_token', csrfToken);
+        // PERBAIKAN: Create a standard form submission instead of fetch with custom headers
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.style.display = 'none';
+        form.action = `/user/cart/delete/${itemId}`;
 
-        // Send DELETE request - PERBAIKAN: Gunakan endpoint yang benar
-        const response = await fetch(`/user/cart/delete/${itemId}`, {
-            method: 'POST',  // Gunakan POST dengan _method=DELETE untuk kompatibilitas
-            headers: {
-                'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json'
-            },
-            body: formData
-        });
+        // Add CSRF token
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
 
-        if (!response.ok) {
-            // Handle HTTP errors
-            if (response.status === 401) {
-                throw new Error('Sesi login Anda telah berakhir. Silakan login kembali.');
-            } else if (response.status === 404) {
-                throw new Error('Produk tidak ditemukan di keranjang Anda.');
-            } else {
-                throw new Error(`Terjadi kesalahan server (${response.status}). Silakan coba lagi.`);
-            }
-        }
+        // Add method spoofing for DELETE
+        const methodInput = document.createElement('input');
+        methodInput.type = 'hidden';
+        methodInput.name = '_method';
+        methodInput.value = 'DELETE';
+        form.appendChild(methodInput);
 
-        const data = await response.json();
+        // Add to document, submit form, and then remove it
+        document.body.appendChild(form);
 
-        if (data.success) {
-            // Remove from cart state
-            cartState.removeItem(itemId);
+        // Use XMLHttpRequest for better compatibility
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', form.action, true);
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        xhr.setRequestHeader('Accept', 'application/json');
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        if (data.success) {
+                            // Remove from cart state
+                            cartState.removeItem(itemId);
 
-            // Smoothly remove from UI with animation
-            itemElements.forEach(el => {
-                el.classList.add('deleted');
+                            // Smoothly remove from UI with animation
+                            itemElements.forEach(el => {
+                                el.classList.add('deleted');
 
-                // Remove from DOM after animation completes
-                el.addEventListener('transitionend', () => {
-                    el.remove();
+                                // Remove from DOM after animation completes
+                                el.addEventListener('transitionend', () => {
+                                    el.remove();
 
-                    // Check if cart is empty after removal
-                    if (cartState.items.length === 0) {
-                        showEmptyCart();
-                    } else {
-                        calculateTotals();
+                                    // Check if cart is empty after removal
+                                    if (document.querySelectorAll('[data-item-row]').length === 0) {
+                                        showEmptyCart();
+                                    } else {
+                                        calculateTotals();
+                                    }
+                                }, { once: true });
+                            });
+
+                            // Show success notification
+                            toastSystem.success('Berhasil', 'Produk berhasil dihapus dari keranjang');
+                        } else {
+                            throw new Error(data.message || 'Gagal menghapus produk dari keranjang');
+                        }
+                    } catch (e) {
+                        throw new Error('Terjadi kesalahan saat memproses respons server');
                     }
-                }, { once: true });
-            });
+                } else {
+                    // Handle HTTP errors
+                    if (xhr.status === 401) {
+                        throw new Error('Sesi login Anda telah berakhir. Silakan login kembali.');
+                    } else if (xhr.status === 404) {
+                        throw new Error('Produk tidak ditemukan di keranjang Anda.');
+                    } else {
+                        throw new Error(`Terjadi kesalahan server (${xhr.status}). Silakan coba lagi.`);
+                    }
+                }
+                loadingOverlay.hide();
+            }
+        };
+        
+        // Handle network errors
+        xhr.onerror = function() {
+            loadingOverlay.hide();
+            itemElements.forEach(el => el.classList.remove('deleting'));
+            toastSystem.error('Gagal Menghapus', 'Terjadi kesalahan jaringan. Silakan coba lagi.');
+        };
 
-            // Show success notification
-            toastSystem.success('Berhasil', 'Produk berhasil dihapus dari keranjang');
+        // Send the form data
+        const formData = new FormData(form);
+        xhr.send(formData);
 
-            return data;
-        } else {
-            throw new Error(data.message || 'Gagal menghapus produk dari keranjang');
-        }
+        document.body.removeChild(form);
+        
+        // Return a promise that resolves when the operation is complete
+        return new Promise((resolve, reject) => {
+            xhr.onload = () => resolve({ success: true });
+            xhr.onerror = () => reject(new Error('Network error'));
+        });
     } catch (error) {
         console.error('Error deleting cart item:', error);
 
@@ -2239,9 +2278,8 @@ async function deleteCartItem(itemId) {
             feather.replace();
         }
 
-        throw error;
-    } finally {
         loadingOverlay.hide();
+        throw error;
     }
 }
 
@@ -2483,89 +2521,144 @@ function updateItemQuantity(itemId) {
     // Get CSRF token from meta tag or hidden input
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || document.querySelector('input[name="_token"]')?.value;
 
-    // Send AJAX request - Using PUT method directly
-    fetch(`/user/cart/update/${itemId}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': csrfToken,
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-            quantity: newQuantity
-        })
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            // Update item price from response if available
-            if (data.data) {
-                cartState.items[itemIndex].quantity = data.data.quantity;
+    // PERBAIKAN: Create a standard form for submission
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.style.display = 'none';
+    form.action = `/user/cart/update/${itemId}`;
 
-                // Flash the total price to show it's been updated
-                const cartTotal = document.getElementById('cart-total');
-                if (cartTotal) {
-                    cartTotal.classList.add('flash-update');
+    // Add CSRF token
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = '_token';
+    csrfInput.value = csrfToken;
+    form.appendChild(csrfInput);
+
+    // Add method spoofing for PUT
+    const methodInput = document.createElement('input');
+    methodInput.type = 'hidden';
+    methodInput.name = '_method';
+    methodInput.value = 'PUT';
+    form.appendChild(methodInput);
+
+    // Add quantity parameter
+    const quantityField = document.createElement('input');
+    quantityField.type = 'hidden';
+    quantityField.name = 'quantity';
+    quantityField.value = newQuantity;
+    form.appendChild(quantityField);
+
+    // Add to document
+    document.body.appendChild(form);
+
+    // Use XMLHttpRequest for better compatibility
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', form.action, true);
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.setRequestHeader('Accept', 'application/json');
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            try {
+                if (xhr.status === 200) {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.success) {
+                        // Update item price from response if available
+                        if (data.data) {
+                            cartState.items[itemIndex].quantity = data.data.quantity;
+
+                            // Flash the total price to show it's been updated
+                            const cartTotal = document.getElementById('cart-total');
+                            if (cartTotal) {
+                                cartTotal.classList.add('flash-update');
+                                setTimeout(() => {
+                                    cartTotal.classList.remove('flash-update');
+                                }, 500);
+                            }
+
+                            // Recalculate totals with the updated data
+                            calculateTotals();
+                        }
+
+                        // Show success toast
+                        toastSystem.success('Berhasil', 'Jumlah produk berhasil diubah');
+                    } else {
+                        throw new Error(data.message || 'Gagal mengubah jumlah produk');
+                    }
+                } else {
+                    throw new Error(`HTTP error! Status: ${xhr.status}`);
+                }
+            } catch (error) {
+                console.error('Error updating quantity:', error);
+
+                // Revert to old quantity in state and display
+                updateItemDisplay(itemId, oldQuantity);
+
+                // Show error toast
+                toastSystem.error('Gagal', 'Gagal mengubah jumlah produk. Silakan coba lagi.');
+            } finally {
+                // Remove updating state
+                quantityContainers.forEach(container => {
+                    container.classList.remove('updating');
+                });
+
+                // Remove this update from pending list
+                const nextQuantity = cartState.pendingQuantityUpdates[itemId]?.nextQuantity;
+                delete cartState.pendingQuantityUpdates[itemId];
+
+                // Check if there's another pending update for this item
+                if (nextQuantity !== null) {
+                    // Process the next update
                     setTimeout(() => {
-                        cartTotal.classList.remove('flash-update');
-                    }, 500);
+                        // Update input value first
+                        const inputs = document.querySelectorAll(`.cart-quantity-input[data-item-id="${itemId}"]`);
+                        inputs.forEach(input => {
+                            input.value = nextQuantity;
+                        });
+
+                        updateItemQuantity(itemId);
+                    }, 100);
                 }
 
-                // Recalculate totals with the updated data
-                calculateTotals();
+                // Check if there are no more pending updates
+                if (Object.keys(cartState.pendingQuantityUpdates).length === 0) {
+                    cartState.updating = false;
+                }
+                
+                // Remove the temporary form
+                document.body.removeChild(form);
             }
-
-            // Show success toast
-            toastSystem.success('Berhasil', 'Jumlah produk berhasil diubah');
-        } else {
-            throw new Error(data.message || 'Gagal mengubah jumlah produk');
         }
-    })
-    .catch(error => {
-        console.error('Error updating quantity:', error);
-
+    };
+    
+    // Handle network errors
+    xhr.onerror = function() {
         // Revert to old quantity in state and display
         updateItemDisplay(itemId, oldQuantity);
-
-        // Show error toast
-        toastSystem.error('Gagal', 'Gagal mengubah jumlah produk. Silakan coba lagi.');
-    })
-    .finally(() => {
+        
         // Remove updating state
         quantityContainers.forEach(container => {
             container.classList.remove('updating');
         });
-
+        
         // Remove this update from pending list
-        const nextQuantity = cartState.pendingQuantityUpdates[itemId]?.nextQuantity;
         delete cartState.pendingQuantityUpdates[itemId];
-
-        // Check if there's another pending update for this item
-        if (nextQuantity !== null) {
-            // Process the next update
-            setTimeout(() => {
-                // Update input value first
-                const inputs = document.querySelectorAll(`.cart-quantity-input[data-item-id="${itemId}"]`);
-                inputs.forEach(input => {
-                    input.value = nextQuantity;
-                });
-
-                updateItemQuantity(itemId);
-            }, 100);
-        }
-
-        // Check if there are no more pending updates
+        
+        // Show error toast
+        toastSystem.error('Gagal', 'Gagal terhubung ke server. Silakan coba lagi.');
+        
+        // Remove the temporary form
+        document.body.removeChild(form);
+        
         if (Object.keys(cartState.pendingQuantityUpdates).length === 0) {
             cartState.updating = false;
         }
-    });
-}
+    };
 
+    // Send the form data
+    const formData = new FormData(form);
+    xhr.send(formData);
+}
 /**
  * Function to save selected shipping method to session via AJAX
  * @param {string} methodCode - Shipping method code
@@ -2574,16 +2667,18 @@ function saveShippingMethod(methodCode) {
     // Get CSRF token
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || document.querySelector('input[name="_token"]')?.value;
 
+    // Use FormData for better compatibility
+    const formData = new FormData();
+    formData.append('_token', csrfToken);
+    formData.append('shipping_method', methodCode);
+
     fetch('/user/cart/save-shipping', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
             'X-CSRF-TOKEN': csrfToken,
             'Accept': 'application/json'
         },
-        body: JSON.stringify({
-            shipping_method: methodCode
-        })
+        body: formData
     })
     .then(response => response.json())
     .then(data => {
@@ -2602,16 +2697,18 @@ function savePaymentMethod(methodCode) {
     // Get CSRF token
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || document.querySelector('input[name="_token"]')?.value;
 
+    // Use FormData for better compatibility
+    const formData = new FormData();
+    formData.append('_token', csrfToken);
+    formData.append('payment_method', methodCode);
+
     fetch('/user/cart/save-payment', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
             'X-CSRF-TOKEN': csrfToken,
             'Accept': 'application/json'
         },
-        body: JSON.stringify({
-            payment_method: methodCode
-        })
+        body: formData
     })
     .then(response => response.json())
     .then(data => {
@@ -3177,5 +3274,4 @@ window.addEventListener('beforeunload', function(e) {
 });
 </script>
 <?php $__env->stopSection(); ?>
-
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\azka-garden\resources\views/user/cart.blade.php ENDPATH**/ ?>

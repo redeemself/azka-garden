@@ -5,29 +5,21 @@
 @section('content')
 @php
     $user = auth()->user();
-    // Cek alamat: relasi addresses harus pakai method (Eloquent)
     $hasAddress = $user && method_exists($user, 'addresses') && $user->addresses()->count();
     $promo_code = session('promo_code');
     $promo_type = session('promo_type');
     $promo_discount = session('promo_discount');
     $promo_discount_percent = ($promo_type === 'percent') ? 10.0 : null;
 
-    // Ambil data keranjang dari session
-    $cartItems = session('cart_items') ?? session('cartItems') ?? collect();
-
-    // Konversi ke collection jika bukan collection
-    if (!($cartItems instanceof \Illuminate\Support\Collection)) {
-        $cartItems = collect($cartItems);
-    }
-
-    // Hitung jumlah item di keranjang
-    if ($cartItems->isEmpty()) {
-        $cartItemCount = 0;
+    // Hitung jumlah item di keranjang dari database jika login, dari session jika guest
+    if (auth()->check()) {
+        $cartItemCount = \App\Models\Cart::where('user_id', auth()->id())->sum('quantity');
     } else {
-        $cartItemCount = 0;
-        foreach ($cartItems as $item) {
-            $cartItemCount += $item->quantity ?? 0;
+        $cartItems = session('cart_items') ?? session('cartItems') ?? collect();
+        if (!($cartItems instanceof \Illuminate\Support\Collection)) {
+            $cartItems = collect($cartItems);
         }
+        $cartItemCount = $cartItems->sum('quantity');
     }
 
     // Prepare images for preloading to reduce lag
@@ -41,7 +33,6 @@
         asset('images/hero-7.jpg'),
     ];
 
-    // Current date and time for reference
     $currentDateTime = '2025-07-28 09:48:35';
     $currentUser = 'redeemself';
 @endphp
@@ -647,12 +638,12 @@
     <div
         class="absolute inset-0 bg-center bg-cover transition-opacity duration-[1200ms] ease-in-out z-10 hero-layer"
         :class="frontLayer ? 'opacity-100' : 'opacity-0'"
-        :style="`background-image: url('${heroImages[currentBg]}');`"
+        :style="'background-image: url(\'' + heroImages[currentBg] + '\')'"
     ></div>
     <div
         class="absolute inset-0 bg-center bg-cover transition-opacity duration-[1200ms] ease-in-out z-0 hero-layer"
         :class="!frontLayer ? 'opacity-100' : 'opacity-0'"
-        :style="`background-image: url('${heroImages[nextBg]}');`"
+        :style="'background-image: url(\'' + heroImages[nextBg] + '\')'"
     ></div>
     <div class="absolute inset-0 pointer-events-none bg-gradient-to-br from-black/60 via-black/50 to-green-900/40"></div>
 
@@ -896,12 +887,11 @@
                                 Detail
                             </a>
                             @auth
-                                <form method="POST" action="{{ route('user.cart.add') }}">
+                                <form method="POST" action="{{ route('user.cart.add') }}" class="add-to-cart-form">
                                     @csrf
                                     <input type="hidden" name="product_id" value="{{ $product->id }}">
-                                    @if($promo_code)
-                                    <input type="hidden" name="promo_code" value="{{ $promo_code }}">
-                                    @endif
+                                    <input type="hidden" name="promo_code" value="{{ session('promo_code') ?? '' }}">
+                                    <input type="hidden" name="price" value="{{ $final_price }}">
                                     <button type="submit"
                                         class="flex items-center justify-center w-full px-4 py-2.5 text-white bg-green-700 rounded-lg hover:bg-green-800 add-to-cart-btn transition-all">
                                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -950,35 +940,26 @@ document.addEventListener('DOMContentLoaded', function() {
     // CSRF Token for AJAX requests
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-    // Show loading overlay
     function showLoadingOverlay() {
         const overlay = document.querySelector('.loading-overlay');
-        if (overlay) {
-            overlay.classList.add('active');
-        }
+        if (overlay) overlay.classList.add('active');
     }
-
-    // Hide loading overlay
     function hideLoadingOverlay() {
         const overlay = document.querySelector('.loading-overlay');
-        if (overlay) {
-            overlay.classList.remove('active');
-        }
+        if (overlay) overlay.classList.remove('active');
     }
 
-    // Show toast notification
     function showToast(type, title, message, duration = 3000) {
         const toastContainer = document.getElementById('toastContainer');
-
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
-
         toast.innerHTML = `
             <div class="toast-icon">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     ${type === 'success'
-                        ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
-                        : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'}
+                        ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>'
+                        : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>'
+                    }
                 </svg>
             </div>
             <div class="toast-content">
@@ -987,54 +968,100 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <button class="toast-close">&times;</button>
         `;
-
         toastContainer.appendChild(toast);
 
         toast.querySelector('.toast-close').addEventListener('click', () => {
             toast.classList.remove('show');
             setTimeout(() => toast.remove(), 300);
         });
-
-        // Ensure proper animation timing
         requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                toast.classList.add('show');
-            });
+            requestAnimationFrame(() => { toast.classList.add('show'); });
         });
-
         setTimeout(() => {
             toast.classList.remove('show');
             setTimeout(() => toast.remove(), 300);
         }, duration);
     }
 
-function updateCartCounter() {
-    const counter = document.getElementById('cart-counter');
-    if (counter) {
-        const count = {{ $cartItemCount }};
-        counter.textContent = count;
-        localStorage.setItem('cartItemCount', count);
+    // Function to handle fetch with timeout
+    async function fetchWithTimeout(url, options, timeout = 10000) {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeout);
+        
+        try {
+            const response = await fetch(url, {
+                ...options,
+                signal: controller.signal
+            });
+            clearTimeout(id);
+            return response;
+        } catch (error) {
+            clearTimeout(id);
+            if (error.name === 'AbortError') {
+                throw new Error('Request timeout');
+            }
+            throw error;
+        }
     }
-}
 
-    // Add loading indicator for all cart forms
-    document.querySelectorAll('form[action="{{ route("user.cart.add") }}"]').forEach(form => {
-        form.addEventListener('submit', function() {
+    document.querySelectorAll('.add-to-cart-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
             showLoadingOverlay();
 
-            // Increment cart counter
-            const counter = document.getElementById('cart-counter');
-            if (counter) {
-                const currentCount = parseInt(counter.textContent || '0');
-                counter.textContent = currentCount + 1;
-
-                // Store in localStorage
-                localStorage.setItem('cartItemCount', currentCount + 1);
+            const formData = new FormData(form);
+            // Pastikan promo_code tersimpan di form dan tidak kosong jika ada di session
+            if (!formData.get('promo_code')) {
+                formData.set('promo_code', '{{ session('promo_code') ?? '' }}');
             }
+
+            fetchWithTimeout(form.action, {
+                method: 'POST',
+                headers: { 
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            })
+            .then(res => {
+                if (!res.ok) {
+                    if (res.status === 422) {
+                        return res.json().then(data => {
+                            throw new Error(data.message || 'Validasi gagal');
+                        });
+                    }
+                    throw new Error(`Server error: ${res.status}`);
+                }
+                return res.json();
+            })
+            .then(data => {
+                hideLoadingOverlay();
+                if (data.success) {
+                    const counter = document.getElementById('cart-counter');
+                    if (counter) counter.textContent = data.data.cart_count;
+
+                    showToast('success', 'Berhasil', data.message);
+
+                    // Redirect ke halaman products.index setelah sukses
+                    setTimeout(() => window.location.href = "{{ route('products.index') }}", 900);
+                } else {
+                    showToast('error', 'Gagal', data.message || "Gagal menambah produk ke keranjang");
+                }
+            })
+            .catch((error) => {
+                console.error('Cart error:', error);
+                hideLoadingOverlay();
+                if (error.message === 'Request timeout') {
+                    showToast('error', 'Gagal', 'Server tidak merespon. Silakan coba lagi.');
+                } else {
+                    showToast('error', 'Gagal', error.message || 'Server tidak merespon. Silakan coba lagi.');
+                }
+            });
         });
     });
 
-    // Handle promo form with AJAX
+    // Promo form AJAX with improved error handling
     const promoForm = document.getElementById('promoForm');
     if (promoForm) {
         promoForm.addEventListener('submit', function(e) {
@@ -1042,47 +1069,61 @@ function updateCartCounter() {
 
             const formData = new FormData(this);
             const promoCode = formData.get('promo_code');
-
             if (!promoCode) {
                 showToast('error', 'Error', 'Masukkan kode promo terlebih dahulu');
                 return;
             }
-
+            
             showLoadingOverlay();
-
-            fetch(this.action, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': csrfToken
-                },
-                body: formData
-            })
-            .then(response => response.json().catch(() => {
-                if (response.ok) {
-                    return { success: true };
-                }
-                throw new Error('Network response was not ok');
-            }))
-            .then(data => {
-                if (data.success) {
-                    showToast('success', 'Berhasil', 'Kode promo berhasil diterapkan');
-                    setTimeout(() => window.location.reload(), 1000);
-                } else {
-                    throw new Error(data.message || 'Gagal menerapkan kode promo');
-                }
-            })
-            .catch(error => {
-                console.error('Error applying promo code:', error);
+            
+            // Use traditional XMLHttpRequest for better compatibility
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', this.action, true);
+            xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            xhr.timeout = 10000; // 10 seconds timeout
+            
+            xhr.onload = function() {
                 hideLoadingOverlay();
-                showToast('error', 'Gagal', 'Kode promo tidak valid atau tidak dapat diterapkan');
-            });
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        if (data.success) {
+                            showToast('success', 'Berhasil', 'Kode promo berhasil diterapkan');
+                            setTimeout(() => window.location.reload(), 1000);
+                        } else {
+                            showToast('error', 'Gagal', data.message || 'Kode promo tidak valid atau tidak dapat diterapkan');
+                        }
+                    } catch (e) {
+                        console.error('JSON parse error:', e);
+                        showToast('error', 'Gagal', 'Terjadi kesalahan saat memproses respons server');
+                    }
+                } else if (xhr.status === 422) {
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        showToast('error', 'Gagal', data.message || 'Kode promo tidak valid');
+                    } catch (e) {
+                        showToast('error', 'Gagal', 'Kode promo tidak valid');
+                    }
+                } else {
+                    showToast('error', 'Gagal', `Error server (${xhr.status}). Silakan coba lagi.`);
+                }
+            };
+            
+            xhr.ontimeout = function() {
+                hideLoadingOverlay();
+                showToast('error', 'Gagal', 'Server tidak merespon. Silakan coba lagi.');
+            };
+            
+            xhr.onerror = function() {
+                hideLoadingOverlay();
+                showToast('error', 'Gagal', 'Terjadi kesalahan jaringan. Silakan coba lagi.');
+            };
+            
+            xhr.send(formData);
         });
     }
 
-    // Initialize cart counter with actual value
-    updateCartCounter();
-
-    // Automatically hide loading overlay when page is fully loaded
     window.addEventListener('load', function() {
         hideLoadingOverlay();
     });
