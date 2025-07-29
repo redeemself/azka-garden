@@ -1,0 +1,226 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ───────────────────────────────
+   1. Extend base & typography
+   ─────────────────────────────── */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    overflow-x: hidden !important; /* Hapus scroll horizontal global */
+  }
+}
+
+/* ───────────────────────────────
+   Sticky Footer Layout Utility
+   ─────────────────────────────── */
+html, body {
+  height: 100%;
+  min-height: 100%;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  height: 100vh;
+}
+main, .main, #main {
+  flex: 1 1 auto;
+}
+
+/* ───────────────────────────────
+   2. Components
+   ─────────────────────────────── */
+@layer components {
+  /* Tombol utama */
+  .btn-primary {
+    @apply inline-block rounded-lg bg-primary px-6 py-3 font-semibold text-white shadow-md
+           transition transform hover:-translate-y-1 hover:bg-primary-dark active:translate-y-0;
+  }
+
+  /* Card generik */
+  .card {
+    @apply flex flex-col overflow-hidden rounded-2xl bg-white shadow-lg transition
+           hover:-translate-y-2 hover:shadow-xl;
+  }
+  .card-img {
+    @apply h-52 w-full object-cover;
+  }
+  .card-body {
+    @apply p-6 text-center;
+  }
+
+  /* Animasi fade-in atas/bawah */
+  .animate-fadeInDown {
+    animation: fadeInDown 0.8s ease-out both;
+  }
+  .animate-fadeInUp {
+    animation: fadeInUp 0.8s ease-out both;
+  }
+
+  /* Footer language navigator */
+  #language-navigator {
+    @apply flex items-center justify-center gap-2 px-2 py-1 rounded bg-primary
+           overflow-x-auto whitespace-nowrap max-w-xs mx-auto select-none mt-1 mb-3;
+  }
+  #language-navigator button {
+    @apply px-2 py-1 text-white bg-primary rounded hover:bg-primary-dark
+           focus:outline-none focus:ring-2 focus:ring-secondary transition duration-200;
+  }
+  #language-navigator #lang-display {
+    @apply min-w-[110px] text-center font-semibold text-white cursor-pointer select-none;
+  }
+
+  /* Footer legal links and container */
+  .footer-legal {
+    @apply flex flex-col items-center space-y-2 text-xs px-4 py-4 bg-primary text-white;
+  }
+  .footer-legal-links {
+    @apply flex flex-wrap justify-center gap-3 text-center;
+  }
+  .footer-legal-links a {
+    @apply hover:underline hover:text-secondary;
+  }
+
+  /* Responsif spacing footer legal */
+  @media (max-width: 640px) {
+    .footer-legal {
+      @apply px-6 py-6;
+    }
+    #language-navigator {
+      @apply mb-2;
+    }
+  }
+
+  /* Kartu panduan mini (card stepper) */
+  .guide-step-card {
+    @apply p-6 sm:p-7 bg-white/30 backdrop-blur-md rounded-2xl shadow-xl border border-white/10
+           flex flex-col items-center;
+    min-width: 210px;
+    max-width: 350px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* ───── Footer: Ikon Referensi ───── */
+  .footer-icons-wrap {
+    @apply flex flex-wrap gap-4 items-center relative;
+    overflow: visible !important;        /* Tooltip tidak terpotong */
+    max-width: 100%;
+    min-width: 0;
+    padding-bottom: 1rem;
+  }
+  .footer-tooltip {
+    z-index: 50;
+    pointer-events: none;
+    display: none;                        /* Default: hidden */
+    left: 50%;
+    bottom: 115%;                         /* Jarak dari ikon ke tooltip */
+    transform: translateX(-50%);
+    min-width: max-content;
+    max-width: 220px;
+    text-align: center;
+  }
+  .group:hover .footer-tooltip,
+  .group:focus .footer-tooltip {
+    display: block !important;            /* Tampil saat hover/focus parent */
+  }
+}
+
+/* ───────────────────────────────
+   3. Utilities & Layout
+   ─────────────────────────────── */
+@layer utilities {
+  .bg-hero {
+    background-image:
+      linear-gradient(to bottom, rgba(0,0,0,0.65), rgba(0,0,0,0.35)),
+      url('/images/your-photo.jpg');
+    @apply bg-cover bg-center;
+  }
+
+  .backdrop-blur-md {
+    backdrop-filter: blur(8px);
+  }
+
+  .delay-200 { animation-delay: 0.2s; }
+  .delay-400 { animation-delay: 0.4s; }
+  .delay-600 { animation-delay: 0.6s; }
+  .delay-800 { animation-delay: 0.8s; }
+
+  #mobile-nav-container {
+    @apply fixed inset-0 z-40 invisible opacity-0 pointer-events-none
+           transition-opacity duration-300 ease-in-out;
+  }
+  #mobile-nav-container.show {
+    @apply visible opacity-100 pointer-events-auto;
+  }
+  #mobile-nav {
+    @apply absolute top-0 right-0 h-full w-1/2 bg-white shadow-2xl
+           transform translate-x-full transition-transform duration-300 ease-in-out;
+    max-width: 360px;
+  }
+  #mobile-nav-container.show #mobile-nav {
+    @apply translate-x-0;
+  }
+
+  .animate-bounce-slow {
+    animation: bounce-slow 2s infinite;
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.8s ease-out forwards;
+  }
+}
+
+/* ───────────────────────────────
+   4. Custom Animations & Keyframes
+   ─────────────────────────────── */
+@keyframes bounce-slow {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6%); }
+}
+@keyframes fadeInDown {
+  0%   { opacity: 0; transform: translateY(-20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeInUp {
+  0%   { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in-up {
+  0%   { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  0%   { background-position: -500px 0; }
+  100% { background-position: 500px 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(90deg,rgba(255,255,255,0.18) 0%,rgba(255,255,255,0.85) 50%,rgba(72,255,136,0.12) 100%);
+  background-size: 800px 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 2s cubic-bezier(0.4,0,0.2,1) infinite;
+}
+
+/* ───────────────────────────────
+   5. Misc - Stepper Dot
+   ─────────────────────────────── */
+.stepper-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  display: inline-block;
+  margin: 0 2px;
+  background: #34d399; /* Tailwind green-400 */
+  border: 2px solid #fff;
+  box-shadow: 0 0 2px 1px #7dd3fc33;
+}
+.stepper-dot.inactive {
+  background: #fff6;
+  border: 2px solid transparent;
+  box-shadow: none;
+}

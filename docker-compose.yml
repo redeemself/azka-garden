@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  app:
+    image: php:8.2-fpm
+    container_name: azka_app
+    volumes:
+      - ./:/var/www/html
+    working_dir: /var/www/html
+    networks:
+      - azka-network
+
+  web:
+    image: nginx:alpine
+    container_name: azka_web
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - app
+    networks:
+      - azka-network
+
+  db:
+    image: mysql:8.0
+    container_name: azka_db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: azka_garden
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - azka-network
+
+networks:
+  azka-network:
+
+volumes:
+  db_data:

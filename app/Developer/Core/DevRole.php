@@ -1,0 +1,12 @@
+<?php
+namespace App\Developer\Core;
+
+enum DevRole: string
+{
+    case LEAD_DEVELOPER = 'LEAD_DEVELOPER';
+    case BACKEND_DEVELOPER = 'BACKEND_DEVELOPER';
+    case FRONTEND_DEVELOPER = 'FRONTEND_DEVELOPER';
+    case DATABASE_ADMIN = 'DATABASE_ADMIN';
+    case DEVOPS_ENGINEER = 'DEVOPS_ENGINEER';
+    case SECURITY_ENGINEER = 'SECURITY_ENGINEER';
+}

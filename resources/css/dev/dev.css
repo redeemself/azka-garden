@@ -1,0 +1,16 @@
+/* Developer Domain Styles */
+body {
+  background-color: #0f172a;
+  color: #cbd5e1;
+  font-family: 'Consolas', monospace;
+}
+
+nav {
+  background-color: #1e293b;
+}
+
+footer {
+  background-color: #334155;
+  color: #94a3b8;
+  padding: 1rem 0;
+}

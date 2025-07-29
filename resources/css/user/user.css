@@ -1,0 +1,16 @@
+/* User Domain Styles */
+body {
+  background-color: #f0fdf4;
+  color: #065f46;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+nav {
+  background-color: #a7f3d0;
+}
+
+footer {
+  background-color: #059669;
+  color: white;
+  padding: 1rem 0;
+}

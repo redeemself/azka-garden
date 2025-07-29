@@ -1,0 +1,9 @@
+{
+  "DockerRun.DisableDockerrc": true,
+  "files.associations": {
+    "*.css": "postcss"
+  },
+  "tailwindCSS.includeLanguages": {
+    "postcss": "css"
+  }
+}
