@@ -5,7 +5,7 @@
     "src": "resources/css/admin/admin.css"
   },
   "resources/css/app.css": {
-    "file": "assets/app-0f491a4f.css",
+    "file": "assets/app-52d445e3.css",
     "src": "resources/js/app.css"
   },
   "resources/css/dev/dev.css": {
@@ -19,14 +19,14 @@
     "src": "resources/css/user/user.css"
   },
   "resources/js/app.css": {
-    "file": "assets/app-0f491a4f.css",
+    "file": "assets/app-52d445e3.css",
     "src": "resources/js/app.css"
   },
   "resources/js/app.js": {
     "css": [
-      "assets/app-0f491a4f.css"
+      "assets/app-52d445e3.css"
     ],
-    "file": "assets/app-f0250d05.js",
+    "file": "assets/app-7ecc9298.js",
     "isEntry": true,
     "src": "resources/js/app.js"
   }
