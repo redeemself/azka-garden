@@ -8,10 +8,15 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use App\Models\Promotion;
 use App\Models\Contact;
-use App\Models\Cart;
 
 class PromoController extends Controller
 {
+    /**
+     * Aktivasi kode promo.
+     * Validasi kode promo, membership promo, status, dan tanggal.
+     * Simpan data promo ke session.
+     * Tidak melakukan update langsung ke keranjang (biarkan CartController tangani).
+     */
     public function activate(Request $request)
     {
         $code = trim($request->input('promo_code'));
@@ -29,17 +34,18 @@ class PromoController extends Controller
             ->where('promo_code', $code)
             ->first();
 
-        // Jika ada membership promo, langsung valid
+        // Cari promo di DB
         $promo = Promotion::where('promo_code', $code)->first();
 
         if (!$promo && !$membership) {
+            $msg = 'Kode promo tidak ditemukan. Silakan cek kembali.';
             if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => 'Kode promo tidak ditemukan']);
+                return response()->json(['success' => false, 'message' => $msg]);
             }
-            return redirect()->back()->with('error', 'Kode promo tidak ditemukan. Silakan cek kembali.');
+            return redirect()->back()->with('error', $msg);
         }
 
-        // Validasi status & tanggal promo (jika ada di database)
+        // Validasi status & tanggal promo jika ada
         if ($promo) {
             $now = now();
             if (!$promo->status) {
@@ -62,15 +68,13 @@ class PromoController extends Controller
             }
         }
 
-        // Diskon percent sesuai value di DB atau default 10% untuk membership
+        // Tentukan nilai diskon dan tipe promo
         if ($promo) {
-            $discount_value = ($promo->discount_type === 'percent')
-                ? floatval($promo->discount_value)
-                : floatval($promo->discount_value);
+            $discount_value = floatval($promo->discount_value);
             $promo_code = $promo->promo_code;
             $promo_type = $promo->discount_type;
-        } else if ($membership) {
-            // default percent 10% untuk promo newsletter
+        } elseif ($membership) {
+            // Default 10% untuk membership promo
             $discount_value = 10.0;
             $promo_code = $membership->promo_code;
             $promo_type = 'percent';
@@ -80,35 +84,40 @@ class PromoController extends Controller
             $promo_type = 'fixed';
         }
 
-        // Simpan ke session
+        // Simpan promo ke session
         Session::put('promo_code', $promo_code);
         Session::put('promo_type', $promo_type);
         Session::put('promo_discount', $discount_value);
 
-        // Perbaikan utama: Jangan update keranjang di sini!
-        // Hapus logika update keranjang di sini.
-        // Biarkan CartController yang update diskon saat produk ditambahkan,
-        // agar promo bisa berubah dinamis sesuai session saat checkout.
+        // Jangan update keranjang di sini; biarkan CartController yang tangani saat checkout
 
         if ($request->expectsJson()) {
-            return response()->json(['success' => true, 'promo_code' => $promo_code, 'promo_type' => $promo_type, 'promo_discount' => $discount_value]);
+            return response()->json([
+                'success' => true,
+                'promo_code' => $promo_code,
+                'promo_type' => $promo_type,
+                'promo_discount' => $discount_value,
+                'message' => 'Kode promo berhasil diaktifkan!'
+            ]);
         }
+
         return redirect()->back()->with('success', 'Kode promo berhasil diaktifkan!');
     }
 
+    /**
+     * Nonaktifkan kode promo.
+     * Hanya hapus session promo tanpa update keranjang.
+     */
     public function deactivate(Request $request)
     {
-        Session::forget('promo_code');
-        Session::forget('promo_type');
-        Session::forget('promo_discount');
+        Session::forget(['promo_code', 'promo_type', 'promo_discount']);
 
-        // Perbaikan utama: Jangan update keranjang di sini!
-        // Biarkan diskon tetap di cart, tapi tidak dipakai saat checkout jika promo nonaktif.
-        // Agar user tahu keranjangnya berisi produk yang pernah promo.
+        // Jangan update keranjang; biarkan diskon tidak berlaku saat checkout
 
         if ($request->expectsJson()) {
-            return response()->json(['success' => true, 'message' => 'Promo dinonaktifkan']);
+            return response()->json(['success' => true, 'message' => 'Promo berhasil dinonaktifkan']);
         }
+
         return redirect()->back()->with('success', 'Promo berhasil dinonaktifkan.');
     }
 }

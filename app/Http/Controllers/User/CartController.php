@@ -8,9 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Models\Product;
 use App\Models\Cart;
-use App\Models\Contact;
 use App\Models\Promotion;
-use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Contracts\View\View;
@@ -33,11 +31,10 @@ class CartController extends Controller
 
         $cartItems = Cart::with('product')->where('user_id', $user->id)->get();
 
-        // Promo aktif di session
-        $activePromo = null;
         $promoCode = session('promo_code');
+        $activePromo = null;
         if ($promoCode) {
-            $activePromo = Promotion::where('promo_code', $promoCode)->first();
+            $activePromo = Promotion::where('promo_code', $promoCode)->where('active', true)->first();
         }
 
         $primaryAddress = $user->addresses()->where('is_primary', true)->first();
@@ -86,11 +83,7 @@ class CartController extends Controller
                 ->where('status', 1)
                 ->first();
 
-            if ($paymentMethod) {
-                session(['payment_method' => $paymentMethod->code]);
-            } else {
-                session(['payment_method' => 'CASH']);
-            }
+            session(['payment_method' => $paymentMethod->code ?? 'CASH']);
         }
 
         return view('User.orders.confirm', compact('cartItems'));
@@ -144,7 +137,7 @@ class CartController extends Controller
             $cartItem->save();
 
             $promo = $cartItem->promo_code ?? session('promo_code');
-            $promotion = $promo ? Promotion::where('promo_code', $promo)->first() : null;
+            $promotion = $promo ? Promotion::where('promo_code', $promo)->where('active', true)->first() : null;
 
             $discount = 0;
             $unit_price = $product->price ?? 0;
@@ -203,17 +196,6 @@ class CartController extends Controller
         try {
             $user = Auth::user();
 
-            Log::info('Delete cart item request received', [
-                'id' => $id,
-                'user_id' => $user ? $user->id : 'not authenticated',
-                'method' => request()->method(),
-                'headers' => [
-                    'accept' => request()->header('Accept'),
-                    'content-type' => request()->header('Content-Type'),
-                    'csrf' => request()->header('X-CSRF-TOKEN') ? 'present' : 'missing'
-                ]
-            ]);
-
             if (!$user) {
                 return response()->json([
                     'success' => false,
@@ -231,16 +213,6 @@ class CartController extends Controller
                     'message' => 'Produk tidak ditemukan di keranjang Anda'
                 ], 404);
             }
-
-            $productId = $cartItem->product_id;
-            $productName = $cartItem->product ? $cartItem->product->name : 'unknown';
-
-            Log::info('Deleting cart item', [
-                'user_id' => $user->id,
-                'cart_item_id' => $id,
-                'product_id' => $productId,
-                'product_name' => $productName
-            ]);
 
             $cartItem->delete();
 
@@ -301,12 +273,6 @@ class CartController extends Controller
                     ->with('error', 'Produk tidak ditemukan di keranjang Anda.');
             }
 
-            Log::info('Removing cart item (redirect)', [
-                'user_id' => $user->id,
-                'cart_item_id' => $id,
-                'product_id' => $cartItem->product_id,
-            ]);
-
             $cartItem->delete();
             return redirect()->back()->with('success', 'Produk berhasil dihapus dari keranjang.');
 
@@ -326,11 +292,6 @@ class CartController extends Controller
      */
     public function deletePost(Request $request, $id): JsonResponse
     {
-        Log::info('Delete POST method received', [
-            'id' => $id,
-            'csrf' => $request->header('X-CSRF-TOKEN') ? 'present' : 'missing'
-        ]);
-
         return $this->delete($id);
     }
 
@@ -393,22 +354,19 @@ class CartController extends Controller
     }
 
     /**
-     * Tambah produk ke keranjang dengan validasi promo code dan diskon.
-     * Perbaikan: Simpan harga promo (diskon) pada cart dan gunakan harga dari request jika dikirim, agar penghitungan diskon konsisten dengan tampilan.
+     * Tambah produk ke keranjang (versi minimal & stabil).
      */
-    public function add(Request $request)
+    public function add(Request $request): JsonResponse|RedirectResponse
     {
         try {
             $request->validate([
                 'product_id' => 'required|exists:products,id',
-                'promo_code' => 'nullable|string|max:50',
                 'quantity' => 'nullable|integer|min:1',
-                'price' => 'nullable|numeric|min:0',
             ]);
 
-            $user = \Auth::user();
+            $user = Auth::user();
             if (!$user) {
-                if ($request->expectsJson()) {
+                if ($request->expectsJson() || $request->ajax()) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Anda harus login untuk menambahkan produk ke keranjang'
@@ -419,12 +377,11 @@ class CartController extends Controller
             }
 
             $productId = $request->input('product_id');
-            $promoCode = $request->input('promo_code') ?: session('promo_code');
             $quantity = $request->input('quantity', 1);
 
             $product = Product::find($productId);
             if (!$product) {
-                if ($request->expectsJson()) {
+                if ($request->expectsJson() || $request->ajax()) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Produk tidak ditemukan.'
@@ -434,7 +391,7 @@ class CartController extends Controller
             }
 
             if ($quantity > $product->stock) {
-                if ($request->expectsJson()) {
+                if ($request->expectsJson() || $request->ajax()) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Jumlah melebihi stok yang tersedia.'
@@ -443,130 +400,75 @@ class CartController extends Controller
                 return back()->with('error', 'Jumlah melebihi stok yang tersedia.');
             }
 
-            // Ambil harga promo dari request jika tersedia
-            $final_price = $request->filled('price') ? floatval($request->input('price')) : $product->price;
-
-            // Validasi promo
-            $discount = 0;
-            $discountMsg = '';
-            $promoValid = false;
-
-            if ($promoCode) {
-                $promotion = Promotion::where('promo_code', $promoCode)
-                    ->where('active', true)
-                    ->first();
-
-                if ($promotion) {
-                    $promoValid = true;
-                    if ($promotion->discount_type === 'percent') {
-                        $percent = $promotion->discount_value ?: 10;
-                        $discount = round($product->price * ($percent / 100));
-                        $discountMsg = "Diskon {$percent}%";
-                    } elseif ($promotion->discount_type === 'fixed') {
-                        $discount = min($promotion->discount_value ?? 0, $product->price);
-                        $discountMsg = "Diskon Rp " . number_format($discount, 0, ',', '.');
-                    }
-                    // Final price sudah dikirim dari blade (dengan diskon)
-                } else {
-                    $discount = 0;
-                    $discountMsg = "Kode promo tidak valid";
-                }
-            }
-
-            // Produk tetap masuk keranjang apapun promo valid/tidak
-            $cartItem = Cart::where('user_id', $user->id)
-                ->where('product_id', $productId)
-                ->first();
-
-            if ($cartItem) {
-                $cartItem->quantity += $quantity;
-                if ($cartItem->quantity > $product->stock) {
-                    $cartItem->quantity = $product->stock;
-                }
-                $cartItem->promo_code = $promoCode;
-                $cartItem->discount = $discount;
-                $cartItem->price = $final_price;
-                $cartItem->save();
-            } else {
-                $cartItem = Cart::create([
-                    'user_id'    => $user->id,
-                    'product_id' => $productId,
-                    'quantity'   => $quantity,
-                    'promo_code' => $promoCode,
-                    'discount'   => $discount,
-                    'price'      => $final_price,
-                ]);
-            }
-
-            session([
-                'promo_code' => $promoCode,
-                'promo_discount' => $discount,
+            // Buat/Update cart
+            $cartItem = Cart::firstOrNew([
+                'user_id' => $user->id,
+                'product_id' => $product->id,
             ]);
-
-            $message = 'Produk berhasil ditambahkan ke keranjang';
-            if ($discount > 0) {
-                $message .= ' dengan promo! ' . $discountMsg;
-            } else if ($promoCode && !$promoValid) {
-                $message .= '. Kode promo tidak valid.';
-            } else {
-                $message .= '.';
+            $cartItem->quantity += $quantity;
+            if ($cartItem->quantity > $product->stock) {
+                $cartItem->quantity = $product->stock;
             }
+            $cartItem->save();
 
-            if ($request->expectsJson()) {
+            if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
-                    'message' => $message,
+                    'message' => 'Produk berhasil ditambahkan ke keranjang',
                     'data' => [
                         'cart_count' => Cart::where('user_id', $user->id)->sum('quantity'),
                         'item_id' => $cartItem->id,
                         'quantity' => $cartItem->quantity,
-                        'discount' => $discount,
-                        'price' => $final_price,
                     ]
                 ]);
             }
 
-            return back()->with('success', $message);
+            return back()->with('success', 'Produk berhasil ditambah ke keranjang');
         } catch (Exception $e) {
-            if ($request->expectsJson()) {
+            if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Gagal menambahkan produk ke keranjang: ' . $e->getMessage(),
+                    'message' => 'Gagal menambah produk: ' . $e->getMessage(),
                     'error' => config('app.debug') ? $e->getMessage() : null
                 ], 500);
             }
-            return back()->with('error', 'Gagal menambahkan produk ke keranjang.');
+            return back()->with('error', 'Gagal menambah produk ke keranjang');
         }
     }
 
     /**
      * Apply promo code to cart
      */
-    public function redeemPromo(Request $request)
+    public function redeemPromo(Request $request): JsonResponse|RedirectResponse
     {
         try {
             $request->validate([
                 'promo_code' => 'required|string|min:3|max:50',
             ]);
 
-            $promotion = Promotion::where('promo_code', $request->promo_code)
+            $promoCode = trim($request->input('promo_code'));
+
+            // Cari promo aktif sesuai kode promo
+            $promotion = Promotion::where('promo_code', $promoCode)
                 ->where('active', true)
                 ->first();
 
             if (!$promotion) {
+                $msg = 'Kode promo tidak valid atau sudah tidak aktif';
                 if ($request->expectsJson()) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Kode promo tidak valid atau sudah tidak aktif'
+                        'message' => $msg
                     ], 400);
                 }
-                return back()->with('error', 'Kode promo tidak valid atau sudah tidak aktif');
+                return back()->with('error', $msg);
             }
 
+            // Simpan promo ke session agar dipakai di CartController dan checkout
             session([
                 'promo_code' => $promotion->promo_code,
                 'promo_type' => $promotion->discount_type,
-                'promo_discount' => $promotion->discount_value
+                'promo_discount' => $promotion->discount_value,
             ]);
 
             if ($request->expectsJson()) {
@@ -576,8 +478,8 @@ class CartController extends Controller
                     'data' => [
                         'promo_code' => $promotion->promo_code,
                         'promo_type' => $promotion->discount_type,
-                        'promo_value' => $promotion->discount_value
-                    ]
+                        'promo_value' => $promotion->discount_value,
+                    ],
                 ]);
             }
 
@@ -592,11 +494,12 @@ class CartController extends Controller
             if ($request->expectsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Gagal menerapkan kode promo: ' . $e->getMessage()
+                    'message' => 'Gagal menerapkan kode promo: ' . $e->getMessage(),
                 ], 500);
             }
 
             return back()->with('error', 'Gagal menerapkan kode promo');
         }
     }
+
 }

@@ -38,18 +38,18 @@ Route::controller(PublicController::class)->group(function () {
     Route::get('/services', 'services')->name('services.index');
 });
 
-// Perbaikan: Menempatkan route produk detail setelah kategori untuk menghindari konflik
+// Produk detail setelah kategori agar tidak bentrok
 Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
 
 // -----------------------------
-// LIKE & COMMENT PRODUCT ROUTES (Protected by auth middleware)
+// LIKE & COMMENT PRODUCT ROUTES (auth middleware)
 // -----------------------------
 Route::middleware(['auth'])->group(function () {
     Route::post('/products/{id}/like', [ProductController::class, 'like'])->name('products.like');
     Route::post('/products/{id}/comment', [ProductController::class, 'comment'])->name('products.comment');
-    // ======== ROUTE ADDRESS ========
+
+    // Address routes
     Route::post('/user/address', [AddressController::class, 'store'])->name('user.address.store');
-    // Tambahkan route update koordinat alamat (AJAX)
     Route::post('/user/address/update-coords', [AddressController::class, 'updateCoords'])->name('user.address.updateCoords');
 });
 
@@ -90,15 +90,12 @@ Route::view('/return-policy', 'policies.return')->name('return.policy');
 Route::view('/accessibility', 'policies.accessibility')->name('accessibility');
 
 // ---------------
-// POLICY ACCEPT
+// POLICY ACCEPT & RESET
 // ---------------
 Route::post('/policy/accept', function(Request $request) {
     return redirect()->back()->with('success', 'Kebijakan privasi diterima.');
 })->name('policy.accept');
 
-// ---------------
-// POLICY RESET
-// ---------------
 Route::post('/policy/reset', function(Request $request) {
     return redirect()->route('privacy')->with('success', 'Persetujuan kebijakan privasi telah direset.');
 })->name('policy.reset');
@@ -115,7 +112,7 @@ Route::prefix('artikel')->group(function () {
 });
 
 // -----------------------------
-// USER AUTH (guest middleware for web guard)
+// USER AUTH (guest middleware)
 // -----------------------------
 Route::middleware('guest')->group(function () {
     Route::get('register', [UserAuthController::class, 'showRegister'])->name('register');
@@ -144,34 +141,21 @@ Route::middleware('auth:web')->prefix('user')->name('user.')->group(function () 
     // Produk khusus user login
     Route::prefix('products')->name('products.')->controller(ProductController::class)->group(function () {
         Route::get('/', 'index')->name('index');
-        
-        // Perbaikan: Memindahkan route redeem ke level yang sama dengan detail produk
         Route::get('redeem', 'redeemForm')->name('redeem.form');
         Route::post('redeem', 'redeemPromo')->name('redeem');
-        
-        // Perbaikan: Memindahkan route ID ke bawah redeem untuk menghindari konflik
         Route::get('{id}', 'show')->name('show');
     });
 
-    // Keranjang User
-    Route::prefix('cart')->name('cart.')->group(function () {
-        Route::get('/', [CartController::class, 'index'])->name('index');
-        Route::post('add', [CartController::class, 'add'])->name('add');
-        
-        // Perbaikan: Mengubah route delete untuk menggunakan metode dan path yang benar
-        Route::delete('delete/{id}', [CartController::class, 'delete'])->name('delete');
-        
-        // Perbaikan: Memastikan nama metode konsisten
-        Route::put('update/{id}', [CartController::class, 'update'])->name('update');
-        
-        Route::post('redeem', [CartController::class, 'redeemPromo'])->name('redeem');
-        
-        // Perbaikan: Memastikan nama metode konsisten
-        Route::post('save-shipping', [CartController::class, 'saveShipping'])->name('save-shipping');
-        Route::post('save-payment', [CartController::class, 'savePayment'])->name('save-payment');
-        
-        // Perbaikan: Menghapus route checkout yang mungkin tidak digunakan
-        // Route::post('checkout', [CartController::class, 'checkout'])->name('checkout');
+    // Keranjang User (cart) — pakai POST untuk update & delete supaya AJAX lancar
+    Route::prefix('cart')->name('cart.')->controller(CartController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('add', 'add')->name('add');
+        Route::post('update/{id}', 'update')->name('update');
+        Route::post('delete/{id}', 'delete')->name('delete');
+        // Perbaikan: redeem promo menggunakan route POST 'cart/redeem'
+        Route::post('redeem', 'redeemPromo')->name('redeem');
+        Route::post('save-shipping', 'saveShipping')->name('save-shipping');
+        Route::post('save-payment', 'savePayment')->name('save-payment');
     });
 
     // Orders User
@@ -180,24 +164,19 @@ Route::middleware('auth:web')->prefix('user')->name('user.')->group(function () 
         Route::get('history', 'history')->name('history.index');
         Route::get('{order}', 'show')->name('show');
         Route::post('create', 'create')->name('create');
-        
-        // Perbaikan: Menstandarisasi metode HTTP untuk operasi cancel
         Route::post('{order}/cancel', 'cancel')->name('cancel');
         Route::patch('{order}/cancel', 'cancel')->name('cancelPatch');
-        
         Route::get('{order}/confirm', 'confirm')->name('confirm');
         Route::post('{order}/pay', 'pay')->name('pay');
         Route::post('cancel-confirm', 'cancelConfirm')->name('cancelConfirm');
         Route::post('clear_expired', 'clearExpired')->name('clear_expired');
         Route::post('{order}/finish', 'finish')->name('finish');
         Route::post('cancel-draft', 'cancelDraft')->name('cancel-draft');
-
-        // PATCH untuk tombol aksi di daftar pesanan
         Route::patch('{order}/expire', 'expire')->name('expire');
         Route::patch('{order}/complete', 'complete')->name('complete');
     });
-    
-    // Perbaikan: Menambahkan route untuk alamat dalam grup user
+
+    // Address group for user
     Route::prefix('address')->name('address.')->controller(AddressController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->name('store');
@@ -209,7 +188,6 @@ Route::middleware('auth:web')->prefix('user')->name('user.')->group(function () 
 
 // -----------------------------
 // PATCH ROUTES AGAR BISA DIAKSES DARI NAMA DI BLADE (akses global, tidak dalam prefix user)
-// Perbaikan: Menyederhanakan dengan menambahkan scope middleware
 // -----------------------------
 Route::middleware(['auth'])->group(function() {
     Route::patch('user/orders/{order}/expire', [OrderController::class, 'expire'])->name('user.orders.expire');
@@ -218,8 +196,7 @@ Route::middleware(['auth'])->group(function() {
 });
 
 // -----------------------------
-// PROMO CODE ACTIVATION (UNTUK SEMUA USER)
-// Perbaikan: Menggunakan namespace yang benar untuk PromoController
+// PROMO CODE ACTIVATION & DEACTIVATION (untuk semua user)
 // -----------------------------
 Route::post('/promo/activate', [PromoController::class, 'activate'])->name('promo.activate');
 Route::post('/promo/deactivate', [PromoController::class, 'deactivate'])->name('promo.deactivate');
@@ -246,7 +223,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:admin', 'admin'])->gro
 });
 
 // -----------------------------
-// DEVELOPER AUTH (guest middleware for developer guard)
+// DEVELOPER AUTH
 // -----------------------------
 Route::prefix('dev')->name('dev.')->middleware('guest:developer')->group(function () {
     Route::get('register', [DevController::class, 'showRegister'])->name('register');
@@ -256,7 +233,7 @@ Route::prefix('dev')->name('dev.')->middleware('guest:developer')->group(functio
 });
 
 // -----------------------------
-// DEVELOPER DASHBOARD (auth & developer middleware)
+// DEVELOPER DASHBOARD
 // -----------------------------
 Route::prefix('dev')->name('dev.')->middleware(['auth:developer', 'developer'])->group(function () {
     Route::get('/', [DevController::class, 'dashboard'])->name('dashboard');
@@ -275,7 +252,7 @@ foreach ([401, 403, 404, 419, 422, 429, 500, 503] as $code) {
 }
 
 // -----------------------------
-// FALLBACK: Redirect ALL errors to home
+// FALLBACK ROUTE (redirect to home)
 // -----------------------------
 Route::fallback(function() {
     return redirect()->route('home');
