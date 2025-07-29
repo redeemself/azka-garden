@@ -1,9 +1,13 @@
 {
-  "DockerRun.DisableDockerrc": true,
-  "files.associations": {
-    "*.css": "postcss"
-  },
-  "tailwindCSS.includeLanguages": {
-    "postcss": "css"
-  }
+    "intelephense.diagnostics.undefinedMethods": false,
+    "intelephense.diagnostics.undefinedTypes": false,
+    "intelephense.diagnostics.typeErrors": false,
+    "php.validate.enable": false,
+    "DockerRun.DisableDockerrc": true,
+    "files.associations": {
+        "*.css": "postcss"
+    },
+    "tailwindCSS.includeLanguages": {
+        "postcss": "css"
+    }
 }

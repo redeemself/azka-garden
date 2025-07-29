@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'azka/azka-garden',
-        'pretty_version' => '1.0.0+no-version-set',
-        'version' => '1.0.0.0',
-        'reference' => null,
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => '071079017740da6878283321d1c8a84dffe76846',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'azka/azka-garden' => array(
-            'pretty_version' => '1.0.0+no-version-set',
-            'version' => '1.0.0.0',
-            'reference' => null,
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '071079017740da6878283321d1c8a84dffe76846',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

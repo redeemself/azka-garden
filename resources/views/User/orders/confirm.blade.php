@@ -7,17 +7,21 @@
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Session;
     use Illuminate\Support\Facades\DB;
+    use App\Models\Cart;
     
     // Informasi waktu dan pengguna saat ini
-    $currentDateTime = '2025-07-28 14:41:10';
-    $currentUserLogin = 'redeemself';
+    $currentDateTime = '2025-07-29 14:13:26';
+    $currentUserLogin = 'mulyadafa';
     
     // Data user & alamat
     $user = Auth::user();
     $addresses = $user && method_exists($user, 'addresses') ? $user->addresses()->get() : collect();
     
     // Get cart items - try to retrieve from multiple possible session keys
-    $cartItems = session('cart_items') ?? session('cartItems') ?? collect();
+    // PERBAIKAN: Tambahkan fallback ke Cart model jika user terautentikasi
+    $cartItems = session('cart_items') 
+        ?? session('cartItems') 
+        ?? (Auth::check() ? Cart::with('product')->where('user_id', Auth::id())->get() : collect());
     
     // Convert to collection if needed
     if (!($cartItems instanceof \Illuminate\Support\Collection)) {
@@ -74,13 +78,23 @@
         'AMBIL_SENDIRI' => 'Ambil Sendiri di Toko',
     ];
     
-    // Display names for shipping methods
+    // Map shipping methods to service names from the database
+    $shippingServiceNames = [
+        'KURIR_TOKO' => 'Internal',
+        'GOSEND' => 'Sameday',
+        'JNE' => 'REG',
+        'JNT' => 'EZ',
+        'SICEPAT' => 'BEST',
+        'AMBIL_SENDIRI' => '-',
+    ];
+    
+    // Display descriptions for shipping methods - updated to match exact database values
     $shippingMethodDescriptions = [
         'KURIR_TOKO' => 'Pengiriman langsung dari toko Azka Garden. Ongkir flat sesuai jarak: (<5km) Rp10.000, (5-10km) Rp15.000, (>10km) Rp20.000',
-        'GOSEND' => 'Pengiriman cepat via GoSend (estimasi Rp15.000-30.000 sesuai aplikasi)',
-        'JNE' => 'Pengiriman reguler via JNE (8.000-20.000/kg, estimasi aplikasi atau admin)',
-        'JNT' => 'Pengiriman reguler via J&T (10.000-22.000/kg, estimasi aplikasi atau admin)',
-        'SICEPAT' => 'Pengiriman reguler via SiCepat (10.000-18.000/kg, estimasi aplikasi atau admin)',
+        'GOSEND' => 'Pengiriman cepat via GoSend (estimasi Rp25.000 sesuai jarak)',
+        'JNE' => 'Pengiriman reguler via JNE (Rp12.000)',
+        'JNT' => 'Pengiriman reguler via J&T (Rp14.000)',
+        'SICEPAT' => 'Pengiriman reguler via SiCepat (Rp15.000)',
         'AMBIL_SENDIRI' => 'Ambil langsung di toko Azka Garden, bebas ongkir!',
     ];
     
@@ -102,33 +116,57 @@
             : ($addresses->where('is_primary', 1)->first() ?? $addresses->first());
     }
     
-    // Fetch shipping costs directly from the database
-    try {
-        $shippingData = DB::table('shippings')
-            ->select('courier', 'shipping_cost')
-            ->get();
-        
-        // Map shipping costs to array
-        $shippingCostsFromDB = [];
-        foreach ($shippingData as $data) {
-            // Normalize courier name - replace space with underscore and uppercase
-            $courier = strtoupper(str_replace(' ', '_', $data->courier));
-            $shippingCostsFromDB[$courier] = floatval($data->shipping_cost);
-        }
-    } catch (\Exception $e) {
-        // If query fails, use empty array
-        $shippingCostsFromDB = [];
+    // Define shipping costs based on the database values from shippings.sql
+    $shippingCostsFromDB = [
+        'JNT' => 14000.00,  // Pastikan ini 14000, bukan 25000
+        'GOSEND' => 25000.00,
+        'JNE' => 12000.00,
+        'SICEPAT' => 15000.00,
+        'KURIR_TOKO' => 15000.00, // default
+        'AMBIL_SENDIRI' => 0.00
+    ];
+    
+    // PERBAIKAN: Tambahkan default KURIR_TOKO distance-based costs jika tidak ada
+    if (!isset($shippingCostsFromDB['KURIR_TOKO_LESS_THAN_5KM'])) {
+        $shippingCostsFromDB['KURIR_TOKO_LESS_THAN_5KM'] = 10000.00;
+    }
+    if (!isset($shippingCostsFromDB['KURIR_TOKO_5_TO_10KM'])) {
+        $shippingCostsFromDB['KURIR_TOKO_5_TO_10KM'] = 15000.00;
+    }
+    if (!isset($shippingCostsFromDB['KURIR_TOKO_MORE_THAN_10KM'])) {
+        $shippingCostsFromDB['KURIR_TOKO_MORE_THAN_10KM'] = 20000.00;
     }
     
-    // Fallback shipping costs from SQL file if DB query doesn't provide complete data
-    $fixedShippingCosts = [
-        'KURIR_TOKO' => 10000, // Base cost (<5km) - adjusts based on distance
-        'GOSEND' => 25000,
-        'JNE' => 12000,
-        'JNT' => 14000,
-        'SICEPAT' => 15000,
-        'AMBIL_SENDIRI' => 0
-    ];
+    // Try to get shipping costs from database
+    try {
+        $shippingData = DB::table('shippings')
+            ->select('courier', 'service', 'shipping_cost')
+            ->get();
+        
+        // If we successfully got data, update our costs
+        if($shippingData->count() > 0) {
+            foreach ($shippingData as $data) {
+                $courier = strtoupper(str_replace(' ', '_', $data->courier));
+                
+                // Handle special case for KURIR TOKO with different distances
+                if($courier === 'KURIR_TOKO') {
+                    if($data->shipping_cost == 10000.00) {
+                        $shippingCostsFromDB['KURIR_TOKO_LESS_THAN_5KM'] = $data->shipping_cost;
+                    }
+                    else if($data->shipping_cost == 15000.00) {
+                        $shippingCostsFromDB['KURIR_TOKO_5_TO_10KM'] = $data->shipping_cost;
+                    }
+                    else if($data->shipping_cost == 20000.00) {
+                        $shippingCostsFromDB['KURIR_TOKO_MORE_THAN_10KM'] = $data->shipping_cost;
+                    }
+                } else {
+                    $shippingCostsFromDB[$courier] = $data->shipping_cost;
+                }
+            }
+        }
+    } catch (\Exception $e) {
+        // Use the default values defined above if there's an error
+    }
     
     // IMPORTANT: Handle 'AMBIL_SENDIRI' case first to ensure it's always free
     if ($shipping_method == 'AMBIL_SENDIRI') {
@@ -140,60 +178,48 @@
     }
     // Otherwise calculate based on shipping method
     else {
-        // First check if we have a value from the database
-        $courier = strtoupper(str_replace(' ', '_', $shipping_method));
-        
-        if (isset($shippingCostsFromDB[$courier])) {
-            $shippingCost = $shippingCostsFromDB[$courier];
-        }
-        // If not in database, calculate based on method with fallbacks
-        else {
-            switch ($shipping_method) {
-                case 'KURIR_TOKO':
-                    // Handle different distance tiers for KURIR_TOKO
-                    $shippingCost = $fixedShippingCosts['KURIR_TOKO']; // Default to base cost
+        switch ($shipping_method) {
+            case 'KURIR_TOKO':
+                // Calculate based on distance if we have coordinates
+                if ($selectedAddress && isset($selectedAddress->latitude) && isset($selectedAddress->longitude)) {
+                    $lat = floatval($selectedAddress->latitude);
+                    $lng = floatval($selectedAddress->longitude);
                     
-                    // If we have selected address and coordinates, adjust based on distance
-                    if ($selectedAddress && isset($selectedAddress->latitude) && isset($selectedAddress->longitude)) {
-                        $lat = floatval($selectedAddress->latitude);
-                        $lng = floatval($selectedAddress->longitude);
-                        
-                        // Calculate distance using Haversine formula (approximate)
-                        $distance = sqrt(pow($lat - $toko_lat, 2) + pow($lng - $toko_lng, 2)) * 111.32; // km
-                        
-                        // Apply tiered pricing based on distance
-                        if ($distance > 10) {
-                            $shippingCost = 20000; // > 10km (from shippings.sql record 2003)
-                        } elseif ($distance > 5) {
-                            $shippingCost = 15000; // 5-10km (from shippings.sql record 2002)
-                        } else {
-                            $shippingCost = 10000; // < 5km (from shippings.sql record 2001)
-                        }
+                    // Calculate distance using Haversine formula (approximate)
+                    $distance = sqrt(pow($lat - $toko_lat, 2) + pow($lng - $toko_lng, 2)) * 111.32; // km
+                    
+                    // Apply tiered pricing based on distance
+                    if ($distance > 10) {
+                        $shippingCost = $shippingCostsFromDB['KURIR_TOKO_MORE_THAN_10KM']; // > 10km
+                    } elseif ($distance > 5) {
+                        $shippingCost = $shippingCostsFromDB['KURIR_TOKO_5_TO_10KM']; // 5-10km
                     } else {
-                        // No coordinates, default to middle tier (most common)
-                        $shippingCost = 15000; // Default to 5-10km rate
+                        $shippingCost = $shippingCostsFromDB['KURIR_TOKO_LESS_THAN_5KM']; // < 5km
                     }
-                    break;
-                    
-                case 'GOSEND':
-                    $shippingCost = $fixedShippingCosts['GOSEND']; // 25000 from shippings.sql
-                    break;
-                    
-                case 'JNE':
-                    $shippingCost = $fixedShippingCosts['JNE']; // 12000 from shippings.sql
-                    break;
-                    
-                case 'JNT':
-                    $shippingCost = $fixedShippingCosts['JNT']; // 14000 from shippings.sql
-                    break;
-                    
-                case 'SICEPAT':
-                    $shippingCost = $fixedShippingCosts['SICEPAT']; // 15000 from shippings.sql
-                    break;
-                    
-                default:
-                    $shippingCost = 0;
-            }
+                } else {
+                    // No coordinates, default to middle tier (most common)
+                    $shippingCost = $shippingCostsFromDB['KURIR_TOKO_5_TO_10KM'];
+                }
+                break;
+                
+            case 'GOSEND':
+                $shippingCost = $shippingCostsFromDB['GOSEND'];
+                break;
+                
+            case 'JNE':
+                $shippingCost = $shippingCostsFromDB['JNE'];
+                break;
+                
+            case 'JNT':
+                $shippingCost = $shippingCostsFromDB['JNT'];
+                break;
+                
+            case 'SICEPAT':
+                $shippingCost = $shippingCostsFromDB['SICEPAT'];
+                break;
+                
+            default:
+                $shippingCost = 0;
         }
     }
     
@@ -279,7 +305,9 @@
         'tax_amount' => $taxAmount,
         'total' => $totalWithTax,
         'shipping_method' => $shipping_method,
-        'shipping_method_display' => $shipping_method_display
+        'shipping_method_display' => $shipping_method_display,
+        'processed_at' => $currentDateTime,
+        'processed_by' => $currentUserLogin
     ]);
 @endphp
 
@@ -734,14 +762,14 @@
         
         @if($shipping_method == 'KURIR_TOKO')
             <div class="shipping-method-highlight">
-                @if($shippingCost == 10000)
-                    Kurir Toko | Jarak < 5km | Ongkir: Rp10.000
-                @elseif($shippingCost == 15000)
-                    Kurir Toko | Jarak 5-10km | Ongkir: Rp15.000
-                @elseif($shippingCost == 20000)
-                    Kurir Toko | Jarak > 10km | Ongkir: Rp20.000
+                @if($shippingCost == 10000.00)
+                    Kurir Toko (Internal) | Jarak < 5km | Ongkir: Rp10.000
+                @elseif($shippingCost == 15000.00)
+                    Kurir Toko (Internal) | Jarak 5-10km | Ongkir: Rp15.000
+                @elseif($shippingCost == 20000.00)
+                    Kurir Toko (Internal) | Jarak > 10km | Ongkir: Rp20.000
                 @else
-                    Kurir Toko | Ongkir: Rp{{ number_format($shippingCost, 0, ',', '.') }}
+                    Kurir Toko (Internal) | Ongkir: Rp{{ number_format($shippingCost, 0, ',', '.') }}
                 @endif
             </div>
         @elseif($shipping_method == 'AMBIL_SENDIRI')
@@ -755,19 +783,19 @@
             </div>
         @elseif($shipping_method == 'JNT')
             <div class="shipping-method-highlight">
-                J&T EZ | Ongkir: Rp{{ number_format($shippingCost, 0, ',', '.') }}
+                Pengiriman reguler via J&T (Rp{{ number_format($shippingCost, 0, ',', '.') }})
             </div>
         @elseif($shipping_method == 'SICEPAT')
             <div class="shipping-method-highlight">
-                SiCepat BEST | Ongkir: Rp{{ number_format($shippingCost, 0, ',', '.') }}
+                SiCepat (BEST) | Ongkir: Rp{{ number_format($shippingCost, 0, ',', '.') }}
             </div>
         @elseif($shipping_method == 'JNE')
             <div class="shipping-method-highlight">
-                JNE REG | Ongkir: Rp{{ number_format($shippingCost, 0, ',', '.') }}
+                JNE (REG) | Ongkir: Rp{{ number_format($shippingCost, 0, ',', '.') }}
             </div>
         @elseif($shipping_method == 'GOSEND')
             <div class="shipping-method-highlight">
-                GoSend Sameday | Ongkir: Rp{{ number_format($shippingCost, 0, ',', '.') }}
+                GoSend (Sameday) | Ongkir: Rp{{ number_format($shippingCost, 0, ',', '.') }}
             </div>
         @else
             <div class="shipping-method-highlight">
@@ -938,6 +966,7 @@
             <form id="createOrderForm" action="{{ route('user.orders.create') }}" method="POST" style="margin:0; flex: 1;">
                 @csrf
                 <input type="hidden" name="shipping_method" value="{{ $shipping_method }}">
+                <input type="hidden" name="shipping_service" value="{{ $shippingServiceNames[$shipping_method] ?? '-' }}">
                 @if($selectedAddress)
                 <input type="hidden" name="shipping_address_id" value="{{ $selectedAddress->id }}">
                 @endif
@@ -1196,14 +1225,54 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Logging waktu dan user saat ini
-    console.log('Current date and time: {{ $currentDateTime }}');
-    console.log('Current user: {{ $currentUserLogin }}');
+    // PERBAIKAN: Updated timestamps dan tambahkan logging untuk debug
+    console.log('Current date and time: 2025-07-29 14:13:26');
+    console.log('Current user: mulyadafa');
+    
+    // PERBAIKAN: Tambahkan logging untuk membantu debug
+    console.log('Confirm page loaded', {
+        'cartItems': {{ $cartItems->count() ?? 0 }},
+        'hasOrder': {{ isset($order) ? 'true' : 'false' }},
+        'shippingMethod': '{{ $shipping_method }}',
+        'paymentMethod': '{{ $payment_method }}',
+        'shippingCost': {{ $shippingCost }},
+        'hasAddress': {{ $selectedAddress ? 'true' : 'false' }},
+        'timestamp': '2025-07-29 14:13:26',
+        'user': 'mulyadafa'
+    });
     
     // Handle form submissions
     document.querySelectorAll('form').forEach(form => {
-        form.addEventListener('submit', function() {
-            // No loading animation
+        form.addEventListener('submit', function(e) {
+            // Prevent double submission
+            const submitButton = this.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = 'Memproses...';
+            }
+            
+            // Check if address is selected for createOrderForm
+            if (this.id === 'createOrderForm') {
+                const addressId = this.querySelector('input[name="shipping_address_id"]');
+                if (!addressId || !addressId.value) {
+                    e.preventDefault();
+                    alert('Silakan pilih alamat pengiriman terlebih dahulu.');
+                    if (submitButton) {
+                        submitButton.disabled = false;
+                        submitButton.innerHTML = 'Konfirmasi Pembayaran <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
+                    }
+                    return false;
+                }
+                
+                // Log form submission for debugging
+                console.log('Form submitted', {
+                    'shipping_method': '{{ $shipping_method }}',
+                    'shipping_cost': {{ $shippingCost }},
+                    'payment_method': '{{ $payment_method }}',
+                    'total': {{ $totalWithTax }},
+                    'timestamp': '2025-07-29 14:13:26'
+                });
+            }
         });
     });
     
@@ -1211,9 +1280,11 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('#back-to-cart').forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
-            window.location.href = "{{ route('user.cart.index') }}";
+            console.log('Back to cart clicked');
+            window.location.href = this.getAttribute('href');
         });
     });
 });
 </script>
 @endsection
+        

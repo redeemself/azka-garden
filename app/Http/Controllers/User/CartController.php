@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use App\Models\Product;
 use App\Models\Cart;
 use App\Models\Contact;
@@ -47,6 +48,167 @@ class CartController extends Controller
     }
 
     /**
+     * Tampilkan halaman konfirmasi pesanan dengan shipping cost yang benar
+     */
+    public function confirm(): View|RedirectResponse
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            return redirect()->route('login')
+                ->with('error', 'Anda harus login untuk melakukan konfirmasi pesanan');
+        }
+
+        $cartItems = Cart::where('user_id', $user->id)->with('product')->get();
+
+        if ($cartItems->isEmpty()) {
+            return redirect()->route('user.cart.index')
+                ->with('error', 'Keranjang Anda kosong. Silahkan tambahkan produk terlebih dahulu.');
+        }
+
+        // Get shipping method from session or set default
+        $shippingMethod = session('shipping_method', 'JNT');
+        $paymentMethod = session('payment_method', 'CASH');
+        $shippingAddressId = session('shipping_address_id');
+
+        // Calculate shipping cost based on method
+        $shippingCost = $this->calculateShippingCost($shippingMethod);
+
+        // Store shipping cost in session for consistency
+        session(['shipping_cost' => $shippingCost]);
+
+        // Get user addresses
+        $addresses = $user->addresses()->get();
+        $selectedAddress = null;
+        
+        if ($addresses->count()) {
+            $selectedAddress = $shippingAddressId 
+                ? $addresses->where('id', $shippingAddressId)->first() 
+                : ($addresses->where('is_primary', 1)->first() ?? $addresses->first());
+        }
+
+        // Calculate cart totals
+        $subtotal = 0;
+        $totalDiscount = 0;
+        $originalPriceTotal = 0;
+        
+        $promoCode = session('promo_code');
+        
+        foreach ($cartItems as $item) {
+            $product = $item->product;
+            if (!$product) continue;
+            
+            $itemPromo = $item->promo_code ?? $promoCode;
+            $promotion = $itemPromo ? Promotion::where('promo_code', $itemPromo)->first() : null;
+            $discount = 0;
+            $unitPrice = $product->price ?? 0;
+            $qty = $item->quantity ?? 0;
+            
+            $originalPriceTotal += $unitPrice * $qty;
+            
+            if ($promotion) {
+                if ($promotion->discount_type === 'percent') {
+                    $percent = $promotion->discount_value ?: 10;
+                    $discount = round($unitPrice * ($percent / 100));
+                } elseif ($promotion->discount_type === 'fixed') {
+                    $discount = min($promotion->discount_value ?: 0, $unitPrice);
+                }
+            }
+            
+            $discountedPrice = max(0, $unitPrice - $discount);
+            $itemTotal = $discountedPrice * $qty;
+            
+            $subtotal += $itemTotal;
+            $totalDiscount += $discount * $qty;
+        }
+
+        // Calculate final totals
+        $handlingFee = 0;
+        $paymentFee = 0;
+        $totalBeforeTax = $subtotal + $handlingFee + $shippingCost + $paymentFee;
+        $taxAmount = round($totalBeforeTax * 0.11); // PPN 11%
+        $totalWithTax = $totalBeforeTax + $taxAmount;
+
+        // Store order summary in session
+        session([
+            'order_summary' => [
+                'subtotal' => $subtotal,
+                'original_total' => $originalPriceTotal,
+                'discount' => $totalDiscount,
+                'handling_fee' => $handlingFee,
+                'shipping_cost' => $shippingCost,
+                'payment_fee' => $paymentFee,
+                'tax_amount' => $taxAmount,
+                'total' => $totalWithTax,
+                'shipping_method' => $shippingMethod,
+                'payment_method' => $paymentMethod
+            ]
+        ]);
+
+        return view('user.orders.confirm', compact(
+            'cartItems', 
+            'shippingCost', 
+            'selectedAddress', 
+            'addresses',
+            'subtotal',
+            'totalDiscount',
+            'originalPriceTotal',
+            'taxAmount',
+            'totalWithTax',
+            'shippingMethod',
+            'paymentMethod'
+        ));
+    }
+
+    /**
+     * Calculate shipping cost based on method - sesuai database shippings.sql
+     */
+    private function calculateShippingCost($method): float
+    {
+        // Shipping costs sesuai dengan database shippings.sql
+        $costs = [
+            'JNT' => 14000.00,          // ID 15 - J&T EZ
+            'GOSEND' => 25000.00,       // ID 13 - GoSend Sameday  
+            'JNE' => 12000.00,          // ID 14 - JNE REG
+            'SICEPAT' => 15000.00,      // ID 16 - SiCepat BEST
+            'KURIR_TOKO' => 15000.00,   // ID 11 - Default middle tier (5-10km)
+            'AMBIL_SENDIRI' => 0.00     // ID 17 - Free pickup
+        ];
+        
+        // Log untuk debugging
+        Log::info('Calculating shipping cost', [
+            'method' => $method,
+            'cost' => $costs[$method] ?? 0,
+            'timestamp' => now()->format('Y-m-d H:i:s')
+        ]);
+        
+        return $costs[$method] ?? 0;
+    }
+
+    /**
+     * Get shipping cost via AJAX
+     */
+    public function getShippingCost(Request $request): JsonResponse
+    {
+        try {
+            $method = $request->input('method');
+            $cost = $this->calculateShippingCost($method);
+            
+            return response()->json([
+                'success' => true,
+                'cost' => $cost,
+                'formatted_cost' => 'Rp' . number_format($cost, 0, ',', '.')
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghitung ongkos kirim',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
+    }
+
+    /**
      * Process checkout from cart
      */
     public function checkout(Request $request): View|RedirectResponse
@@ -67,6 +229,9 @@ class CartController extends Controller
 
         if ($request->has('shipping_method')) {
             session(['shipping_method' => $request->shipping_method]);
+            // Recalculate shipping cost when method changes
+            $shippingCost = $this->calculateShippingCost($request->shipping_method);
+            session(['shipping_cost' => $shippingCost]);
         }
 
         if ($request->has('payment_method')) {
@@ -78,7 +243,8 @@ class CartController extends Controller
         }
 
         if (!session('shipping_method')) {
-            session(['shipping_method' => 'KURIR_TOKO']);
+            session(['shipping_method' => 'JNT']); // Default ke JNT
+            session(['shipping_cost' => $this->calculateShippingCost('JNT')]);
         }
 
         if (!session('payment_method')) {
@@ -93,7 +259,7 @@ class CartController extends Controller
             }
         }
 
-        return view('User.orders.confirm', compact('cartItems'));
+        return redirect()->route('user.cart.confirm');
     }
 
     /**
@@ -364,7 +530,7 @@ class CartController extends Controller
     }
 
     /**
-     * Simpan metode pengiriman ke session.
+     * Simpan metode pengiriman ke session dan update shipping cost.
      */
     public function saveShipping(Request $request): JsonResponse
     {
@@ -373,11 +539,22 @@ class CartController extends Controller
                 'shipping_method' => 'required|string|max:50',
             ]);
 
-            session(['shipping_method' => $request->shipping_method]);
+            $shippingMethod = $request->shipping_method;
+            $shippingCost = $this->calculateShippingCost($shippingMethod);
+
+            session([
+                'shipping_method' => $shippingMethod,
+                'shipping_cost' => $shippingCost
+            ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Metode pengiriman berhasil disimpan'
+                'message' => 'Metode pengiriman berhasil disimpan',
+                'data' => [
+                    'shipping_method' => $shippingMethod,
+                    'shipping_cost' => $shippingCost,
+                    'formatted_cost' => 'Rp' . number_format($shippingCost, 0, ',', '.')
+                ]
             ]);
         } catch (Exception $e) {
             Log::error('Error saving shipping method', [
