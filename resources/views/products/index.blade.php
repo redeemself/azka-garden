@@ -5,12 +5,17 @@
 @section('content')
 @php
     $user = auth()->user();
+<<<<<<< HEAD
+=======
+    // Cek alamat: relasi addresses harus pakai method (Eloquent)
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     $hasAddress = $user && method_exists($user, 'addresses') && $user->addresses()->count();
     $promo_code = session('promo_code');
     $promo_type = session('promo_type');
     $promo_discount = session('promo_discount');
     $promo_discount_percent = ($promo_type === 'percent') ? 10.0 : null;
 
+<<<<<<< HEAD
     // Hitung jumlah item di keranjang dari database jika login, dari session jika guest
     if (auth()->check()) {
         $cartItemCount = \App\Models\Cart::where('user_id', auth()->id())->sum('quantity');
@@ -20,6 +25,20 @@
             $cartItems = collect($cartItems);
         }
         $cartItemCount = $cartItems->sum('quantity');
+=======
+    // Ambil data keranjang dari session
+    $cartItems = session('cart_items') ?? session('cartItems') ?? collect();
+
+    // Konversi ke collection jika bukan collection
+    if (!($cartItems instanceof \Illuminate\Support\Collection)) {
+        $cartItems = collect($cartItems);
+    }
+
+    // Hitung jumlah item di keranjang
+    $cartItemCount = 0;
+    foreach ($cartItems as $item) {
+        $cartItemCount += $item->quantity ?? 0;
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     }
 
     // Prepare images for preloading to reduce lag
@@ -33,6 +52,10 @@
         asset('images/hero-7.jpg'),
     ];
 
+<<<<<<< HEAD
+=======
+    // Current date and time for reference
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     $currentDateTime = '2025-07-28 09:48:35';
     $currentUser = 'redeemself';
 @endphp
@@ -638,12 +661,20 @@
     <div
         class="absolute inset-0 bg-center bg-cover transition-opacity duration-[1200ms] ease-in-out z-10 hero-layer"
         :class="frontLayer ? 'opacity-100' : 'opacity-0'"
+<<<<<<< HEAD
         :style="'background-image: url(\'' + heroImages[currentBg] + '\')'"
+=======
+        :style="`background-image: url('${heroImages[currentBg]}');`"
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     ></div>
     <div
         class="absolute inset-0 bg-center bg-cover transition-opacity duration-[1200ms] ease-in-out z-0 hero-layer"
         :class="!frontLayer ? 'opacity-100' : 'opacity-0'"
+<<<<<<< HEAD
         :style="'background-image: url(\'' + heroImages[nextBg] + '\')'"
+=======
+        :style="`background-image: url('${heroImages[nextBg]}');`"
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     ></div>
     <div class="absolute inset-0 pointer-events-none bg-gradient-to-br from-black/60 via-black/50 to-green-900/40"></div>
 
@@ -713,14 +744,22 @@
 
                 <form method="POST" action="{{ route('promo.activate') }}" id="promoForm" class="flex flex-col">
                     @csrf
+<<<<<<< HEAD
                     <div class="flex-1 p-4 border border-green-200 rounded-lg bg-green-50">
+=======
+                    <div class="flex-1 p-4 bg-green-50 border border-green-200 rounded-lg">
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                         <p class="mb-2 font-semibold text-green-800">Punya kode promo? Aktifkan disini:</p>
                         <div class="flex flex-wrap gap-2">
                             <input type="text" name="promo_code" value="{{ old('promo_code', session('promo_code')) }}"
                                    placeholder="Masukkan kode promo"
                                    class="flex-1 px-4 py-2 min-w-[150px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 promo-input" />
                             <button type="submit"
+<<<<<<< HEAD
                                     class="px-5 py-2 text-white transition-all bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 promo-button">
+=======
+                                    class="px-5 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all promo-button">
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                                 Aktifkan
                             </button>
                         </div>
@@ -747,7 +786,11 @@
                 </div>
                 <form method="POST" action="{{ route('promo.deactivate') }}">
                     @csrf
+<<<<<<< HEAD
                     <button type="submit" class="px-4 py-2 text-white transition-all bg-gray-800 rounded-lg hover:bg-gray-900">Nonaktifkan</button>
+=======
+                    <button type="submit" class="px-4 py-2 text-white bg-gray-800 rounded-lg hover:bg-gray-900 transition-all">Nonaktifkan</button>
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                 </form>
             </div>
         @endif
@@ -763,7 +806,11 @@
             </div>
         </div>
 
+<<<<<<< HEAD
         <div class="mb-12 product-grid">
+=======
+        <div class="product-grid mb-12">
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             @forelse($products as $product)
                 @php
                     $final_price = $product->price;
@@ -796,15 +843,26 @@
                         ->values();
                 @endphp
 
+<<<<<<< HEAD
                 <div class="overflow-hidden product-card rounded-xl">
+=======
+                <div class="product-card overflow-hidden rounded-xl">
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                     @if($promo_active)
                         <div class="discount-badge">DISKON {{ $promo_label }}</div>
                     @endif
 
+<<<<<<< HEAD
                     <div class="p-2 product-image-container">
                         <div class="grid grid-cols-2 gap-2">
                             @foreach($displayImages->take(2) as $index => $img)
                                 <div class="overflow-hidden bg-white rounded-lg aspect-square">
+=======
+                    <div class="product-image-container p-2">
+                        <div class="grid grid-cols-2 gap-2">
+                            @foreach($displayImages->take(2) as $index => $img)
+                                <div class="aspect-square rounded-lg overflow-hidden bg-white">
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                                     <img
                                         src="{{ asset($img->image_url) }}"
                                         alt="{{ $product->name }} {{ $index + 1 }}"
@@ -816,7 +874,11 @@
                             @endforeach
                             @if($displayImages->count() < 2)
                                 @if($displayImages->count() == 1)
+<<<<<<< HEAD
                                     <div class="overflow-hidden bg-white rounded-lg aspect-square">
+=======
+                                    <div class="aspect-square rounded-lg overflow-hidden bg-white">
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                                         <img
                                             src="{{ asset($displayImages->first()->image_url) }}"
                                             alt="{{ $product->name }} 1"
@@ -825,7 +887,11 @@
                                             onerror="this.onerror=null;this.src='{{ asset('images/produk/placeholder.png') }}';"
                                         >
                                     </div>
+<<<<<<< HEAD
                                     <div class="overflow-hidden bg-white rounded-lg aspect-square">
+=======
+                                    <div class="aspect-square rounded-lg overflow-hidden bg-white">
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                                         <img
                                             src="{{ asset($product->image_url ?? 'images/produk/placeholder.png') }}"
                                             alt="{{ $product->name }} 2"
@@ -834,7 +900,11 @@
                                         >
                                     </div>
                                 @else
+<<<<<<< HEAD
                                     <div class="overflow-hidden bg-white rounded-lg aspect-square">
+=======
+                                    <div class="aspect-square rounded-lg overflow-hidden bg-white">
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                                         <img
                                             src="{{ asset($product->image_url ?? 'images/produk/placeholder.png') }}"
                                             alt="{{ $product->name }} 1"
@@ -842,7 +912,11 @@
                                             loading="lazy"
                                         >
                                     </div>
+<<<<<<< HEAD
                                     <div class="overflow-hidden bg-white rounded-lg aspect-square">
+=======
+                                    <div class="aspect-square rounded-lg overflow-hidden bg-white">
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                                         <img
                                             src="{{ asset('images/produk/placeholder.png') }}"
                                             alt="{{ $product->name }} 2"
@@ -887,11 +961,20 @@
                                 Detail
                             </a>
                             @auth
+<<<<<<< HEAD
                                 <form method="POST" action="{{ route('user.cart.add') }}" class="add-to-cart-form">
                                     @csrf
                                     <input type="hidden" name="product_id" value="{{ $product->id }}">
                                     <input type="hidden" name="promo_code" value="{{ session('promo_code') ?? '' }}">
                                     <input type="hidden" name="price" value="{{ $final_price }}">
+=======
+                                <form method="POST" action="{{ route('user.cart.add') }}">
+                                    @csrf
+                                    <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                    @if($promo_code)
+                                    <input type="hidden" name="promo_code" value="{{ $promo_code }}">
+                                    @endif
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                                     <button type="submit"
                                         class="flex items-center justify-center w-full px-4 py-2.5 text-white bg-green-700 rounded-lg hover:bg-green-800 add-to-cart-btn transition-all">
                                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -914,7 +997,11 @@
                     </div>
                 </div>
             @empty
+<<<<<<< HEAD
                 <div class="p-8 bg-white col-span-full rounded-xl">
+=======
+                <div class="col-span-full p-8 bg-white rounded-xl">
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                     <div class="flex flex-col items-center text-center">
                         <svg class="w-16 h-16 mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -940,6 +1027,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // CSRF Token for AJAX requests
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
+<<<<<<< HEAD
     function showLoadingOverlay() {
         const overlay = document.querySelector('.loading-overlay');
         if (overlay) overlay.classList.add('active');
@@ -960,6 +1048,37 @@ document.addEventListener('DOMContentLoaded', function() {
                         ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>'
                         : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>'
                     }
+=======
+    // Show loading overlay
+    function showLoadingOverlay() {
+        const overlay = document.querySelector('.loading-overlay');
+        if (overlay) {
+            overlay.classList.add('active');
+        }
+    }
+
+    // Hide loading overlay
+    function hideLoadingOverlay() {
+        const overlay = document.querySelector('.loading-overlay');
+        if (overlay) {
+            overlay.classList.remove('active');
+        }
+    }
+
+    // Show toast notification
+    function showToast(type, title, message, duration = 3000) {
+        const toastContainer = document.getElementById('toastContainer');
+
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+
+        toast.innerHTML = `
+            <div class="toast-icon">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    ${type === 'success'
+                        ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
+                        : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'}
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                 </svg>
             </div>
             <div class="toast-content">
@@ -968,21 +1087,37 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <button class="toast-close">&times;</button>
         `;
+<<<<<<< HEAD
+=======
+
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         toastContainer.appendChild(toast);
 
         toast.querySelector('.toast-close').addEventListener('click', () => {
             toast.classList.remove('show');
             setTimeout(() => toast.remove(), 300);
         });
+<<<<<<< HEAD
         requestAnimationFrame(() => {
             requestAnimationFrame(() => { toast.classList.add('show'); });
         });
+=======
+
+        // Ensure proper animation timing
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                toast.classList.add('show');
+            });
+        });
+
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         setTimeout(() => {
             toast.classList.remove('show');
             setTimeout(() => toast.remove(), 300);
         }, duration);
     }
 
+<<<<<<< HEAD
     // Function to handle fetch with timeout
     async function fetchWithTimeout(url, options, timeout = 10000) {
         const controller = new AbortController();
@@ -1062,6 +1197,39 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Promo form AJAX with improved error handling
+=======
+    // Update cart counter with actual count
+    function updateCartCounter() {
+        const counter = document.getElementById('cart-counter');
+        if (counter) {
+            // Get the actual count from the initial PHP value or localStorage
+            const count = {{ $cartItemCount }} || parseInt(localStorage.getItem('cartItemCount') || '0');
+            counter.textContent = count;
+
+            // Store in localStorage for persistence
+            localStorage.setItem('cartItemCount', count);
+        }
+    }
+
+    // Add loading indicator for all cart forms
+    document.querySelectorAll('form[action="{{ route("user.cart.add") }}"]').forEach(form => {
+        form.addEventListener('submit', function() {
+            showLoadingOverlay();
+
+            // Increment cart counter
+            const counter = document.getElementById('cart-counter');
+            if (counter) {
+                const currentCount = parseInt(counter.textContent || '0');
+                counter.textContent = currentCount + 1;
+
+                // Store in localStorage
+                localStorage.setItem('cartItemCount', currentCount + 1);
+            }
+        });
+    });
+
+    // Handle promo form with AJAX
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     const promoForm = document.getElementById('promoForm');
     if (promoForm) {
         promoForm.addEventListener('submit', function(e) {
@@ -1069,10 +1237,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const formData = new FormData(this);
             const promoCode = formData.get('promo_code');
+<<<<<<< HEAD
+=======
+
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             if (!promoCode) {
                 showToast('error', 'Error', 'Masukkan kode promo terlebih dahulu');
                 return;
             }
+<<<<<<< HEAD
             
             showLoadingOverlay();
             
@@ -1124,9 +1297,51 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+=======
+
+            showLoadingOverlay();
+
+            fetch(this.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: formData
+            })
+            .then(response => response.json().catch(() => {
+                if (response.ok) {
+                    return { success: true };
+                }
+                throw new Error('Network response was not ok');
+            }))
+            .then(data => {
+                if (data.success) {
+                    showToast('success', 'Berhasil', 'Kode promo berhasil diterapkan');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    throw new Error(data.message || 'Gagal menerapkan kode promo');
+                }
+            })
+            .catch(error => {
+                console.error('Error applying promo code:', error);
+                hideLoadingOverlay();
+                showToast('error', 'Gagal', 'Kode promo tidak valid atau tidak dapat diterapkan');
+            });
+        });
+    }
+
+    // Initialize cart counter with actual value
+    updateCartCounter();
+
+    // Automatically hide loading overlay when page is fully loaded
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     window.addEventListener('load', function() {
         hideLoadingOverlay();
     });
 });
 </script>
+<<<<<<< HEAD
 @endsection
+=======
+@endsection
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)

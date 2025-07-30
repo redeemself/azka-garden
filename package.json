@@ -9,7 +9,10 @@
   "dependencies": {
     "axios": "^1.8.2",
     "chart.js": "^4.5.0",
+<<<<<<< HEAD
     "esbuild": "^0.25.8",
+=======
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     "flatpickr": "^4.6.13",
     "lodash": "^4.17.21"
   },

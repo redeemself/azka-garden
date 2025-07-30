@@ -12,7 +12,10 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $note
  * @property int $interface_id
  * @property int|null $discount
+<<<<<<< HEAD
  * @property int $price
+=======
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
  * @property string|null $promo_code
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -25,6 +28,7 @@ class Cart extends Model
     protected $table = 'carts'; // pastikan sesuai dengan nama tabel di database
 
     protected $fillable = [
+<<<<<<< HEAD
         'user_id',
         'product_id',
         'quantity',
@@ -33,6 +37,9 @@ class Cart extends Model
         'promo_code',
         'discount',
         'price' // <<< tambahkan ini agar tidak error pada akses property price
+=======
+        'user_id', 'product_id', 'quantity', 'note', 'interface_id', 'promo_code', 'discount'
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     ];
 
     // relasi ke user

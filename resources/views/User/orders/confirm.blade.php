@@ -7,21 +7,32 @@
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\Session;
     use Illuminate\Support\Facades\DB;
+<<<<<<< HEAD
     use App\Models\Cart;
     
     // Informasi waktu dan pengguna saat ini
     $currentDateTime = '2025-07-29 14:13:26';
     $currentUserLogin = 'mulyadafa';
+=======
+    
+    // Informasi waktu dan pengguna saat ini
+    $currentDateTime = '2025-07-28 14:41:10';
+    $currentUserLogin = 'redeemself';
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     
     // Data user & alamat
     $user = Auth::user();
     $addresses = $user && method_exists($user, 'addresses') ? $user->addresses()->get() : collect();
     
     // Get cart items - try to retrieve from multiple possible session keys
+<<<<<<< HEAD
     // PERBAIKAN: Tambahkan fallback ke Cart model jika user terautentikasi
     $cartItems = session('cart_items') 
         ?? session('cartItems') 
         ?? (Auth::check() ? Cart::with('product')->where('user_id', Auth::id())->get() : collect());
+=======
+    $cartItems = session('cart_items') ?? session('cartItems') ?? collect();
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     
     // Convert to collection if needed
     if (!($cartItems instanceof \Illuminate\Support\Collection)) {
@@ -78,6 +89,7 @@
         'AMBIL_SENDIRI' => 'Ambil Sendiri di Toko',
     ];
     
+<<<<<<< HEAD
     // Map shipping methods to service names from the database
     $shippingServiceNames = [
         'KURIR_TOKO' => 'Internal',
@@ -95,6 +107,15 @@
         'JNE' => 'Pengiriman reguler via JNE (Rp12.000)',
         'JNT' => 'Pengiriman reguler via J&T (Rp14.000)',
         'SICEPAT' => 'Pengiriman reguler via SiCepat (Rp15.000)',
+=======
+    // Display names for shipping methods
+    $shippingMethodDescriptions = [
+        'KURIR_TOKO' => 'Pengiriman langsung dari toko Azka Garden. Ongkir flat sesuai jarak: (<5km) Rp10.000, (5-10km) Rp15.000, (>10km) Rp20.000',
+        'GOSEND' => 'Pengiriman cepat via GoSend (estimasi Rp15.000-30.000 sesuai aplikasi)',
+        'JNE' => 'Pengiriman reguler via JNE (8.000-20.000/kg, estimasi aplikasi atau admin)',
+        'JNT' => 'Pengiriman reguler via J&T (10.000-22.000/kg, estimasi aplikasi atau admin)',
+        'SICEPAT' => 'Pengiriman reguler via SiCepat (10.000-18.000/kg, estimasi aplikasi atau admin)',
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         'AMBIL_SENDIRI' => 'Ambil langsung di toko Azka Garden, bebas ongkir!',
     ];
     
@@ -116,6 +137,7 @@
             : ($addresses->where('is_primary', 1)->first() ?? $addresses->first());
     }
     
+<<<<<<< HEAD
     // Define shipping costs based on the database values from shippings.sql
     $shippingCostsFromDB = [
         'JNT' => 14000.00,  // Pastikan ini 14000, bukan 25000
@@ -168,6 +190,36 @@
         // Use the default values defined above if there's an error
     }
     
+=======
+    // Fetch shipping costs directly from the database
+    try {
+        $shippingData = DB::table('shippings')
+            ->select('courier', 'shipping_cost')
+            ->get();
+        
+        // Map shipping costs to array
+        $shippingCostsFromDB = [];
+        foreach ($shippingData as $data) {
+            // Normalize courier name - replace space with underscore and uppercase
+            $courier = strtoupper(str_replace(' ', '_', $data->courier));
+            $shippingCostsFromDB[$courier] = floatval($data->shipping_cost);
+        }
+    } catch (\Exception $e) {
+        // If query fails, use empty array
+        $shippingCostsFromDB = [];
+    }
+    
+    // Fallback shipping costs from SQL file if DB query doesn't provide complete data
+    $fixedShippingCosts = [
+        'KURIR_TOKO' => 10000, // Base cost (<5km) - adjusts based on distance
+        'GOSEND' => 25000,
+        'JNE' => 12000,
+        'JNT' => 14000,
+        'SICEPAT' => 15000,
+        'AMBIL_SENDIRI' => 0
+    ];
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // IMPORTANT: Handle 'AMBIL_SENDIRI' case first to ensure it's always free
     if ($shipping_method == 'AMBIL_SENDIRI') {
         $shippingCost = 0; // Always free for pickup
@@ -178,6 +230,7 @@
     }
     // Otherwise calculate based on shipping method
     else {
+<<<<<<< HEAD
         switch ($shipping_method) {
             case 'KURIR_TOKO':
                 // Calculate based on distance if we have coordinates
@@ -220,6 +273,62 @@
                 
             default:
                 $shippingCost = 0;
+=======
+        // First check if we have a value from the database
+        $courier = strtoupper(str_replace(' ', '_', $shipping_method));
+        
+        if (isset($shippingCostsFromDB[$courier])) {
+            $shippingCost = $shippingCostsFromDB[$courier];
+        }
+        // If not in database, calculate based on method with fallbacks
+        else {
+            switch ($shipping_method) {
+                case 'KURIR_TOKO':
+                    // Handle different distance tiers for KURIR_TOKO
+                    $shippingCost = $fixedShippingCosts['KURIR_TOKO']; // Default to base cost
+                    
+                    // If we have selected address and coordinates, adjust based on distance
+                    if ($selectedAddress && isset($selectedAddress->latitude) && isset($selectedAddress->longitude)) {
+                        $lat = floatval($selectedAddress->latitude);
+                        $lng = floatval($selectedAddress->longitude);
+                        
+                        // Calculate distance using Haversine formula (approximate)
+                        $distance = sqrt(pow($lat - $toko_lat, 2) + pow($lng - $toko_lng, 2)) * 111.32; // km
+                        
+                        // Apply tiered pricing based on distance
+                        if ($distance > 10) {
+                            $shippingCost = 20000; // > 10km (from shippings.sql record 2003)
+                        } elseif ($distance > 5) {
+                            $shippingCost = 15000; // 5-10km (from shippings.sql record 2002)
+                        } else {
+                            $shippingCost = 10000; // < 5km (from shippings.sql record 2001)
+                        }
+                    } else {
+                        // No coordinates, default to middle tier (most common)
+                        $shippingCost = 15000; // Default to 5-10km rate
+                    }
+                    break;
+                    
+                case 'GOSEND':
+                    $shippingCost = $fixedShippingCosts['GOSEND']; // 25000 from shippings.sql
+                    break;
+                    
+                case 'JNE':
+                    $shippingCost = $fixedShippingCosts['JNE']; // 12000 from shippings.sql
+                    break;
+                    
+                case 'JNT':
+                    $shippingCost = $fixedShippingCosts['JNT']; // 14000 from shippings.sql
+                    break;
+                    
+                case 'SICEPAT':
+                    $shippingCost = $fixedShippingCosts['SICEPAT']; // 15000 from shippings.sql
+                    break;
+                    
+                default:
+                    $shippingCost = 0;
+            }
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         }
     }
     
@@ -305,9 +414,13 @@
         'tax_amount' => $taxAmount,
         'total' => $totalWithTax,
         'shipping_method' => $shipping_method,
+<<<<<<< HEAD
         'shipping_method_display' => $shipping_method_display,
         'processed_at' => $currentDateTime,
         'processed_by' => $currentUserLogin
+=======
+        'shipping_method_display' => $shipping_method_display
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     ]);
 @endphp
 
@@ -762,6 +875,7 @@
         
         @if($shipping_method == 'KURIR_TOKO')
             <div class="shipping-method-highlight">
+<<<<<<< HEAD
                 @if($shippingCost == 10000.00)
                     Kurir Toko (Internal) | Jarak < 5km | Ongkir: Rp10.000
                 @elseif($shippingCost == 15000.00)
@@ -770,6 +884,16 @@
                     Kurir Toko (Internal) | Jarak > 10km | Ongkir: Rp20.000
                 @else
                     Kurir Toko (Internal) | Ongkir: Rp{{ number_format($shippingCost, 0, ',', '.') }}
+=======
+                @if($shippingCost == 10000)
+                    Kurir Toko | Jarak < 5km | Ongkir: Rp10.000
+                @elseif($shippingCost == 15000)
+                    Kurir Toko | Jarak 5-10km | Ongkir: Rp15.000
+                @elseif($shippingCost == 20000)
+                    Kurir Toko | Jarak > 10km | Ongkir: Rp20.000
+                @else
+                    Kurir Toko | Ongkir: Rp{{ number_format($shippingCost, 0, ',', '.') }}
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                 @endif
             </div>
         @elseif($shipping_method == 'AMBIL_SENDIRI')
@@ -783,6 +907,7 @@
             </div>
         @elseif($shipping_method == 'JNT')
             <div class="shipping-method-highlight">
+<<<<<<< HEAD
                 Pengiriman reguler via J&T (Rp{{ number_format($shippingCost, 0, ',', '.') }})
             </div>
         @elseif($shipping_method == 'SICEPAT')
@@ -796,6 +921,21 @@
         @elseif($shipping_method == 'GOSEND')
             <div class="shipping-method-highlight">
                 GoSend (Sameday) | Ongkir: Rp{{ number_format($shippingCost, 0, ',', '.') }}
+=======
+                J&T EZ | Ongkir: Rp{{ number_format($shippingCost, 0, ',', '.') }}
+            </div>
+        @elseif($shipping_method == 'SICEPAT')
+            <div class="shipping-method-highlight">
+                SiCepat BEST | Ongkir: Rp{{ number_format($shippingCost, 0, ',', '.') }}
+            </div>
+        @elseif($shipping_method == 'JNE')
+            <div class="shipping-method-highlight">
+                JNE REG | Ongkir: Rp{{ number_format($shippingCost, 0, ',', '.') }}
+            </div>
+        @elseif($shipping_method == 'GOSEND')
+            <div class="shipping-method-highlight">
+                GoSend Sameday | Ongkir: Rp{{ number_format($shippingCost, 0, ',', '.') }}
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             </div>
         @else
             <div class="shipping-method-highlight">
@@ -966,7 +1106,10 @@
             <form id="createOrderForm" action="{{ route('user.orders.create') }}" method="POST" style="margin:0; flex: 1;">
                 @csrf
                 <input type="hidden" name="shipping_method" value="{{ $shipping_method }}">
+<<<<<<< HEAD
                 <input type="hidden" name="shipping_service" value="{{ $shippingServiceNames[$shipping_method] ?? '-' }}">
+=======
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                 @if($selectedAddress)
                 <input type="hidden" name="shipping_address_id" value="{{ $selectedAddress->id }}">
                 @endif
@@ -1225,6 +1368,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+<<<<<<< HEAD
     // PERBAIKAN: Updated timestamps dan tambahkan logging untuk debug
     console.log('Current date and time: 2025-07-29 14:13:26');
     console.log('Current user: mulyadafa');
@@ -1273,6 +1417,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     'timestamp': '2025-07-29 14:13:26'
                 });
             }
+=======
+    // Logging waktu dan user saat ini
+    console.log('Current date and time: {{ $currentDateTime }}');
+    console.log('Current user: {{ $currentUserLogin }}');
+    
+    // Handle form submissions
+    document.querySelectorAll('form').forEach(form => {
+        form.addEventListener('submit', function() {
+            // No loading animation
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         });
     });
     
@@ -1280,11 +1434,19 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('#back-to-cart').forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
+<<<<<<< HEAD
             console.log('Back to cart clicked');
             window.location.href = this.getAttribute('href');
+=======
+            window.location.href = "{{ route('user.cart.index') }}";
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         });
     });
 });
 </script>
+<<<<<<< HEAD
 @endsection
         
+=======
+@endsection
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)

@@ -422,8 +422,11 @@ return array(
     'Database\\Seeders\\InterfaceSeeder' => $baseDir . '/database/seeders/InterfaceSeeder.php',
     'Database\\Seeders\\PaymentMethodSeeder' => $baseDir . '/database/seeders/PaymentMethodSeeder.php',
     'Database\\Seeders\\RoleSeeder' => $baseDir . '/database/seeders/RoleSeeder.php',
+<<<<<<< HEAD
     'Database\\Seeders\\ShippingMethodSeeder' => $baseDir . '/database/seeders/ShippingMethodSeeder.php',
     'Database\\Seeders\\ShippingSeeder' => $baseDir . '/database/seeders/ShippingSeeder.php',
+=======
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     'Database\\Seeders\\SyncContactPromoSeeder' => $baseDir . '/database/seeders/SyncContactPromoSeeder.php',
     'DateError' => $vendorDir . '/symfony/polyfill-php83/Resources/stubs/DateError.php',
     'DateException' => $vendorDir . '/symfony/polyfill-php83/Resources/stubs/DateException.php',

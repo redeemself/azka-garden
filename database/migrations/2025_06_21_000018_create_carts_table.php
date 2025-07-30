@@ -8,7 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
+<<<<<<< HEAD
         // Jika tabel belum ada, buat baru dengan kolom lengkap
+=======
+        // Jika ingin migrasi baru, sebaiknya jangan drop dulu (kecuali memang ingin menghapus semua data lama)
+        // Schema::dropIfExists('carts'); // Hapus jika ingin menambah kolom ke tabel yang sudah ada
+
+        // Jika tabel sudah ada, cukup modify:
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         if (!Schema::hasTable('carts')) {
             Schema::create('carts', function (Blueprint $table) {
                 $table->id();
@@ -18,10 +25,14 @@ return new class extends Migration
                 $table->foreignId('product_id')
                       ->constrained('products')
                       ->onDelete('cascade');
+<<<<<<< HEAD
                 $table->integer('quantity')->default(1);
                 $table->string('promo_code')->nullable();
                 $table->integer('discount')->default(0);
                 $table->integer('price')->default(0); // Kolom harga promo/final
+=======
+                $table->integer('quantity')->default(1); // Pastikan ada default!
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                 $table->text('note')->nullable();
                 $table->foreignId('interface_id')
                       ->default(1)
@@ -29,6 +40,7 @@ return new class extends Migration
                 $table->timestamps();
             });
         } else {
+<<<<<<< HEAD
             // Jika tabel sudah ada, tambahkan kolom jika belum ada
             Schema::table('carts', function (Blueprint $table) {
                 if (!Schema::hasColumn('carts', 'promo_code')) {
@@ -40,6 +52,10 @@ return new class extends Migration
                 if (!Schema::hasColumn('carts', 'price')) {
                     $table->integer('price')->default(0);
                 }
+=======
+            // Jika tabel sudah ada, dan ingin menambah/mengubah kolom:
+            Schema::table('carts', function (Blueprint $table) {
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                 if (!Schema::hasColumn('carts', 'quantity')) {
                     $table->integer('quantity')->default(1);
                 }
@@ -59,4 +75,8 @@ return new class extends Migration
     {
         Schema::dropIfExists('carts');
     }
+<<<<<<< HEAD
 };
+=======
+};
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)

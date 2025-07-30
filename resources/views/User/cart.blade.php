@@ -58,8 +58,11 @@
 @endphp
 
 <style>
+<<<<<<< HEAD
     /* All the original styles remain unchanged */
     /* Styles section remains the same, no changes needed */
+=======
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
 :root {
     --primary: #166534;
     --primary-light: #16a34a;
@@ -1282,11 +1285,19 @@
         max-width: none;
         width: auto;
     }
+<<<<<<< HEAD
 
     .cart-empty {
         min-height: 300px;
     }
 
+=======
+    
+    .cart-empty {
+        min-height: 300px;
+    }
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     .cart-empty-icon svg {
         width: 80px;
         height: 80px;
@@ -1380,7 +1391,11 @@
                             $grand_total = 0;
                             $total_discount = 0;
                         @endphp
+<<<<<<< HEAD
                         @foreach($cartItems as $index => $item)
+=======
+                        @foreach($cartItems as $item)
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                             @php
                                 $promo = $item->promo_code ?? $promo_code;
                                 $promotion = $promo ? \App\Models\Promotion::where('promo_code', $promo)->first() : null;
@@ -1403,7 +1418,10 @@
                                 $total_discount += $discount * $qty;
                             @endphp
                             <tr data-item-row="{{ $item->id }}" data-unit-price="{{ $unit_price }}" data-discounted-price="{{ $discounted_price }}">
+<<<<<<< HEAD
                                 <td>{{ $index + 1 }}</td> <!-- Penomoran item -->
+=======
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                                 <td>
                                     <div class="flex items-center">
                                         <img src="{{ asset($item->product->image_url ?? 'images/no-image.png') }}" alt="{{ $item->product->name }}" class="cart-item-image">
@@ -1650,6 +1668,7 @@
                     </div>
                     <div class="cart-panel-body">
                         @if($allMethods->count())
+<<<<<<< HEAD
                             <!-- Payment method selection (tetap ditampilkan untuk validasi sebelum checkout) -->
                             <div class="payment-methods">
                                 @foreach($allMethods as $method)
@@ -1701,6 +1720,59 @@
                                     Checkout
                                 </a>
                             </div>
+=======
+                            <form id="form-checkout" action="{{ route('user.orders.create') }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="shipping_method" id="shipping_method_input" value="{{ $selected_shipping }}">
+                                @if($primaryAddress)
+                                    <input type="hidden" name="shipping_address_id" value="{{ $primaryAddress->id }}">
+                                @endif
+
+                                <div class="payment-methods">
+                                    @foreach($allMethods as $method)
+                                        <label class="payment-method{{ $selected_payment === $method->code ? ' selected' : '' }}">
+                                            <input type="radio" name="payment_method" value="{{ $method->code }}" class="payment-method-radio" {{ $selected_payment === $method->code ? 'checked' : '' }} required>
+                                            <div class="payment-method-icon">
+                                                @switch($method->code)
+                                                    @case('CASH')
+                                                        <i data-feather="dollar-sign"></i>
+                                                        @break
+                                                    @case('COD_QRIS')
+                                                        <i data-feather="smartphone"></i>
+                                                        @break
+                                                    @case('QRIS')
+                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                            <path d="M3 3H9V9H3V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                            <path d="M15 3H21V9H15V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                            <path d="M3 15H9V21H3V15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                            <path d="M15 15H21V21H15V15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                        </svg>
+                                                        @break
+                                                    @case('EWALLET')
+                                                        <i data-feather="smartphone"></i>
+                                                        @break
+                                                    @default
+                                                        <i data-feather="credit-card"></i>
+                                                @endswitch
+                                            </div>
+                                            <div class="payment-method-details">
+                                                <div class="payment-method-name">{{ $method->name }}</div>
+                                                @if($method->config)
+                                                    <div class="payment-method-desc">
+                                                        {{ is_array($method->config) ? ($method->config['desc'] ?? '') : (json_decode($method->config)->desc ?? '') }}
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        </label>
+                                    @endforeach
+                                </div>
+
+                                <button type="submit" class="cart-checkout">
+                                    <i data-feather="shopping-bag"></i>
+                                    Checkout Sekarang
+                                </button>
+                            </form>
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                         @else
                             <div class="p-4 text-center border border-red-300 rounded-lg text-error bg-error-bg">
                                 <i data-feather="alert-circle" class="mx-auto mb-2"></i>
@@ -2080,12 +2152,20 @@ const loadingOverlay = {
 function ensureCsrfToken() {
     // Check for meta tag
     let token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // If not found, check for input
     if (!token) {
         token = document.querySelector('input[name="_token"]')?.value;
     }
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // If still not found, create one
     if (!token) {
         const tokenInput = document.createElement('input');
@@ -2093,23 +2173,38 @@ function ensureCsrfToken() {
         tokenInput.name = '_token';
         tokenInput.value = '{{ csrf_token() }}';
         document.body.appendChild(tokenInput);
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Add meta tag too
         const metaToken = document.createElement('meta');
         metaToken.name = 'csrf-token';
         metaToken.content = '{{ csrf_token() }}';
         document.head.appendChild(metaToken);
+<<<<<<< HEAD
 
         token = '{{ csrf_token() }}';
     }
 
+=======
+        
+        token = '{{ csrf_token() }}';
+    }
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Add to default fetch headers
     window.fetchDefaults = window.fetchDefaults || {};
     window.fetchDefaults.headers = {
         'X-CSRF-TOKEN': token,
         'Accept': 'application/json'
     };
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     return token;
 }
 
@@ -2141,6 +2236,7 @@ async function deleteCartItem(itemId) {
 
         // Get item information for notification
         const itemName = itemElements[0].querySelector('.cart-item-name, .mobile-cart-item-name')?.textContent || 'Produk';
+<<<<<<< HEAD
 
         // Get CSRF token - PERBAIKAN: mencoba dari beberapa sumber
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
@@ -2253,14 +2349,98 @@ async function deleteCartItem(itemId) {
     } catch (error) {
         console.error('Error deleting cart item:', error);
 
+=======
+        
+        // Get CSRF token - PERBAIKAN: mencoba dari beberapa sumber
+        const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        const inputToken = document.querySelector('input[name="_token"]')?.value;
+        const csrfToken = metaToken || inputToken;
+        
+        if (!csrfToken) {
+            throw new Error('CSRF token tidak ditemukan. Silakan refresh halaman.');
+        }
+        
+        // Show loading overlay
+        loadingOverlay.show();
+        
+        // Add deleting animation class
+        itemElements.forEach(el => el.classList.add('deleting'));
+        
+        // PERBAIKAN: Gunakan FormData dengan _method=DELETE untuk kompatibilitas
+        const formData = new FormData();
+        formData.append('_method', 'DELETE');
+        formData.append('_token', csrfToken);
+        
+        // Send DELETE request - PERBAIKAN: Gunakan endpoint yang benar
+        const response = await fetch(`/user/cart/delete/${itemId}`, {
+            method: 'POST',  // Gunakan POST dengan _method=DELETE untuk kompatibilitas
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: formData
+        });
+        
+        if (!response.ok) {
+            // Handle HTTP errors
+            if (response.status === 401) {
+                throw new Error('Sesi login Anda telah berakhir. Silakan login kembali.');
+            } else if (response.status === 404) {
+                throw new Error('Produk tidak ditemukan di keranjang Anda.');
+            } else {
+                throw new Error(`Terjadi kesalahan server (${response.status}). Silakan coba lagi.`);
+            }
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Remove from cart state
+            cartState.removeItem(itemId);
+            
+            // Smoothly remove from UI with animation
+            itemElements.forEach(el => {
+                el.classList.add('deleted');
+                
+                // Remove from DOM after animation completes
+                el.addEventListener('transitionend', () => {
+                    el.remove();
+                    
+                    // Check if cart is empty after removal
+                    if (cartState.items.length === 0) {
+                        showEmptyCart();
+                    } else {
+                        calculateTotals();
+                    }
+                }, { once: true });
+            });
+            
+            // Show success notification
+            toastSystem.success('Berhasil', 'Produk berhasil dihapus dari keranjang');
+            
+            return data;
+        } else {
+            throw new Error(data.message || 'Gagal menghapus produk dari keranjang');
+        }
+    } catch (error) {
+        console.error('Error deleting cart item:', error);
+        
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Remove deleting animation from items
         document.querySelectorAll(`[data-item-row="${itemId}"]`).forEach(el => {
             el.classList.remove('deleting');
         });
+<<<<<<< HEAD
 
         // Show error notification with retry button
         const errorToast = toastSystem.error('Gagal Menghapus', error.message || 'Gagal menghapus produk dari keranjang.', 0);
 
+=======
+        
+        // Show error notification with retry button
+        const errorToast = toastSystem.error('Gagal Menghapus', error.message || 'Gagal menghapus produk dari keranjang.', 0);
+        
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Add retry button to error toast
         const toastContent = errorToast.querySelector('.toast-content');
         const retryBtn = document.createElement('button');
@@ -2272,14 +2452,25 @@ async function deleteCartItem(itemId) {
             setTimeout(() => handleDeleteItem(itemId), 300);
         });
         toastContent.appendChild(retryBtn);
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Initialize feather icons in retry button
         if (window.feather) {
             feather.replace();
         }
+<<<<<<< HEAD
 
         loadingOverlay.hide();
         throw error;
+=======
+        
+        throw error;
+    } finally {
+        loadingOverlay.hide();
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     }
 }
 
@@ -2292,13 +2483,21 @@ async function handleDeleteItem(itemId) {
         // Find the item elements
         const itemElements = document.querySelectorAll(`[data-item-row="${itemId}"]`);
         if (itemElements.length === 0) return;
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Get product information for confirmation dialog
         const firstElement = itemElements[0];
         const itemName = firstElement.querySelector('.cart-item-name, .mobile-cart-item-name')?.textContent || 'Produk';
         const itemImage = firstElement.querySelector('.cart-item-image, .mobile-cart-item-image')?.src || '';
         const itemPrice = firstElement.querySelector('.cart-price, .mobile-cart-item-price')?.textContent || '';
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Show confirmation dialog
         const confirmed = await confirmDialog.show({
             title: 'Konfirmasi Hapus',
@@ -2313,7 +2512,11 @@ async function handleDeleteItem(itemId) {
                 price: itemPrice
             }
         });
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // If confirmed, proceed with deletion
         if (confirmed) {
             await deleteCartItem(itemId);
@@ -2329,10 +2532,17 @@ async function handleDeleteItem(itemId) {
 function showEmptyCart() {
     const cartContent = document.getElementById('cart-content');
     if (!cartContent) return;
+<<<<<<< HEAD
 
     // Animate fade out
     cartContent.classList.add('fade-out');
 
+=======
+    
+    // Animate fade out
+    cartContent.classList.add('fade-out');
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     setTimeout(() => {
         cartContent.innerHTML = `
             <div class="cart-empty">
@@ -2355,9 +2565,15 @@ function showEmptyCart() {
                 </a>
             </div>
         `;
+<<<<<<< HEAD
 
         cartContent.classList.remove('fade-out');
 
+=======
+        
+        cartContent.classList.remove('fade-out');
+        
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Initialize feather icons
         if (window.feather) {
             feather.replace();
@@ -2371,15 +2587,24 @@ function showEmptyCart() {
 function calculateTotals() {
     let subtotal = 0;
     let discount = 0;
+<<<<<<< HEAD
 
     cartState.items.forEach(item => {
         const itemElements = document.querySelectorAll(`[data-item-row="${item.id}"]`);
         if (itemElements.length === 0) return;
 
+=======
+    
+    cartState.items.forEach(item => {
+        const itemElements = document.querySelectorAll(`[data-item-row="${item.id}"]`);
+        if (itemElements.length === 0) return;
+        
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         const unitPrice = parseFloat(itemElements[0].getAttribute('data-unit-price')) || 0;
         const discountedPrice = parseFloat(itemElements[0].getAttribute('data-discounted-price')) || unitPrice;
         const quantityInput = itemElements[0].querySelector('.cart-quantity-input');
         const quantity = parseInt(quantityInput?.value || 1);
+<<<<<<< HEAD
 
         subtotal += unitPrice * quantity;
         discount += (unitPrice - discountedPrice) * quantity;
@@ -2388,15 +2613,33 @@ function calculateTotals() {
     const shipping = cartState.shippingCost || 0;
     const total = subtotal - discount + shipping;
 
+=======
+        
+        subtotal += unitPrice * quantity;
+        discount += (unitPrice - discountedPrice) * quantity;
+    });
+    
+    const shipping = cartState.shippingCost || 0;
+    const total = subtotal - discount + shipping;
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Update UI
     const subtotalEl = document.getElementById('cart-subtotal');
     const discountEl = document.getElementById('cart-discount');
     const totalEl = document.getElementById('cart-total');
+<<<<<<< HEAD
 
     if (subtotalEl) subtotalEl.textContent = `Rp ${formatCurrency(subtotal)}`;
     if (discountEl) discountEl.textContent = `-Rp ${formatCurrency(discount)}`;
     if (totalEl) totalEl.textContent = `Rp ${formatCurrency(total)}`;
 
+=======
+    
+    if (subtotalEl) subtotalEl.textContent = `Rp ${formatCurrency(subtotal)}`;
+    if (discountEl) discountEl.textContent = `-Rp ${formatCurrency(discount)}`;
+    if (totalEl) totalEl.textContent = `Rp ${formatCurrency(total)}`;
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Show/hide discount row
     const discountRow = document.getElementById('cart-discount-row');
     if (discountRow) {
@@ -2426,7 +2669,11 @@ function updateItemDisplay(itemId, newQuantity) {
     // Get unit price and discounted price
     const unitPrice = parseFloat(itemElements[0].getAttribute('data-unit-price')) || 0;
     const discountedPrice = parseFloat(itemElements[0].getAttribute('data-discounted-price')) || unitPrice;
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Calculate new total
     const itemTotal = discountedPrice * newQuantity;
 
@@ -2434,7 +2681,11 @@ function updateItemDisplay(itemId, newQuantity) {
     itemElements.forEach(element => {
         const quantityInput = element.querySelector('.cart-quantity-input');
         if (quantityInput) quantityInput.value = newQuantity;
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Update total display
         const totalElement = element.querySelector('.item-total, .mobile-item-total');
         if (totalElement) {
@@ -2443,7 +2694,11 @@ function updateItemDisplay(itemId, newQuantity) {
             setTimeout(() => totalElement.classList.remove('flash-update'), 500);
         }
     });
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Recalculate cart totals
     calculateTotals();
 
@@ -2458,17 +2713,29 @@ function updateItemQuantity(itemId) {
     // Get all elements with this item ID
     const itemElements = document.querySelectorAll(`[data-item-row="${itemId}"]`);
     if (itemElements.length === 0) return;
+<<<<<<< HEAD
 
     // Get input element and new quantity
     const quantityInput = itemElements[0].querySelector('.cart-quantity-input');
     if (!quantityInput) return;
 
+=======
+    
+    // Get input element and new quantity
+    const quantityInput = itemElements[0].querySelector('.cart-quantity-input');
+    if (!quantityInput) return;
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     const newQuantity = parseInt(quantityInput.value);
     if (isNaN(newQuantity) || newQuantity < 1) {
         quantityInput.value = 1;
         return;
     }
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Convert itemId to integer
     itemId = parseInt(itemId);
 
@@ -2486,7 +2753,11 @@ function updateItemQuantity(itemId) {
         quantityInput.value = 1;
         return;
     }
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Maximum quantity check
     const maxStock = parseInt(quantityInput.getAttribute('max')) || 100;
     if (newQuantity > maxStock) {
@@ -2521,6 +2792,7 @@ function updateItemQuantity(itemId) {
     // Get CSRF token from meta tag or hidden input
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || document.querySelector('input[name="_token"]')?.value;
 
+<<<<<<< HEAD
     // PERBAIKAN: Create a standard form for submission
     const form = document.createElement('form');
     form.method = 'POST';
@@ -2636,12 +2908,68 @@ function updateItemQuantity(itemId) {
         // Revert to old quantity in state and display
         updateItemDisplay(itemId, oldQuantity);
         
+=======
+    // Send AJAX request - Using PUT method directly
+    fetch(`/user/cart/update/${itemId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            quantity: newQuantity
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Update item price from response if available
+            if (data.data) {
+                cartState.items[itemIndex].quantity = data.data.quantity;
+                
+                // Flash the total price to show it's been updated
+                const cartTotal = document.getElementById('cart-total');
+                if (cartTotal) {
+                    cartTotal.classList.add('flash-update');
+                    setTimeout(() => {
+                        cartTotal.classList.remove('flash-update');
+                    }, 500);
+                }
+                
+                // Recalculate totals with the updated data
+                calculateTotals();
+            }
+            
+            // Show success toast
+            toastSystem.success('Berhasil', 'Jumlah produk berhasil diubah');
+        } else {
+            throw new Error(data.message || 'Gagal mengubah jumlah produk');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating quantity:', error);
+        
+        // Revert to old quantity in state and display
+        updateItemDisplay(itemId, oldQuantity);
+        
+        // Show error toast
+        toastSystem.error('Gagal', 'Gagal mengubah jumlah produk. Silakan coba lagi.');
+    })
+    .finally(() => {
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Remove updating state
         quantityContainers.forEach(container => {
             container.classList.remove('updating');
         });
         
         // Remove this update from pending list
+<<<<<<< HEAD
         delete cartState.pendingQuantityUpdates[itemId];
         
         // Show error toast
@@ -2659,6 +2987,32 @@ function updateItemQuantity(itemId) {
     const formData = new FormData(form);
     xhr.send(formData);
 }
+=======
+        const nextQuantity = cartState.pendingQuantityUpdates[itemId]?.nextQuantity;
+        delete cartState.pendingQuantityUpdates[itemId];
+        
+        // Check if there's another pending update for this item
+        if (nextQuantity !== null) {
+            // Process the next update
+            setTimeout(() => {
+                // Update input value first
+                const inputs = document.querySelectorAll(`.cart-quantity-input[data-item-id="${itemId}"]`);
+                inputs.forEach(input => {
+                    input.value = nextQuantity;
+                });
+                
+                updateItemQuantity(itemId);
+            }, 100);
+        }
+        
+        // Check if there are no more pending updates
+        if (Object.keys(cartState.pendingQuantityUpdates).length === 0) {
+            cartState.updating = false;
+        }
+    });
+}
+
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
 /**
  * Function to save selected shipping method to session via AJAX
  * @param {string} methodCode - Shipping method code
@@ -2666,6 +3020,7 @@ function updateItemQuantity(itemId) {
 function saveShippingMethod(methodCode) {
     // Get CSRF token
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || document.querySelector('input[name="_token"]')?.value;
+<<<<<<< HEAD
 
     // Use FormData for better compatibility
     const formData = new FormData();
@@ -2679,6 +3034,19 @@ function saveShippingMethod(methodCode) {
             'Accept': 'application/json'
         },
         body: formData
+=======
+    
+    fetch('/user/cart/save-shipping', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            shipping_method: methodCode
+        })
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     })
     .then(response => response.json())
     .then(data => {
@@ -2696,6 +3064,7 @@ function saveShippingMethod(methodCode) {
 function savePaymentMethod(methodCode) {
     // Get CSRF token
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || document.querySelector('input[name="_token"]')?.value;
+<<<<<<< HEAD
 
     // Use FormData for better compatibility
     const formData = new FormData();
@@ -2709,6 +3078,19 @@ function savePaymentMethod(methodCode) {
             'Accept': 'application/json'
         },
         body: formData
+=======
+    
+    fetch('/user/cart/save-payment', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            payment_method: methodCode
+        })
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     })
     .then(response => response.json())
     .then(data => {
@@ -2728,17 +3110,30 @@ function setupFormSubmissions() {
     if (promoForm) {
         promoForm.addEventListener('submit', function(e) {
             e.preventDefault();
+<<<<<<< HEAD
 
             const formData = new FormData(this);
             const promoCode = formData.get('promo_code');
 
+=======
+            
+            const formData = new FormData(this);
+            const promoCode = formData.get('promo_code');
+            
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             if (!promoCode) {
                 toastSystem.error('Error', 'Masukkan kode promo terlebih dahulu');
                 return;
             }
+<<<<<<< HEAD
 
             loadingOverlay.show();
 
+=======
+            
+            loadingOverlay.show();
+            
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             fetch(this.action, {
                 method: 'POST',
                 body: formData
@@ -2753,7 +3148,11 @@ function setupFormSubmissions() {
                 if (data.success) {
                     // Show success toast
                     toastSystem.success('Berhasil', 'Kode promo berhasil diterapkan');
+<<<<<<< HEAD
 
+=======
+                    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                     // Reload page to reflect promo after a slight delay
                     setTimeout(() => {
                         window.location.reload();
@@ -2769,15 +3168,25 @@ function setupFormSubmissions() {
             });
         });
     }
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Handle promo code removal
     const promoRemoveForm = document.getElementById('promo-remove-form');
     if (promoRemoveForm) {
         promoRemoveForm.addEventListener('submit', function(e) {
             e.preventDefault();
+<<<<<<< HEAD
 
             loadingOverlay.show();
 
+=======
+            
+            loadingOverlay.show();
+            
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             fetch(this.action, {
                 method: 'POST',
                 body: new FormData(this)
@@ -2792,7 +3201,11 @@ function setupFormSubmissions() {
                 if (data.success) {
                     // Show success toast
                     toastSystem.success('Berhasil', 'Kode promo berhasil dihapus');
+<<<<<<< HEAD
 
+=======
+                    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                     // Reload page to reflect promo removal after a slight delay
                     setTimeout(() => {
                         window.location.reload();
@@ -2808,31 +3221,57 @@ function setupFormSubmissions() {
             });
         });
     }
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Handle checkout form
     const checkoutForm = document.getElementById('form-checkout');
     if (checkoutForm) {
         checkoutForm.addEventListener('submit', function(e) {
+<<<<<<< HEAD
             // Validasi metode pengiriman tidak dipilih
+=======
+            // Make sure shipping method is set
+            const shippingMethodInput = document.getElementById('shipping_method_input');
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             if (shippingMethodInput && !shippingMethodInput.value) {
                 e.preventDefault();
                 toastSystem.error('Perhatian', 'Silakan pilih metode pengiriman terlebih dahulu');
                 return;
             }
+<<<<<<< HEAD
 
             // Validasi metode pembayaran tidak dipilih
+=======
+            
+            // Make sure a payment method is selected
+            const selectedPayment = document.querySelector('input[name="payment_method"]:checked');
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             if (!selectedPayment) {
                 e.preventDefault();
                 toastSystem.error('Perhatian', 'Silakan pilih metode pembayaran terlebih dahulu');
                 return;
             }
+<<<<<<< HEAD
 
             // Validasi update keranjang masih dalam proses
+=======
+            
+            // Check if there are any pending updates
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             if (Object.keys(cartState.pendingQuantityUpdates).length > 0 || cartState.updating) {
                 e.preventDefault();
                 toastSystem.error('Perhatian', 'Sedang mengupdate keranjang, mohon tunggu sebentar');
                 return;
             }
+<<<<<<< HEAD
+=======
+            
+            // All checks passed, show loading overlay
+            loadingOverlay.show();
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         });
     }
 }
@@ -2853,11 +3292,16 @@ function setupQuantityHandlers() {
             timeout = setTimeout(later, wait);
         };
     }
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Decrease quantity buttons
     document.querySelectorAll('.quantity-decrease').forEach(btn => {
         btn.addEventListener('click', function() {
             if (cartState.updating) return;
+<<<<<<< HEAD
 
             const container = this.closest('.cart-quantity, .mobile-cart-item-quantity');
             if (!container) return;
@@ -2872,16 +3316,37 @@ function setupQuantityHandlers() {
                 const newQuantity = currentValue - 1;
                 input.value = newQuantity; // Update input immediately for better UX
 
+=======
+            
+            const container = this.closest('.cart-quantity, .mobile-cart-item-quantity');
+            if (!container) return;
+            
+            const itemId = parseInt(container.getAttribute('data-item-id'));
+            const input = container.querySelector('.cart-quantity-input');
+            if (!input) return;
+            
+            const currentValue = parseInt(input.value);
+            
+            if (currentValue > 1) {
+                const newQuantity = currentValue - 1;
+                input.value = newQuantity; // Update input immediately for better UX
+                
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                 // Debounce the actual update to reduce rapid-fire API calls
                 debounce(() => updateItemQuantity(itemId), 300)();
             }
         });
     });
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Increase quantity buttons
     document.querySelectorAll('.quantity-increase').forEach(btn => {
         btn.addEventListener('click', function() {
             if (cartState.updating) return;
+<<<<<<< HEAD
 
             const container = this.closest('.cart-quantity, .mobile-cart-item-quantity');
             if (!container) return;
@@ -2897,23 +3362,52 @@ function setupQuantityHandlers() {
                 const newQuantity = currentValue + 1;
                 input.value = newQuantity; // Update input immediately for better UX
 
+=======
+            
+            const container = this.closest('.cart-quantity, .mobile-cart-item-quantity');
+            if (!container) return;
+            
+            const itemId = parseInt(container.getAttribute('data-item-id'));
+            const input = container.querySelector('.cart-quantity-input');
+            if (!input) return;
+            
+            const currentValue = parseInt(input.value);
+            const maxValue = parseInt(input.getAttribute('max') || '100');
+            
+            if (currentValue < maxValue) {
+                const newQuantity = currentValue + 1;
+                input.value = newQuantity; // Update input immediately for better UX
+                
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                 // Debounce the actual update to reduce rapid-fire API calls
                 debounce(() => updateItemQuantity(itemId), 300)();
             }
         });
     });
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Manual quantity input
     document.querySelectorAll('.cart-quantity-input').forEach(input => {
         input.addEventListener('change', debounce(function() {
             if (cartState.updating) return;
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             const itemId = parseInt(this.getAttribute('data-item-id'));
             if (itemId) {
                 updateItemQuantity(itemId);
             }
         }, 500));
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Prevent manual editing with keyboard (optional, for better control)
         input.addEventListener('keydown', function(e) {
             if (e.key !== 'Tab' && e.key !== 'Enter') {
@@ -2936,13 +3430,21 @@ window.initAzkaCartShippingCalc = function() {
     function doEstimate() {
         try {
             let selectedShipping = document.querySelector('.shipping-method-radio:checked')?.value || 'KURIR_TOKO';
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             // Update hidden input and global state - PERBAIKAN: Check if element exists
             if (shippingMethodInput) {
                 shippingMethodInput.value = selectedShipping;
             }
             cartState.shippingMethod = selectedShipping;
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             // Update visual selection
             document.querySelectorAll('.shipping-method').forEach(method => {
                 method.classList.remove('selected');
@@ -2951,13 +3453,21 @@ window.initAzkaCartShippingCalc = function() {
             if (selectedMethod) {
                 selectedMethod.closest('.shipping-method').classList.add('selected');
             }
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             // Save to session
             saveShippingMethod(selectedShipping);
 
             // PERBAIKAN: Make sure shippingEstimateText exists
             if (!shippingEstimateText) return;
+<<<<<<< HEAD
 
+=======
+            
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             if(selectedShipping === 'KURIR_TOKO') {
                 shippingEstimateText.innerHTML = 'Menghitung ongkir...';
                 if(window.google && window.google.maps) {
@@ -2975,20 +3485,34 @@ window.initAzkaCartShippingCalc = function() {
                             let ongkir = 10000;
                             if(distanceKm > 10) ongkir = 20000;
                             else if(distanceKm > 5) ongkir = 15000;
+<<<<<<< HEAD
 
                             // Store shipping cost in global state
                             cartState.shippingCost = ongkir;
 
+=======
+                            
+                            // Store shipping cost in global state
+                            cartState.shippingCost = ongkir;
+                            
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                             // Update shipping cost in totals
                             const shippingEl = document.getElementById('cart-shipping');
                             if (shippingEl) {
                                 shippingEl.textContent = `Rp ${formatCurrency(ongkir)}`;
                                 shippingEl.setAttribute('data-value', ongkir);
                             }
+<<<<<<< HEAD
 
                             // Recalculate total with shipping
                             calculateTotals();
 
+=======
+                            
+                            // Recalculate total with shipping
+                            calculateTotals();
+                            
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                             let label = '';
                             if(distanceKm > 10) label = '&gt;10km';
                             else if(distanceKm > 5) label = '5-10km';
@@ -3072,20 +3596,32 @@ window.initAzkaCartShippingCalc = function() {
             }
         }
     }
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Add event listeners to shipping method radios
     radios.forEach(function(radio) {
         if (radio) {
             radio.addEventListener('change', doEstimate);
         }
     });
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Add event listeners to payment method radios
     document.querySelectorAll('.payment-method-radio').forEach(function(radio) {
         if (radio) {
             radio.addEventListener('change', function() {
                 cartState.paymentMethod = this.value;
+<<<<<<< HEAD
 
+=======
+                
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                 // Update visual selection
                 document.querySelectorAll('.payment-method').forEach(method => {
                     method.classList.remove('selected');
@@ -3094,12 +3630,20 @@ window.initAzkaCartShippingCalc = function() {
                 if (parent) {
                     parent.classList.add('selected');
                 }
+<<<<<<< HEAD
 
+=======
+                
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                 savePaymentMethod(this.value);
             });
         }
     });
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Run once on page load to initialize shipping estimate
     // PERBAIKAN: Wrap in try/catch to prevent errors
     try {
@@ -3118,7 +3662,11 @@ document.addEventListener('DOMContentLoaded', function() {
         toastSystem.init();
         confirmDialog.init();
         loadingOverlay.init();
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Store cart items data for client-side calculations
         const items = [
             @foreach($cartItems as $item)
@@ -3151,10 +3699,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
             @endforeach
         ];
+<<<<<<< HEAD
 
         // Initialize cart state
         cartState.init(items);
 
+=======
+        
+        // Initialize cart state
+        cartState.init(items);
+        
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Initialize Feather Icons
         if (typeof feather !== 'undefined') {
             feather.replace();
@@ -3167,18 +3722,27 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             document.head.appendChild(script);
         }
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Add event listeners to delete buttons
         document.querySelectorAll('.cart-remove').forEach(button => {
             button.addEventListener('click', function(e) {
                 e.preventDefault();
+<<<<<<< HEAD
                 const itemId = this.getAttribute('data-item-id') ||
+=======
+                const itemId = this.getAttribute('data-item-id') || 
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                                this.closest('[data-item-row]')?.getAttribute('data-item-row');
                 if (itemId) {
                     handleDeleteItem(parseInt(itemId));
                 }
             });
         });
+<<<<<<< HEAD
 
         // Setup quantity update handlers
         setupQuantityHandlers();
@@ -3189,6 +3753,18 @@ document.addEventListener('DOMContentLoaded', function() {
         // Calculate initial totals
         calculateTotals();
 
+=======
+        
+        // Setup quantity update handlers
+        setupQuantityHandlers();
+        
+        // Setup form submissions
+        setupFormSubmissions();
+        
+        // Calculate initial totals
+        calculateTotals();
+        
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Load Google Maps for shipping calculations if address is available
         if ({{ $hasAddress && $primaryAddress ? 'true' : 'false' }}) {
             if (!window.google) {
@@ -3199,10 +3775,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         googleMapsScript.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyCTUfem9YaXy7FPguX6wa26V4lRuYOgF4w&libraries=places";
                         googleMapsScript.async = true;
                         googleMapsScript.defer = true;
+<<<<<<< HEAD
 
                         // After script loads, initialize shipping calc
                         googleMapsScript.onload = window.initAzkaCartShippingCalc;
 
+=======
+                        
+                        // After script loads, initialize shipping calc
+                        googleMapsScript.onload = window.initAzkaCartShippingCalc;
+                        
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                         googleMapsScript.onerror = function() {
                             console.error('Failed to load Google Maps API');
                             // Run shipping calculation anyway without maps
@@ -3210,7 +3793,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         };
                         document.head.appendChild(googleMapsScript);
                     };
+<<<<<<< HEAD
 
+=======
+                    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                     // Slight delay before loading to ensure DOM is ready
                     setTimeout(loadGoogleMaps, 100);
                 } catch (error) {
@@ -3223,7 +3810,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.initAzkaCartShippingCalc();
             }
         }
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Add hover effects to payment and shipping methods
         document.querySelectorAll('.payment-method, .shipping-method').forEach(method => {
             // Make entire label clickable
@@ -3232,13 +3823,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 const radio = this.querySelector('input[type="radio"]');
                 if (radio && !radio.checked) {
                     radio.checked = true;
+<<<<<<< HEAD
 
+=======
+                    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                     // Trigger the change event manually
                     const event = new Event('change', { bubbles: true });
                     radio.dispatchEvent(event);
                 }
             });
         });
+<<<<<<< HEAD
 
         // Checkout link validation
         const checkoutLink = document.getElementById('checkout-link');
@@ -3271,6 +3867,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return true;
             });
         }
+=======
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     } catch (error) {
         console.error('Error in cart initialization:', error);
     }
@@ -3280,12 +3878,20 @@ document.addEventListener('DOMContentLoaded', function() {
 window.addEventListener('error', function(e) {
     console.error('Global error caught:', e.error || e.message);
     loadingOverlay.hideAll();
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // If there's an active spinner for quantity updates, remove it
     document.querySelectorAll('.updating').forEach(el => {
         el.classList.remove('updating');
     });
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     cartState.updating = false;
     cartState.pendingQuantityUpdates = {}; // Clear pending updates on global error
 });

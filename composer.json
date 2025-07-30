@@ -1,7 +1,11 @@
 {
   "name": "azka/azka-garden",
   "type": "project",
+<<<<<<< HEAD
   "description": "Azka Garden e-commerce application - Updated: 2025-07-29 14:33:57 by mulyadafa",
+=======
+  "description": "Azka Garden e-commerce application",
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
   "license": "MIT",
   "require": {
     "php": "^8.1",
@@ -13,7 +17,11 @@
     "nunomaduro/termwind": "^2.0"
   },
   "require-dev": {
+<<<<<<< HEAD
     "barryvdh/laravel-ide-helper": "^3.6",
+=======
+    "barryvdh/laravel-ide-helper": "^3.5",
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     "fakerphp/faker": "^1.23",
     "laravel/pint": "^1.22",
     "mockery/mockery": "^1.6",
@@ -43,6 +51,7 @@
       "@php artisan package:discover --ansi"
     ],
     "post-update-cmd": [
+<<<<<<< HEAD
       "@php artisan vendor:publish --tag=laravel-assets --ansi --force",
       "@php artisan ide-helper:generate",
       "@php artisan ide-helper:meta"
@@ -54,6 +63,10 @@
       "@php artisan ide-helper:models -N"
     ],
     "update-meta": "echo \"Updated: $(date -u '+%Y-%m-%d %H:%M:%S') by mulyadafa\""
+=======
+      "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
+    ]
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
   },
   "devDependencies": {
     "autoprefixer": "^10.4.14",

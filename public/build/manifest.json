@@ -5,7 +5,11 @@
     "src": "resources/css/admin/admin.css"
   },
   "resources/css/app.css": {
+<<<<<<< HEAD
     "file": "assets/app-52d445e3.css",
+=======
+    "file": "assets/app-0f491a4f.css",
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     "src": "resources/js/app.css"
   },
   "resources/css/dev/dev.css": {
@@ -19,14 +23,24 @@
     "src": "resources/css/user/user.css"
   },
   "resources/js/app.css": {
+<<<<<<< HEAD
     "file": "assets/app-52d445e3.css",
+=======
+    "file": "assets/app-0f491a4f.css",
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     "src": "resources/js/app.css"
   },
   "resources/js/app.js": {
     "css": [
+<<<<<<< HEAD
       "assets/app-52d445e3.css"
     ],
     "file": "assets/app-7ecc9298.js",
+=======
+      "assets/app-0f491a4f.css"
+    ],
+    "file": "assets/app-f0250d05.js",
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     "isEntry": true,
     "src": "resources/js/app.js"
   }

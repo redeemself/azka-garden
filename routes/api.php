@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+<<<<<<< HEAD
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 
@@ -18,12 +19,15 @@ use Illuminate\Http\Request;
 | Fixed protected visibility error and added proper shipping cost handling
 |
 */
+=======
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function () {
         return Auth::user();
     });
 
+<<<<<<< HEAD
     /*
     |--------------------------------------------------------------------------
     | Shipping Cost API Endpoints
@@ -312,3 +316,7 @@ Route::get('/health', function() {
         'version' => '1.0.0'
     ]);
 });
+=======
+    // endpoint lain…
+});
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)

@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
     "intelephense.diagnostics.undefinedMethods": false,
     "intelephense.diagnostics.undefinedTypes": false,
     "intelephense.diagnostics.typeErrors": false,
@@ -11,3 +12,13 @@
         "postcss": "css"
     }
 }
+=======
+  "DockerRun.DisableDockerrc": true,
+  "files.associations": {
+    "*.css": "postcss"
+  },
+  "tailwindCSS.includeLanguages": {
+    "postcss": "css"
+  }
+}
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)

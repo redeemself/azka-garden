@@ -1,9 +1,15 @@
 <?php return array(
     'root' => array(
         'name' => 'azka/azka-garden',
+<<<<<<< HEAD
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
         'reference' => '071079017740da6878283321d1c8a84dffe76846',
+=======
+        'pretty_version' => '1.0.0+no-version-set',
+        'version' => '1.0.0.0',
+        'reference' => null,
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +17,15 @@
     ),
     'versions' => array(
         'azka/azka-garden' => array(
+<<<<<<< HEAD
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
             'reference' => '071079017740da6878283321d1c8a84dffe76846',
+=======
+            'pretty_version' => '1.0.0+no-version-set',
+            'version' => '1.0.0.0',
+            'reference' => null,
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

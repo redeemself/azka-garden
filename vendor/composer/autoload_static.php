@@ -977,8 +977,11 @@ class ComposerStaticInit4da9d539f1efe9ebd01010deb0b2a9bd
         'Database\\Seeders\\InterfaceSeeder' => __DIR__ . '/../..' . '/database/seeders/InterfaceSeeder.php',
         'Database\\Seeders\\PaymentMethodSeeder' => __DIR__ . '/../..' . '/database/seeders/PaymentMethodSeeder.php',
         'Database\\Seeders\\RoleSeeder' => __DIR__ . '/../..' . '/database/seeders/RoleSeeder.php',
+<<<<<<< HEAD
         'Database\\Seeders\\ShippingMethodSeeder' => __DIR__ . '/../..' . '/database/seeders/ShippingMethodSeeder.php',
         'Database\\Seeders\\ShippingSeeder' => __DIR__ . '/../..' . '/database/seeders/ShippingSeeder.php',
+=======
+>>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         'Database\\Seeders\\SyncContactPromoSeeder' => __DIR__ . '/../..' . '/database/seeders/SyncContactPromoSeeder.php',
         'DateError' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateError.php',
         'DateException' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateException.php',
