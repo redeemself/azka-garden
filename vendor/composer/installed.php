@@ -1,15 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'azka/azka-garden',
-<<<<<<< HEAD
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '071079017740da6878283321d1c8a84dffe76846',
-=======
-        'pretty_version' => '1.0.0+no-version-set',
-        'version' => '1.0.0.0',
-        'reference' => null,
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
+        'reference' => 'f54de26e1d685c4e254f434db8a4c1df71a91883',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -17,15 +11,9 @@
     ),
     'versions' => array(
         'azka/azka-garden' => array(
-<<<<<<< HEAD
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '071079017740da6878283321d1c8a84dffe76846',
-=======
-            'pretty_version' => '1.0.0+no-version-set',
-            'version' => '1.0.0.0',
-            'reference' => null,
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
+            'reference' => 'f54de26e1d685c4e254f434db8a4c1df71a91883',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -629,9 +617,9 @@
             'dev_requirement' => false,
         ),
         'nikic/php-parser' => array(
-            'pretty_version' => 'v5.5.0',
-            'version' => '5.5.0.0',
-            'reference' => 'ae59794362fe85e051a58ad36b289443f57be7a9',
+            'pretty_version' => 'v5.6.0',
+            'version' => '5.6.0.0',
+            'reference' => '221b0d0fdf1369c71047ad1d18bb5880017bbc56',
             'type' => 'library',
             'install_path' => __DIR__ . '/../nikic/php-parser',
             'aliases' => array(),
@@ -1288,6 +1276,15 @@
             'install_path' => __DIR__ . '/../symfony/string',
             'aliases' => array(),
             'dev_requirement' => false,
+        ),
+        'symfony/thanks' => array(
+            'pretty_version' => 'v1.4.0',
+            'version' => '1.4.0.0',
+            'reference' => 'ad3f07af819f058666f0cac3f0737f18d31e3d05',
+            'type' => 'composer-plugin',
+            'install_path' => __DIR__ . '/../symfony/thanks',
+            'aliases' => array(),
+            'dev_requirement' => true,
         ),
         'symfony/translation' => array(
             'pretty_version' => 'v7.3.1',

@@ -18,6 +18,11 @@ use Illuminate\Support\Str;
 
 class CheckoutController extends Controller
 {
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
     public function __construct()
     {
         $this->middleware('auth');
@@ -25,6 +30,8 @@ class CheckoutController extends Controller
 
     /**
      * Display checkout page
+     *
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function index()
     {
@@ -36,7 +43,7 @@ class CheckoutController extends Controller
             ->get();
 
         if ($cartItems->count() == 0) {
-            return redirect()->route('cart.index')
+            return redirect()->route('user.cart.index')
                 ->with('error', 'Keranjang Anda kosong. Silakan tambahkan produk terlebih dahulu.');
         }
 
@@ -50,7 +57,7 @@ class CheckoutController extends Controller
         // Validate stock availability
         foreach ($cartItems as $item) {
             if ($item->product->stock < $item->quantity) {
-                return redirect()->route('cart.index')
+                return redirect()->route('user.cart.index')
                     ->with('error', "Stok tidak mencukupi untuk produk: {$item->product->name}. Stok tersedia: {$item->product->stock}");
             }
         }
@@ -60,15 +67,19 @@ class CheckoutController extends Controller
 
     /**
      * Process checkout and create order
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\RedirectResponse
      */
     public function process(Request $request)
     {
         try {
-            // Validate request
+            // Validate request with shipping_fee included
             $validated = $request->validate([
                 'shipping_address_id' => 'required|exists:addresses,id',
                 'shipping_method' => 'required|string|max:50',
                 'payment_method' => 'required|string|exists:payment_methods,code',
+                'shipping_fee' => 'required|numeric',
                 'note' => 'nullable|string|max:500'
             ]);
 
@@ -80,7 +91,7 @@ class CheckoutController extends Controller
                 ->get();
 
             if ($cartItems->count() == 0) {
-                return redirect()->route('cart.index')
+                return redirect()->route('user.cart.index')
                     ->with('error', 'Keranjang Anda kosong.');
             }
 
@@ -119,7 +130,7 @@ class CheckoutController extends Controller
                 
                 if (!$product || $product->stock < $item->quantity) {
                     DB::rollBack();
-                    return redirect()->route('cart.index')
+                    return redirect()->route('user.cart.index')
                         ->with('error', "Stok tidak mencukupi untuk produk: {$item->product->name}");
                 }
 
@@ -159,12 +170,8 @@ class CheckoutController extends Controller
                 $product->decrement('stock', $item->quantity);
             }
 
-            // Calculate shipping cost
-            $shippingCost = $this->calculateShippingCost(
-                $validated['shipping_method'], 
-                $address, 
-                $totalWeight
-            );
+            // Use the validated shipping fee from the form
+            $shippingCost = $validated['shipping_fee'];
 
             // Calculate final total
             $finalTotal = $subtotal - $totalDiscount + $shippingCost;
@@ -182,7 +189,9 @@ class CheckoutController extends Controller
                 'shipping_cost' => $shippingCost,
                 'note' => $validated['note'],
                 'payment_method' => $validated['payment_method'],
-                'interface_id' => 1
+                'interface_id' => 1,
+                'created_by' => 'mulyadafa',
+                'created_at' => '2025-07-30 03:10:41'
             ]);
 
             // Create order details
@@ -197,8 +206,17 @@ class CheckoutController extends Controller
             // Clear cart
             Cart::where('user_id', $user->id)->delete();
 
+            // Store necessary data in session
+            session([
+                'shipping_method' => $validated['shipping_method'],
+                'payment_method' => $validated['payment_method'],
+                'shipping_fee' => $validated['shipping_fee'],
+                'order_id' => $order->id,
+                'order_code' => $orderCode
+            ]);
+
             // Clear promo session
-            session()->forget(['promo_code', 'shipping_method', 'payment_method']);
+            session()->forget('promo_code');
 
             // Commit transaction
             DB::commit();
@@ -207,11 +225,13 @@ class CheckoutController extends Controller
                 'order_id' => $order->id,
                 'order_code' => $orderCode,
                 'user_id' => $user->id,
-                'total' => $finalTotal
+                'total' => $finalTotal,
+                'timestamp' => '2025-07-30 03:10:41',
+                'created_by' => 'mulyadafa'
             ]);
 
-            return redirect()->route('orders.show', $order->id)
-                ->with('success', 'Pesanan berhasil dibuat! Silakan lakukan pembayaran.');
+            // Redirect to payment page (GET request)
+            return redirect()->route('user.payment.index');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -219,7 +239,8 @@ class CheckoutController extends Controller
             Log::error('Checkout process failed', [
                 'user_id' => Auth::id(),
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'timestamp' => '2025-07-30 03:10:41'
             ]);
 
             return redirect()->route('checkout.index')
@@ -229,6 +250,11 @@ class CheckoutController extends Controller
 
     /**
      * Calculate shipping cost based on method and address
+     *
+     * @param string $method
+     * @param \App\Models\Address $address
+     * @param float $weight
+     * @return float
      */
     private function calculateShippingCost($method, $address, $weight)
     {
@@ -260,6 +286,8 @@ class CheckoutController extends Controller
 
     /**
      * Generate unique order code
+     *
+     * @return string
      */
     private function generateOrderCode()
     {
@@ -272,6 +300,11 @@ class CheckoutController extends Controller
 
     /**
      * Create shipping record
+     *
+     * @param \App\Models\Order $order
+     * @param string $method
+     * @param float $cost
+     * @return void
      */
     private function createShippingRecord($order, $method, $cost)
     {
@@ -294,7 +327,9 @@ class CheckoutController extends Controller
             'shipping_cost' => $cost,
             'status' => $method === 'AMBIL_SENDIRI' ? 'READY_FOR_PICKUP' : 'WAITING_PICKUP',
             'estimated_delivery' => null,
-            'interface_id' => 1
+            'interface_id' => 1,
+            'created_by' => 'mulyadafa',
+            'created_at' => '2025-07-30 03:10:41'
         ]);
     }
 }

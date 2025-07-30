@@ -1,5 +1,15 @@
 {
-<<<<<<< HEAD
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "[php]": {
+        "editor.defaultFormatter": "bmewburn.vscode-intelephense-client"
+    },
+    "[blade]": {
+        "editor.defaultFormatter": "shufo.vscode-blade-formatter"
+    },
+    "editor.codeActionsOnSave": {
+        "source.fixAll": true
+    },
     "intelephense.diagnostics.undefinedMethods": false,
     "intelephense.diagnostics.undefinedTypes": false,
     "intelephense.diagnostics.typeErrors": false,
@@ -10,15 +20,10 @@
     },
     "tailwindCSS.includeLanguages": {
         "postcss": "css"
-    }
+    },
+    "workbench.colorCustomizations": {
+        "statusBar.background": "#166534",
+        "statusBar.foreground": "#ffffff"
+    },
+    "// Updated": "2025-07-30 03:33:52 by mulyadafa"
 }
-=======
-  "DockerRun.DisableDockerrc": true,
-  "files.associations": {
-    "*.css": "postcss"
-  },
-  "tailwindCSS.includeLanguages": {
-    "postcss": "css"
-  }
-}
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)

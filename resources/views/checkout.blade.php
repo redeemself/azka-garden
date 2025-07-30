@@ -663,6 +663,7 @@
     @else
         <form id="checkout-form" action="{{ route('checkout.process') }}" method="POST">
             @csrf
+            <input type="hidden" name="shipping_fee" id="shipping_fee" value="0">
             <div class="checkout-grid">
                 <div class="checkout-main">
                     <!-- Order Items -->
@@ -936,6 +937,12 @@ const checkoutState = {
     updateTotal() {
         this.total = this.subtotal - this.discount + this.tax + this.shipping;
         this.displayTotal();
+        
+        // Update hidden shipping fee field
+        const shippingFeeInput = document.getElementById('shipping_fee');
+        if (shippingFeeInput) {
+            shippingFeeInput.value = this.shipping;
+        }
     },
     
     displayTotal() {
@@ -1118,14 +1125,20 @@ function initFormValidation() {
             return;
         }
 
-        // Update the form action to payment index
-        form.action = "{{ url('/user/payment') }}";
+        // Make sure shipping fee is set
+        const shippingFee = document.getElementById('shipping_fee');
+        if (shippingFee && (shippingFee.value === '' || isNaN(parseFloat(shippingFee.value)))) {
+            shippingFee.value = checkoutState.shipping;
+        }
 
         // Basic validation passed, allow form submission
         console.log('Form submitted with:', {
             shipping: shippingMethod.value,
             payment: paymentMethod.value,
-            total: checkoutState.total
+            shipping_fee: shippingFee ? shippingFee.value : 0,
+            total: checkoutState.total,
+            created_by: 'mulyadafa',
+            timestamp: '2025-07-30 03:12:27'
         });
     });
 }

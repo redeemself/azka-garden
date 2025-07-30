@@ -1,10 +1,9 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
-<<<<<<< HEAD
 use Illuminate\Support\Facades\Log;
-use Illuminate\Http\Request;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,19 +14,79 @@ use Illuminate\Http\Request;
 | routes are loaded by the RouteServiceProvider and all of them will
 | be assigned to the "api" middleware group. Make something great!
 |
-| Updated: 2025-07-29 13:29:10 UTC by mulyadafa
-| Fixed protected visibility error and added proper shipping cost handling
+| Updated: 2025-07-30 03:36:52 UTC by mulyadafa
 |
 */
-=======
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
+
+// Health check endpoint (public)
+Route::get('/health', function() {
+    return response()->json([
+        'status' => 'OK',
+        'service' => 'Azka Garden API',
+        'timestamp' => now()->format('Y-m-d H:i:s'),
+        'version' => '1.0.0'
+    ]);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Public API Routes (No Authentication Required)
+|--------------------------------------------------------------------------
+|
+| Routes yang bisa diakses tanpa authentication
+|
+*/
+
+// Public API Routes for Mobile App
+Route::prefix('v1')->group(function () {
+    Route::get('/products', [App\Http\Controllers\Api\ProductController::class, 'index']);
+    Route::get('/products/{id}', [App\Http\Controllers\Api\ProductController::class, 'show']);
+});
+
+// Public shipping cost endpoint (for non-authenticated users)
+Route::get('/public/shipping-cost/{method}', function($method) {
+    $costs = [
+        'JNT' => 14000.00,
+        'GOSEND' => 25000.00,
+        'JNE' => 12000.00,
+        'SICEPAT' => 15000.00,
+        'KURIR_TOKO' => 15000.00,
+        'AMBIL_SENDIRI' => 0.00
+    ];
+
+    $method = strtoupper($method);
+    $cost = $costs[$method] ?? 0;
+
+    return response()->json([
+        'success' => true,
+        'method' => $method,
+        'cost' => $cost,
+        'formatted_cost' => 'Rp' . number_format($cost, 0, ',', '.'),
+        'public' => true
+    ]);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Protected API Routes (Authentication Required)
+|--------------------------------------------------------------------------
+|
+| Routes that require authentication with Sanctum
+|
+*/
 
 Route::middleware('auth:sanctum')->group(function () {
+    // Basic user info
     Route::get('/user', function () {
         return Auth::user();
     });
+    
+    // User profile endpoint
+    Route::get('/profile', [App\Http\Controllers\Api\UserController::class, 'profile']);
+    
+    // Orders endpoints
+    Route::post('/orders', [App\Http\Controllers\Api\OrderController::class, 'store']);
 
-<<<<<<< HEAD
     /*
     |--------------------------------------------------------------------------
     | Shipping Cost API Endpoints
@@ -40,7 +99,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Get shipping cost by method
     Route::get('/shipping-cost/{method}', function($method) {
-        // Shipping costs sesuai database shippings.sql (Updated: 2025-07-29)
+        // Shipping costs sesuai database shippings.sql (Updated: 2025-07-30)
         $costs = [
             'JNT' => 14000.00,          // ID 15 - J&T EZ (CORRECTED from 25000)
             'GOSEND' => 25000.00,       // ID 13 - GoSend Sameday
@@ -114,7 +173,7 @@ Route::middleware('auth:sanctum')->group(function () {
         return response()->json([
             'success' => true,
             'data' => $costs,
-            'updated_at' => '2025-07-29 13:29:10',
+            'updated_at' => '2025-07-30 03:36:52',
             'updated_by' => 'mulyadafa',
             'note' => 'JNT cost corrected from Rp25,000 to Rp14,000'
         ]);
@@ -271,52 +330,4 @@ Route::middleware('auth:sanctum')->group(function () {
             'source' => 'config'
         ]);
     });
-
-    // endpoint lain yang sudah ada...
 });
-
-/*
-|--------------------------------------------------------------------------
-| Public API Routes (No Authentication Required)
-|--------------------------------------------------------------------------
-|
-| Routes yang bisa diakses tanpa authentication
-|
-*/
-
-// Public shipping cost endpoint (for non-authenticated users)
-Route::get('/public/shipping-cost/{method}', function($method) {
-    $costs = [
-        'JNT' => 14000.00,
-        'GOSEND' => 25000.00,
-        'JNE' => 12000.00,
-        'SICEPAT' => 15000.00,
-        'KURIR_TOKO' => 15000.00,
-        'AMBIL_SENDIRI' => 0.00
-    ];
-
-    $method = strtoupper($method);
-    $cost = $costs[$method] ?? 0;
-
-    return response()->json([
-        'success' => true,
-        'method' => $method,
-        'cost' => $cost,
-        'formatted_cost' => 'Rp' . number_format($cost, 0, ',', '.'),
-        'public' => true
-    ]);
-});
-
-// Health check endpoint
-Route::get('/health', function() {
-    return response()->json([
-        'status' => 'OK',
-        'service' => 'Azka Garden API',
-        'timestamp' => now()->format('Y-m-d H:i:s'),
-        'version' => '1.0.0'
-    ]);
-});
-=======
-    // endpoint lain…
-});
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)

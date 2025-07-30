@@ -18,7 +18,8 @@
     "laravel/pint": "^1.22",
     "mockery/mockery": "^1.6",
     "nunomaduro/collision": "^8.6",
-    "phpunit/phpunit": "^11.5"
+    "phpunit/phpunit": "^11.5",
+    "symfony/thanks": "^1.4"
   },
   "autoload": {
     "psr-4": {
@@ -64,7 +65,10 @@
     "optimize-autoloader": true,
     "preferred-install": "dist",
     "sort-packages": true,
-    "platform-check": false
+    "platform-check": false,
+    "allow-plugins": {
+      "symfony/thanks": true
+    }
   },
   "minimum-stability": "stable",
   "prefer-stable": true

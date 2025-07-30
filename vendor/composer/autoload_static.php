@@ -61,6 +61,7 @@ class ComposerStaticInit4da9d539f1efe9ebd01010deb0b2a9bd
         ),
         'S' => 
         array (
+            'Symfony\\Thanks\\' => 15,
             'Symfony\\Polyfill\\Uuid\\' => 22,
             'Symfony\\Polyfill\\Php83\\' => 23,
             'Symfony\\Polyfill\\Php80\\' => 23,
@@ -212,6 +213,10 @@ class ComposerStaticInit4da9d539f1efe9ebd01010deb0b2a9bd
         'Termwind\\' => 
         array (
             0 => __DIR__ . '/..' . '/nunomaduro/termwind/src',
+        ),
+        'Symfony\\Thanks\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/thanks/src',
         ),
         'Symfony\\Polyfill\\Uuid\\' => 
         array (
@@ -628,6 +633,7 @@ class ComposerStaticInit4da9d539f1efe9ebd01010deb0b2a9bd
         'App\\Http\\Controllers\\ArticleController' => __DIR__ . '/../..' . '/app/Http/Controllers/ArticleController.php',
         'App\\Http\\Controllers\\AuthController' => __DIR__ . '/../..' . '/app/Http/Controllers/AuthController.php',
         'App\\Http\\Controllers\\BlogController' => __DIR__ . '/../..' . '/app/Http/Controllers/BlogController.php',
+        'App\\Http\\Controllers\\CheckoutController' => __DIR__ . '/../..' . '/app/Http/Controllers/CheckoutController.php',
         'App\\Http\\Controllers\\ContactController' => __DIR__ . '/../..' . '/app/Http/Controllers/ContactController.php',
         'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
         'App\\Http\\Controllers\\DevAuthController' => __DIR__ . '/../..' . '/app/Http/Controllers/DevAuthController.php',
@@ -640,11 +646,8 @@ class ComposerStaticInit4da9d539f1efe9ebd01010deb0b2a9bd
         'App\\Http\\Controllers\\PublicController' => __DIR__ . '/../..' . '/app/Http/Controllers/PublicController.php',
         'App\\Http\\Controllers\\RegisterController' => __DIR__ . '/../..' . '/app/Http/Controllers/RegisterController.php',
         'App\\Http\\Controllers\\User\\AddressController' => __DIR__ . '/../..' . '/app/Http/Controllers/User/AddressController.php',
-        'App\\Http\\Controllers\\User\\CartController' => __DIR__ . '/../..' . '/app/Http/Controllers/User/CartController.php',
-        'App\\Http\\Controllers\\User\\OrderController' => __DIR__ . '/../..' . '/app/Http/Controllers/User/OrderController.php',
-        'App\\Http\\Controllers\\User\\ProductController' => __DIR__ . '/../..' . '/app/Http/Controllers/User/ProductController.php',
+        'App\\Http\\Controllers\\User\\PaymentController' => __DIR__ . '/../..' . '/app/Http/Controllers/User/PaymentController.php',
         'App\\Http\\Controllers\\User\\ProfileController' => __DIR__ . '/../..' . '/app/Http/Controllers/User/ProfileController.php',
-        'App\\Http\\Controllers\\User\\PromoController' => __DIR__ . '/../..' . '/app/Http/Controllers/User/PromoController.php',
         'App\\Http\\Kernel' => __DIR__ . '/../..' . '/app/Http/Kernel.php',
         'App\\Http\\Middleware\\AdminMiddleware' => __DIR__ . '/../..' . '/app/Http/Middleware/AdminMiddleware.php',
         'App\\Http\\Middleware\\Authenticate' => __DIR__ . '/../..' . '/app/Http/Middleware/Authenticate.php',
@@ -663,6 +666,7 @@ class ComposerStaticInit4da9d539f1efe9ebd01010deb0b2a9bd
         'App\\Http\\Middleware\\TrustHosts' => __DIR__ . '/../..' . '/app/Http/Middleware/TrustHosts.php',
         'App\\Http\\Middleware\\TrustProxies' => __DIR__ . '/../..' . '/app/Http/Middleware/TrustProxies.php',
         'App\\Http\\Middleware\\UserMiddleware' => __DIR__ . '/../..' . '/app/Http/Middleware/UserMiddleware.php',
+        'App\\Http\\Middleware\\ValidateOrderOwnership' => __DIR__ . '/../..' . '/app/Http/Middleware/ValidateOrderOwnership.php',
         'App\\Http\\Middleware\\VerifyCsrfToken' => __DIR__ . '/../..' . '/app/Http/Middleware/VerifyCsrfToken.php',
         'App\\Http\\Requests\\ProductRequest' => __DIR__ . '/../..' . '/app/Http/Requests/ProductRequest.php',
         'App\\Mail\\ContactFormMail' => __DIR__ . '/../..' . '/app/Mail/ContactFormMail.php',
@@ -971,17 +975,13 @@ class ComposerStaticInit4da9d539f1efe9ebd01010deb0b2a9bd
         'Database\\Factories\\ProductFactory' => __DIR__ . '/../..' . '/database/factories/ProductFactory.php',
         'Database\\Factories\\RoleFactory' => __DIR__ . '/../..' . '/database/factories/RoleFactory.php',
         'Database\\Factories\\UserFactory' => __DIR__ . '/../..' . '/database/factories/UserFactory.php',
-        'Database\\Seeders\\DatabaseSeeder' => __DIR__ . '/../..' . '/database/seeders/DatabaseSeeder.php',
         'Database\\Seeders\\EnumRolesSeeder' => __DIR__ . '/../..' . '/database/seeders/EnumRolesSeeder.php',
         'Database\\Seeders\\EnumSeeder' => __DIR__ . '/../..' . '/database/seeders/EnumSeeder.php',
         'Database\\Seeders\\InterfaceSeeder' => __DIR__ . '/../..' . '/database/seeders/InterfaceSeeder.php',
         'Database\\Seeders\\PaymentMethodSeeder' => __DIR__ . '/../..' . '/database/seeders/PaymentMethodSeeder.php',
         'Database\\Seeders\\RoleSeeder' => __DIR__ . '/../..' . '/database/seeders/RoleSeeder.php',
-<<<<<<< HEAD
         'Database\\Seeders\\ShippingMethodSeeder' => __DIR__ . '/../..' . '/database/seeders/ShippingMethodSeeder.php',
         'Database\\Seeders\\ShippingSeeder' => __DIR__ . '/../..' . '/database/seeders/ShippingSeeder.php',
-=======
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         'Database\\Seeders\\SyncContactPromoSeeder' => __DIR__ . '/../..' . '/database/seeders/SyncContactPromoSeeder.php',
         'DateError' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateError.php',
         'DateException' => __DIR__ . '/..' . '/symfony/polyfill-php83/Resources/stubs/DateException.php',
@@ -5273,11 +5273,13 @@ class ComposerStaticInit4da9d539f1efe9ebd01010deb0b2a9bd
         'PhpParser\\Lexer\\TokenEmulator\\KeywordEmulator' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Lexer/TokenEmulator/KeywordEmulator.php',
         'PhpParser\\Lexer\\TokenEmulator\\MatchTokenEmulator' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Lexer/TokenEmulator/MatchTokenEmulator.php',
         'PhpParser\\Lexer\\TokenEmulator\\NullsafeTokenEmulator' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Lexer/TokenEmulator/NullsafeTokenEmulator.php',
+        'PhpParser\\Lexer\\TokenEmulator\\PipeOperatorEmulator' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Lexer/TokenEmulator/PipeOperatorEmulator.php',
         'PhpParser\\Lexer\\TokenEmulator\\PropertyTokenEmulator' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Lexer/TokenEmulator/PropertyTokenEmulator.php',
         'PhpParser\\Lexer\\TokenEmulator\\ReadonlyFunctionTokenEmulator' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Lexer/TokenEmulator/ReadonlyFunctionTokenEmulator.php',
         'PhpParser\\Lexer\\TokenEmulator\\ReadonlyTokenEmulator' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Lexer/TokenEmulator/ReadonlyTokenEmulator.php',
         'PhpParser\\Lexer\\TokenEmulator\\ReverseEmulator' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Lexer/TokenEmulator/ReverseEmulator.php',
         'PhpParser\\Lexer\\TokenEmulator\\TokenEmulator' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Lexer/TokenEmulator/TokenEmulator.php',
+        'PhpParser\\Lexer\\TokenEmulator\\VoidCastEmulator' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Lexer/TokenEmulator/VoidCastEmulator.php',
         'PhpParser\\Modifiers' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Modifiers.php',
         'PhpParser\\NameContext' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/NameContext.php',
         'PhpParser\\Node' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Node.php',
@@ -5345,6 +5347,7 @@ class ComposerStaticInit4da9d539f1efe9ebd01010deb0b2a9bd
         'PhpParser\\Node\\Expr\\BinaryOp\\Mul' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Node/Expr/BinaryOp/Mul.php',
         'PhpParser\\Node\\Expr\\BinaryOp\\NotEqual' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Node/Expr/BinaryOp/NotEqual.php',
         'PhpParser\\Node\\Expr\\BinaryOp\\NotIdentical' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Node/Expr/BinaryOp/NotIdentical.php',
+        'PhpParser\\Node\\Expr\\BinaryOp\\Pipe' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Node/Expr/BinaryOp/Pipe.php',
         'PhpParser\\Node\\Expr\\BinaryOp\\Plus' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Node/Expr/BinaryOp/Plus.php',
         'PhpParser\\Node\\Expr\\BinaryOp\\Pow' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Node/Expr/BinaryOp/Pow.php',
         'PhpParser\\Node\\Expr\\BinaryOp\\ShiftLeft' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Node/Expr/BinaryOp/ShiftLeft.php',
@@ -5363,6 +5366,7 @@ class ComposerStaticInit4da9d539f1efe9ebd01010deb0b2a9bd
         'PhpParser\\Node\\Expr\\Cast\\Object_' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Node/Expr/Cast/Object_.php',
         'PhpParser\\Node\\Expr\\Cast\\String_' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Node/Expr/Cast/String_.php',
         'PhpParser\\Node\\Expr\\Cast\\Unset_' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Node/Expr/Cast/Unset_.php',
+        'PhpParser\\Node\\Expr\\Cast\\Void_' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Node/Expr/Cast/Void_.php',
         'PhpParser\\Node\\Expr\\ClassConstFetch' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Node/Expr/ClassConstFetch.php',
         'PhpParser\\Node\\Expr\\Clone_' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Node/Expr/Clone_.php',
         'PhpParser\\Node\\Expr\\Closure' => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser/Node/Expr/Closure.php',
@@ -7086,6 +7090,10 @@ class ComposerStaticInit4da9d539f1efe9ebd01010deb0b2a9bd
         'Symfony\\Polyfill\\Php80\\PhpToken' => __DIR__ . '/..' . '/symfony/polyfill-php80/PhpToken.php',
         'Symfony\\Polyfill\\Php83\\Php83' => __DIR__ . '/..' . '/symfony/polyfill-php83/Php83.php',
         'Symfony\\Polyfill\\Uuid\\Uuid' => __DIR__ . '/..' . '/symfony/polyfill-uuid/Uuid.php',
+        'Symfony\\Thanks\\Command\\FundCommand' => __DIR__ . '/..' . '/symfony/thanks/src/Command/FundCommand.php',
+        'Symfony\\Thanks\\Command\\ThanksCommand' => __DIR__ . '/..' . '/symfony/thanks/src/Command/ThanksCommand.php',
+        'Symfony\\Thanks\\GitHubClient' => __DIR__ . '/..' . '/symfony/thanks/src/GitHubClient.php',
+        'Symfony\\Thanks\\Thanks' => __DIR__ . '/..' . '/symfony/thanks/src/Thanks.php',
         'Termwind\\Actions\\StyleToMethod' => __DIR__ . '/..' . '/nunomaduro/termwind/src/Actions/StyleToMethod.php',
         'Termwind\\Components\\Anchor' => __DIR__ . '/..' . '/nunomaduro/termwind/src/Components/Anchor.php',
         'Termwind\\Components\\BreakLine' => __DIR__ . '/..' . '/nunomaduro/termwind/src/Components/BreakLine.php',
