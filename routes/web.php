@@ -27,7 +27,7 @@ use App\Http\Controllers\User\AddressController;
  * ==================================
  * AZKA GARDEN E-COMMERCE APPLICATION
  * Routes Configuration
- * Last updated: 2025-07-30 03:08:52
+ * Last updated: 2025-07-30 08:01:43
  * Author: mulyadafa
  * ==================================
  */
@@ -89,22 +89,22 @@ Route::view('/accessibility', 'policies.accessibility')->name('accessibility');
 // -----------------------------
 // POLICY ACCEPT & RESET
 // -----------------------------
-Route::post('/policy/accept', function(Request $request) {
+Route::post('/policy/accept', function (Request $request) {
     return redirect()->back()->with('success', 'Kebijakan privasi diterima.');
 })->name('policy.accept');
 
-Route::get('/policy/reset', function() {
+Route::get('/policy/reset', function () {
     return view('policies.reset_confirmation');
 })->name('policy.reset.form');
 
-Route::post('/policy/reset', function(Request $request) {
+Route::post('/policy/reset', function (Request $request) {
     return redirect()->route('privacy')->with('success', 'Persetujuan kebijakan privasi telah direset.');
 })->name('policy.reset');
 
 // -----------------------------
 // PROMO CODE ACTIVATION & DEACTIVATION
 // -----------------------------
-Route::middleware(['web'])->group(function() {
+Route::middleware(['web'])->group(function () {
     Route::post('/promo/activate', [PromoController::class, 'activate'])->name('promo.activate');
     Route::post('/promo/deactivate', [PromoController::class, 'deactivate'])->name('promo.deactivate');
 });
@@ -132,14 +132,24 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/products/{id}/like', [ProductController::class, 'like'])->name('products.like');
     Route::post('/products/{id}/comment', [ProductController::class, 'comment'])->name('products.comment');
 
-    // Address routes (outside of user prefix for compatibility)
-    Route::post('/address', [AddressController::class, 'store'])->name('address.store');
+    // Address routes - FIXED: Added the missing user.address.store route
+    Route::prefix('user/address')->name('user.address.')->group(function () {
+        Route::post('/store', [AddressController::class, 'store'])->name('store');
+        Route::get('/', [AddressController::class, 'index'])->name('index');
+        Route::get('/create', [AddressController::class, 'create'])->name('create');
+        Route::get('/{address}/edit', [AddressController::class, 'edit'])->name('edit');
+        Route::put('/{address}', [AddressController::class, 'update'])->name('update');
+        Route::delete('/{address}', [AddressController::class, 'destroy'])->name('destroy');
+    });
+
+    // Keep existing route for updating coordinates
     Route::post('/address/update-coords', [AddressController::class, 'updateCoords'])->name('address.updateCoords');
 
     // PATCH Routes for order actions (global access, not within user prefix)
-    Route::patch('user/orders/{order}/expire', [OrderController::class, 'expire'])->name('user.orders.expire');
-    Route::patch('user/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('user.orders.cancel');
-    Route::patch('user/orders/{order}/complete', [OrderController::class, 'complete'])->name('user.orders.complete');
+    // FIXED: Renamed these routes to avoid name conflicts
+    Route::patch('user/orders/{order}/expire', [OrderController::class, 'expire'])->name('user.orders.expire.global');
+    Route::patch('user/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('user.orders.cancel.global');
+    Route::patch('user/orders/{order}/complete', [OrderController::class, 'complete'])->name('user.orders.complete.global');
 
     // -----------------------------
     // CHECKOUT ROUTES
@@ -155,14 +165,14 @@ Route::middleware('auth')->prefix('user')->name('user.')->group(function () {
     Route::get('/', fn() => redirect()->route('user.profile.index'))->name('home');
 
     // Profile User
-    Route::controller(ProfileController::class)->group(function() {
+    Route::controller(ProfileController::class)->group(function () {
         Route::get('profile', 'index')->name('profile.index');
         Route::get('profile/edit', 'edit')->name('profile.edit');
         Route::put('profile', 'update')->name('profile.update');
         Route::post('confirm-roles', 'confirmRoles')->name('confirmRoles');
     });
 
-    // Address Management
+    // Address Management - Keep for backward compatibility
     Route::prefix('addresses')->name('addresses.')->controller(AddressController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('create', 'create')->name('create');
@@ -185,11 +195,11 @@ Route::middleware('auth')->prefix('user')->name('user.')->group(function () {
     Route::prefix('cart')->name('cart.')->controller(CartController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('add', 'add')->name('add');
-        
+
         // Supports both direct POST and method spoofing
         Route::match(['post', 'put'], 'update', 'update')->name('update');
         Route::delete('{id}', 'destroy')->name('destroy');
-        
+
         Route::post('redeem', 'redeemPromo')->name('redeem');
         Route::post('apply-promo', 'applyPromo')->name('apply-promo');
         Route::post('save-shipping', 'saveShipping')->name('save-shipping');
@@ -212,21 +222,21 @@ Route::middleware('auth')->prefix('user')->name('user.')->group(function () {
         // List views
         Route::get('/', 'index')->name('index');
         Route::get('history', 'history')->name('history.index');
-        
+
         // Order CRUD operations in logical order
         Route::post('create', 'create')->name('create');
         Route::get('checkout/success/{order}', 'checkoutSuccess')->name('checkout.success');
-        
+
         // Order detail view
         Route::get('{order}', 'show')->name('show');
         Route::post('{order}/pay', 'pay')->name('pay');
-        
-        // Order state change operations
-        Route::match(['post', 'patch'], '{order}/cancel', 'cancel')->name('cancel');
-        Route::match(['post', 'patch'], '{order}/expire', 'expire')->name('expire');
-        Route::match(['post', 'patch'], '{order}/complete', 'complete')->name('complete');
+
+        // Order state change operations - FIXED: This was conflicting with global routes
+        Route::post('{order}/cancel', 'cancel')->name('cancel');
+        Route::post('{order}/expire', 'expire')->name('expire');
+        Route::post('{order}/complete', 'complete')->name('complete');
         Route::post('{order}/finish', 'finish')->name('finish');
-        
+
         // Order management operations
         Route::post('cancel-confirm', 'cancelConfirm')->name('cancelConfirm');
         Route::post('cancel-draft', 'cancelDraft')->name('cancel-draft');
@@ -249,14 +259,14 @@ Route::prefix('admin')->name('admin.')->middleware('guest:admin')->group(functio
 // -----------------------------
 Route::prefix('admin')->name('admin.')->middleware(['auth:admin', 'admin'])->group(function () {
     Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
-    
+
     // Admin Profile
-    Route::controller(AdminProfileController::class)->group(function() {
+    Route::controller(AdminProfileController::class)->group(function () {
         Route::get('profile', 'index')->name('profile');
         Route::get('profile/edit', 'edit')->name('profile.edit');
         Route::put('profile', 'update')->name('profile.update');
     });
-    
+
     // Admin Logout
     Route::post('logout', [AdminAuthController::class, 'logout'])->name('logout');
 });
@@ -290,6 +300,6 @@ foreach ([401, 403, 404, 419, 422, 429, 500, 503] as $code) {
 // -----------------------------
 // FALLBACK ROUTE (redirect to home)
 // -----------------------------
-Route::fallback(function() {
+Route::fallback(function () {
     return redirect()->route('home')->with('error', 'Halaman yang Anda cari tidak ditemukan.');
 });

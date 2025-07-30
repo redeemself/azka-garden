@@ -1,32 +1,17 @@
 {
-  "resources/css/admin/admin.css": {
-    "file": "assets/admin-9a987032.css",
-    "isEntry": true,
-    "src": "resources/css/admin/admin.css"
-  },
   "resources/css/app.css": {
-    "file": "assets/app-a1025e87.css",
+    "file": "assets/app-e1b693ca.css",
     "src": "resources/js/app.css"
   },
-  "resources/css/dev/dev.css": {
-    "file": "assets/dev-538cd7cf.css",
-    "isEntry": true,
-    "src": "resources/css/dev/dev.css"
-  },
-  "resources/css/user/user.css": {
-    "file": "assets/user-11b5c90c.css",
-    "isEntry": true,
-    "src": "resources/css/user/user.css"
-  },
   "resources/js/app.css": {
-    "file": "assets/app-a1025e87.css",
+    "file": "assets/app-e1b693ca.css",
     "src": "resources/js/app.css"
   },
   "resources/js/app.js": {
     "css": [
-      "assets/app-a1025e87.css"
+      "assets/app-e1b693ca.css"
     ],
-    "file": "assets/app-229f1475.js",
+    "file": "assets/app-a6634d04.js",
     "isEntry": true,
     "src": "resources/js/app.js"
   }

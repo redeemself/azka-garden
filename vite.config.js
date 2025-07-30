@@ -1,6 +1,14 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
-import externals from './vite.externals.js';
+
+// Create a simple externals object if vite.externals.js doesn't exist
+const externals = {
+    lodash: 'lodash',
+    axios: 'axios',
+    alpinejs: 'Alpine',
+    'chart.js/auto': 'Chart',
+    flatpickr: 'flatpickr',
+};
 
 export default defineConfig({
     server: {
@@ -35,5 +43,5 @@ export default defineConfig({
             },
         },
     },
-    // Updated: 2025-07-30 04:12:47 by mulyadafa
+    // Updated: 2025-07-30 07:56:30 by mulyadafa
 });

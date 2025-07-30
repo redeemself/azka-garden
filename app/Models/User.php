@@ -10,6 +10,11 @@ use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
+ * User Model
+ *
+ * Last updated: 2025-07-30 07:32:44
+ * Updated by: mulyadafa
+ *
  * @property int $id
  * @property string $name
  * @property string $email
@@ -39,17 +44,27 @@ class User extends Authenticatable
 
     protected $table = 'users';
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'name',
         'email',
         'password',
-        'plain_password', // <--- tambahkan ini
+        'plain_password',
         'phone',
         'last_login',
         'interface_id',
         'profile_photo_path',
     ];
 
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
     protected $hidden = [
         'password',
         'remember_token',
@@ -57,14 +72,24 @@ class User extends Authenticatable
         // 'plain_password',
     ];
 
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
     protected $casts = [
         'email_verified_at' => 'datetime',
         'last_login' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
-        // 'plain_password' => 'string', // tidak wajib, tapi boleh
     ];
 
+    /**
+     * Set the password attribute with automatic hashing if needed.
+     *
+     * @param string $password
+     * @return void
+     */
     public function setPasswordAttribute($password)
     {
         if (!empty($password) && Hash::needsRehash($password)) {
@@ -74,21 +99,51 @@ class User extends Authenticatable
         }
     }
 
+    /**
+     * Get the roles that belong to the user.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
     public function roles()
     {
         return $this->belongsToMany(Role::class, 'role_user', 'user_id', 'role_id')->withTimestamps();
     }
 
+    /**
+     * Get the addresses for the user.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
     public function addresses()
     {
-        return $this->hasMany(Address::class, 'user_id', 'id');
+        return $this->hasMany(Address::class);
     }
 
+    /**
+     * Get the orders for the user.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
     public function orders()
     {
         return $this->hasMany(Order::class, 'user_id', 'id');
     }
 
+    /**
+     * Get the cart items for the user.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function carts()
+    {
+        return $this->hasMany(Cart::class, 'user_id', 'id');
+    }
+
+    /**
+     * Get the user's avatar URL.
+     *
+     * @return string
+     */
     public function getAvatarAttribute(): string
     {
         if ($this->profile_photo_path) {
@@ -97,6 +152,12 @@ class User extends Authenticatable
         return asset('images/default-user.png');
     }
 
+    /**
+     * Check if user has one or more roles.
+     *
+     * @param string|array $roles
+     * @return bool
+     */
     public function hasRole($roles): bool
     {
         $roleValues = $this->roles->map(fn($role) => Str::upper($role->name))->toArray();
@@ -107,10 +168,5 @@ class User extends Authenticatable
         }
 
         return in_array(Str::upper((string) $roles), $roleValues);
-    }
-
-    public function carts()
-    {
-        return $this->hasMany(Cart::class, 'user_id', 'id');
     }
 }
