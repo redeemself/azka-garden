@@ -458,7 +458,35 @@
         margin-top: 0.5rem;
     }
 
-    /* Checkout Button */
+    /* Button Styles */
+    .back-button {
+        background: var(--gray-100);
+        color: var(--gray-700);
+        border: 1px solid var(--gray-300);
+        border-radius: 0.5rem;
+        padding: 1rem;
+        font-weight: 600;
+        font-size: 1rem;
+        width: 100%;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        text-decoration: none;
+        text-align: center;
+    }
+
+    .back-button:hover {
+        background: var(--gray-200);
+        border-color: var(--gray-400);
+        transform: translateY(-1px);
+        color: var(--gray-700);
+        text-decoration: none;
+    }
+
     .checkout-button {
         background: var(--primary);
         color: var(--white);
@@ -844,6 +872,12 @@
                         </h2>
                     </div>
                     <div class="checkout-panel-body">
+                        <!-- Back to Cart Button -->
+                        <a href="{{ route('user.cart.index') }}" class="back-button">
+                            <i data-feather="arrow-left"></i>
+                            Kembali ke Keranjang
+                        </a>
+
                         <div class="summary-row">
                             <span>Subtotal ({{ $cartItems->count() }} item)</span>
                             <span id="checkout-subtotal">Rp {{ number_format($grand_total + $total_discount, 0, ',', '.') }}</span>
@@ -874,7 +908,7 @@
                         @if($allMethods->count())
                             <button type="submit" class="checkout-button">
                                 <i data-feather="credit-card"></i>
-                                Buat Pesanan
+                                Bayar
                             </button>
                         @endif
                     </div>
@@ -1083,6 +1117,9 @@ function initFormValidation() {
             alert('Silakan pilih metode pembayaran');
             return;
         }
+
+        // Update the form action to payment index
+        form.action = "{{ url('/user/payment') }}";
 
         // Basic validation passed, allow form submission
         console.log('Form submitted with:', {

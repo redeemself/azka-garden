@@ -15,6 +15,7 @@ use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\User\ProductController;
 use App\Http\Controllers\User\CartController;
 use App\Http\Controllers\User\OrderController;
+use App\Http\Controllers\User\PaymentController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DevController;
 use App\Http\Controllers\FaqController;
@@ -26,7 +27,7 @@ use App\Http\Controllers\User\AddressController;
  * ==================================
  * AZKA GARDEN E-COMMERCE APPLICATION
  * Routes Configuration
- * Last updated: 2025-07-29 15:31:30
+ * Last updated: 2025-07-30 02:02:00
  * Author: mulyadafa
  * ==================================
  */
@@ -187,7 +188,17 @@ Route::middleware('auth')->prefix('user')->name('user.')->group(function () {
         Route::post('save-payment', 'savePayment')->name('save-payment');
     });
 
-    // Orders Routes - IMPROVED: Removed confirm.blade.php routes
+    // -----------------------------
+    // PAYMENT ROUTES - NEW ADDITION
+    // -----------------------------
+    Route::prefix('payment')->name('payment.')->controller(PaymentController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('process', 'process')->name('process');
+        Route::get('success/{order}', 'success')->name('success');
+        Route::get('failed/{order?}', 'failed')->name('failed');
+    });
+
+    // Orders Routes - IMPROVED: Removed confirm.blade.php routes + Added payment integration
     Route::prefix('orders')->name('orders.')->controller(OrderController::class)->group(function () {
         // List views
         Route::get('/', 'index')->name('index');
@@ -211,6 +222,19 @@ Route::middleware('auth')->prefix('user')->name('user.')->group(function () {
         Route::post('cancel-confirm', 'cancelConfirm')->name('cancelConfirm');
         Route::post('cancel-draft', 'cancelDraft')->name('cancel-draft');
         Route::post('clear_expired', 'clearExpired')->name('clear_expired');
+    });
+
+    // -----------------------------
+    // ADDRESS MANAGEMENT - ENHANCED
+    // -----------------------------
+    Route::prefix('addresses')->name('addresses.')->controller(AddressController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('create', 'create')->name('create');
+        Route::post('/', 'store')->name('store');
+        Route::get('{address}/edit', 'edit')->name('edit');
+        Route::put('{address}', 'update')->name('update');
+        Route::delete('{address}', 'destroy')->name('destroy');
+        Route::patch('{address}/primary', 'setPrimary')->name('setPrimary');
     });
 });
 
