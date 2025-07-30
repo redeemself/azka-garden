@@ -919,4 +919,147 @@ class CartController extends Controller
             return back()->with('error', 'Gagal menerapkan kode promo');
         }
     }
+
+    /**
+     * Handle updating shipping method via AJAX
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateShipping(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'shipping_method' => 'required|string|max:50',
+            ]);
+            $shippingMethod = $request->shipping_method;
+            $shippingCost = $this->calculateShippingCost($shippingMethod);
+            session([
+                'shipping_method' => $shippingMethod,
+                'shipping_cost' => $shippingCost
+            ]);
+            return response()->json([
+                'success' => true,
+                'shipping_method' => $shippingMethod,
+                'shipping_cost' => $shippingCost,
+                'formatted_cost' => 'Rp' . number_format($shippingCost, 0, ',', '.')
+            ]);
+        } catch (Exception $e) {
+            Log::error('Error updating shipping method', [
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui metode pengiriman',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
+    }
+
+    /**
+     * Handle updating payment method via AJAX
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updatePayment(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'payment_method' => 'required|string|max:50',
+            ]);
+            session(['payment_method' => $request->payment_method]);
+            return response()->json(['success' => true]);
+        } catch (Exception $e) {
+            Log::error('Error updating payment method', [
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui metode pembayaran',
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
+    }
+
+    /**
+     * Handle updating quantity via AJAX
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateQuantity(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'cart_id' => 'required|integer|exists:carts,id',
+                'quantity' => 'required|integer|min:1',
+            ]);
+            $cart = Cart::find($request->cart_id);
+            if (!$cart) {
+                return response()->json(['success' => false, 'message' => 'Item keranjang tidak ditemukan']);
+            }
+
+            // Validate quantity
+            $quantity = (int)$request->quantity;
+            if ($quantity < 1) {
+                $quantity = 1;
+            }
+
+            // Check stock
+            $product = $cart->product;
+            if ($product && $quantity > $product->stock) {
+                $quantity = $product->stock;
+                $message = 'Jumlah disesuaikan dengan stok tersedia';
+            } else {
+                $message = 'Jumlah berhasil diperbarui';
+            }
+
+            // Update cart
+            $cart->quantity = $quantity;
+            $cart->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'cart' => $cart
+            ]);
+        } catch (Exception $e) {
+            Log::error('Error updating cart quantity', [
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Handle removing item via AJAX
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function removeItem(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'cart_id' => 'required|integer|exists:carts,id',
+            ]);
+            $cart = Cart::find($request->cart_id);
+            if (!$cart) {
+                return response()->json(['success' => false, 'message' => 'Item keranjang tidak ditemukan']);
+            }
+
+            $cart->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Item berhasil dihapus dari keranjang'
+            ]);
+        } catch (Exception $e) {
+            Log::error('Error removing cart item', [
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
 }

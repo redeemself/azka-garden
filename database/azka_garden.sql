@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Jul 30, 2025 at 12:49 AM
+-- Generation Time: Jul 30, 2025 at 12:18 PM
 -- Server version: 8.0.36
 -- PHP Version: 8.3.16
 
@@ -39,16 +39,21 @@ CREATE TABLE `addresses` (
   `is_primary` tinyint(1) NOT NULL DEFAULT '0',
   `interface_id` bigint UNSIGNED NOT NULL DEFAULT '1',
   `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `state` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `postal_code` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `address` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `latitude` decimal(10,8) DEFAULT NULL,
+  `longitude` decimal(11,8) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `addresses`
 --
 
-INSERT INTO `addresses` (`id`, `user_id`, `label`, `recipient`, `phone_number`, `full_address`, `city`, `zip_code`, `is_primary`, `interface_id`, `created_at`, `updated_at`) VALUES
-(1, 1, 'Alamat Saya', 'Roberto', '081281349115', 'Jl. Swadarma Raya Blok F No.8Sukamaju, Kec. Cilodong, Kota Depok, Jawa Barat 16415', 'Depok', '16415', 1, 1, '2025-07-29 08:52:45', '2025-07-29 08:52:45'),
-(2, 2, 'Alamat Saya', 'Roberto', '081281349115', 'Jl. Swadarma Raya Blok F No.8Sukamaju, Kec. Cilodong, Kota Depok, Jawa Barat 16415', 'Depok', '16415', 1, 1, '2025-07-29 17:31:34', '2025-07-29 17:31:34');
+INSERT INTO `addresses` (`id`, `user_id`, `label`, `recipient`, `phone_number`, `full_address`, `city`, `zip_code`, `is_primary`, `interface_id`, `created_at`, `updated_at`, `state`, `postal_code`, `address`, `latitude`, `longitude`) VALUES
+(1, 5, 'Alamat Saya', 'Roberto', '081281349115', 'Jl. Swadarma Raya Blok F No.8Sukamaju, Kec. Cilodong, Kota Depok, Jawa Barat 16415', 'Depok', '16415', 1, 1, '2025-07-30 01:03:49', '2025-07-30 01:55:26', NULL, NULL, NULL, NULL, NULL),
+(2, 6, 'Alamat Saya', 'Roberto Ocaviantyo Tahta Laksmana', '081281349115', 'jl dwdadaw', 'Depok', '16415', 1, 1, '2025-07-30 01:45:33', '2025-07-30 01:45:33', NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -315,9 +320,8 @@ CREATE TABLE `carts` (
 --
 
 INSERT INTO `carts` (`id`, `user_id`, `product_id`, `quantity`, `promo_code`, `discount`, `price`, `note`, `interface_id`, `created_at`, `updated_at`) VALUES
-(1, 1, 56, 1, NULL, 0, 0, NULL, 1, '2025-07-29 08:52:52', '2025-07-29 09:31:02'),
-(2, 2, 56, 2, NULL, 0, 0, NULL, 1, '2025-07-29 17:32:19', '2025-07-29 17:47:20'),
-(3, 2, 55, 1, NULL, 0, 0, NULL, 1, '2025-07-29 17:32:22', '2025-07-29 17:32:22');
+(3, 5, 55, 2, 'PROMO-INY4MR', 12500, 0, NULL, 1, '2025-07-30 04:38:49', '2025-07-30 05:09:57'),
+(4, 5, 56, 2, 'PROMO-INY4MR', 2500, 0, NULL, 1, '2025-07-30 04:39:19', '2025-07-30 05:09:57');
 
 -- --------------------------------------------------------
 
@@ -341,10 +345,10 @@ CREATE TABLE `categories` (
 --
 
 INSERT INTO `categories` (`id`, `name`, `description`, `icon`, `status`, `interface_id`, `created_at`, `updated_at`) VALUES
-(1, 'Tanaman Hias', 'Tanaman hias indoor dan outdoor', NULL, 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(2, 'Pot', 'Berbagai jenis pot taman', NULL, 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(3, 'Batu Hias', 'Batu taman hias', NULL, 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(4, 'Tanah', 'Media tanah kemasan', NULL, 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08');
+(1, 'Tanaman Hias', 'Tanaman hias indoor dan outdoor', NULL, 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(2, 'Pot', 'Berbagai jenis pot taman', NULL, 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(3, 'Batu Hias', 'Batu taman hias', NULL, 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(4, 'Tanah', 'Media tanah kemasan', NULL, 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06');
 
 -- --------------------------------------------------------
 
@@ -382,8 +386,7 @@ CREATE TABLE `contacts` (
 --
 
 INSERT INTO `contacts` (`id`, `name`, `email`, `phone`, `message`, `promo_code`, `created_at`, `updated_at`) VALUES
-(1, 'Newsletter Subscriber', 'admin@azkagarden.com', NULL, 'newsletter', 'PROMO-EKNQ2W', '2025-07-29 08:53:39', '2025-07-29 08:53:39'),
-(2, 'Newsletter Subscriber', 'admin01@gmail.com', NULL, 'newsletter', 'PROMO-UK83VB', '2025-07-29 17:31:59', '2025-07-29 17:31:59');
+(1, 'Newsletter Subscriber', 'redeemself0@gmail.com', NULL, 'newsletter', 'PROMO-INY4MR', '2025-07-30 04:39:55', '2025-07-30 04:39:55');
 
 -- --------------------------------------------------------
 
@@ -740,11 +743,11 @@ CREATE TABLE `enum_roles` (
 --
 
 INSERT INTO `enum_roles` (`id`, `value`, `created_at`, `updated_at`) VALUES
-(1, 'CUSTOMER', '2025-07-29 08:51:26', '2025-07-29 08:51:26'),
-(2, 'GUEST', '2025-07-29 08:51:26', '2025-07-29 08:51:26'),
-(3, 'ADMIN', '2025-07-29 08:51:26', '2025-07-29 08:51:26'),
-(4, 'USER', '2025-07-29 08:51:26', '2025-07-29 08:51:26'),
-(5, 'DEVELOPER', '2025-07-29 08:51:26', '2025-07-29 08:51:26');
+(1, 'CUSTOMER', '2025-07-30 00:51:31', '2025-07-30 00:51:31'),
+(2, 'GUEST', '2025-07-30 00:51:31', '2025-07-30 00:51:31'),
+(3, 'ADMIN', '2025-07-30 00:51:31', '2025-07-30 00:51:31'),
+(4, 'USER', '2025-07-30 00:51:31', '2025-07-30 00:51:31'),
+(5, 'DEVELOPER', '2025-07-30 00:51:31', '2025-07-30 00:51:31');
 
 -- --------------------------------------------------------
 
@@ -947,111 +950,114 @@ CREATE TABLE `migrations` (
 
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (2056, '2025_07_23_034931_create_product_likes_table', 1),
-(3587, '2025_06_21_000000_create_interfaces_table', 2),
-(3588, '2025_06_21_000001_create_interface_methods_table', 2),
-(3589, '2025_06_21_000002_create_enum_roles_table', 2),
-(3590, '2025_06_21_000003_create_enum_order_status_table', 2),
-(3591, '2025_06_21_000004_create_enum_payment_status_table', 2),
-(3592, '2025_06_21_000005_create_enum_admin_role_table', 2),
-(3593, '2025_06_21_000006_create_enum_admin_status_table', 2),
-(3594, '2025_06_21_000007_create_enum_stats_type_table', 2),
-(3595, '2025_06_21_000008_create_enum_report_type_table', 2),
-(3596, '2025_06_21_000009_create_enum_dev_role_table', 2),
-(3597, '2025_06_21_000010_create_enum_dev_status_table', 2),
-(3598, '2025_06_21_000011_create_roles_table', 2),
-(3599, '2025_06_21_000012_create_users_table', 2),
-(3600, '2025_06_21_000013_create_addresses_table', 2),
-(3601, '2025_06_21_000014_create_categories_table', 2),
-(3602, '2025_06_21_000015_create_products_table', 2),
-(3603, '2025_06_21_000016_create_product_images_table', 2),
-(3604, '2025_06_21_000017_create_reviews_table', 2),
-(3605, '2025_06_21_000018_create_carts_table', 2),
-(3606, '2025_06_21_000019_create_orders_table', 2),
-(3607, '2025_06_21_000020_create_order_details_table', 2),
-(3608, '2025_06_21_000021_create_payment_methods_table', 2),
-(3609, '2025_06_21_000022_create_payments_table', 2),
-(3610, '2025_06_21_000023_create_shippings_table', 2),
-(3611, '2025_06_21_000024_create_admin_roles_table', 2),
-(3612, '2025_06_21_000025_create_admin_statuses_table', 2),
-(3613, '2025_06_21_000026_create_admins_table', 2),
-(3614, '2025_06_21_000027_create_admin_permissions_table', 2),
-(3615, '2025_06_21_000028_create_admin_logs_table', 2),
-(3616, '2025_06_21_000029_create_dashboards_table', 2),
-(3617, '2025_06_21_000030_create_statistics_table', 2),
-(3618, '2025_06_21_000031_create_banners_table', 2),
-(3619, '2025_06_21_000032_create_promotions_table', 2),
-(3620, '2025_06_21_000033_create_newsletters_table', 2),
-(3621, '2025_06_21_000034_create_order_management_table', 2),
-(3622, '2025_06_21_000035_create_refund_management_table', 2),
-(3623, '2025_06_21_000036_create_dispute_management_table', 2),
-(3624, '2025_06_21_000037_create_stock_management_table', 2),
-(3625, '2025_06_21_000038_create_supplier_management_table', 2),
-(3626, '2025_06_21_000039_create_purchase_orders_table', 2),
-(3627, '2025_06_21_000040_create_customer_support_table', 2),
-(3628, '2025_06_21_000041_create_faq_table', 2),
-(3629, '2025_06_21_000042_create_feedback_table', 2),
-(3630, '2025_06_21_000043_create_audit_logs_table', 2),
-(3631, '2025_06_21_000044_create_security_logs_table', 2),
-(3632, '2025_06_21_000045_create_admin_sessions_table', 2),
-(3633, '2025_06_21_000046_create_dev_roles_table', 2),
-(3634, '2025_06_21_000047_create_dev_statuses_table', 2),
-(3635, '2025_06_21_000048_create_developers_table', 2),
-(3636, '2025_06_21_000049_create_developer_permissions_table', 2),
-(3637, '2025_06_21_000050_create_developer_logs_table', 2),
-(3638, '2025_06_21_000051_create_api_endpoints_table', 2),
-(3639, '2025_06_21_000052_create_api_documentations_table', 2),
-(3640, '2025_06_21_000053_create_api_metrics_table', 2),
-(3641, '2025_06_21_000054_create_system_health_table', 2),
-(3642, '2025_06_21_000055_create_error_logs_table', 2),
-(3643, '2025_06_21_000056_create_performances_table', 2),
-(3644, '2025_06_21_000057_create_database_configs_table', 2),
-(3645, '2025_06_21_000058_create_query_optimizations_table', 2),
-(3646, '2025_06_21_000059_create_database_backups_table', 2),
-(3647, '2025_06_21_000060_create_security_audits_table', 2),
-(3648, '2025_06_21_000061_create_vulnerabilities_table', 2),
-(3649, '2025_06_21_000062_create_security_configs_table', 2),
-(3650, '2025_06_21_000063_create_deployments_table', 2),
-(3651, '2025_06_21_000064_create_environments_table', 2),
-(3652, '2025_06_21_000065_create_release_notes_table', 2),
-(3653, '2025_06_21_000066_create_test_cases_table', 2),
-(3654, '2025_06_21_000067_create_test_reports_table', 2),
-(3655, '2025_06_21_000068_create_bug_reports_table', 2),
-(3656, '2025_06_21_000069_create_business_exception_table', 2),
-(3657, '2025_06_21_000070_create_validation_exception_table', 2),
-(3658, '2025_06_21_000071_create_resource_not_found_exception_table', 2),
-(3659, '2025_06_21_000072_create_payment_exception_table', 2),
-(3660, '2025_06_21_000073_create_shipping_exception_table', 2),
-(3661, '2025_06_30_000074_create_sessions_table', 2),
-(3662, '2025_06_30_000075_create_stats_types_table', 2),
-(3663, '2025_07_04_000076_create_cache_table', 2),
-(3664, '2025_07_07_000077_create_subscribers_table', 2),
-(3665, '2025_07_08_000078_create_policy_acceptances_table', 2),
-(3666, '2025_07_09_000079_create_testimonials_table', 2),
-(3667, '2025_07_09_000080_add_is_featured_to_products_table', 2),
-(3668, '2025_07_11_000081_create_payment_methods_views', 2),
-(3669, '2025_07_11_000082_create_report_types_table', 2),
-(3670, '2025_07_11_000083_create_reports_table', 2),
-(3671, '2025_07_11_000084_create_charts_table', 2),
-(3672, '2025_07_14_000085_create_role_user_table', 2),
-(3673, '2025_07_14_000086_drop_role_id_from_users_table', 2),
-(3674, '2025_07_15_000087_create_contacts_table', 2),
-(3675, '2025_07_16_082209_create_seeder_status_table', 2),
-(3676, '2025_07_16_114644_create_enum_roles_table', 2),
-(3677, '2025_07_18_000000_create_faq_table', 2),
-(3678, '2025_07_20_141500_make_message_nullable_on_contacts_table', 2),
-(3679, '2025_07_21_000000_add_promo_code_and_discount_to_carts_table', 2),
-(3680, '2025_07_21_000000_add_promo_code_to_contacts_table', 2),
-(3681, '2025_07_21_000000_create_newsletter_subscribers_table', 2),
-(3682, '2025_07_23_040342_add_promo_fields_to_promotions_table', 2),
-(3683, '2025_07_23_042518_add_promo_code_to_promotions_table', 2),
-(3684, '2025_07_23_082921_create_product_likes_table', 2),
-(3685, '2025_07_24_000001_add_payment_method_to_orders_table', 2),
-(3686, '2025_07_25_000001_add_plain_password_to_users_table', 2),
-(3687, '2025_07_29_040847_add_price_discount_to_carts_table', 2),
-(3688, '2025_07_29_110000_add_description_to_payment_methods_table', 2),
-(3689, '2025_07_29_131408_create_shipping_methods_table', 2),
-(3690, '2025_07_29_131408_update_shippings_table', 2),
-(3691, '2025_07_29_153301_update_orders_table', 2);
+(4218, '2025_07_30_073840_update_addresses_table', 2),
+(4219, '2025_07_30_073913_add_new_fields_to_addresses_table', 2),
+(4220, '2025_06_21_000000_create_interfaces_table', 3),
+(4221, '2025_06_21_000001_create_interface_methods_table', 3),
+(4222, '2025_06_21_000002_create_enum_roles_table', 3),
+(4223, '2025_06_21_000003_create_enum_order_status_table', 3),
+(4224, '2025_06_21_000004_create_enum_payment_status_table', 3),
+(4225, '2025_06_21_000005_create_enum_admin_role_table', 3),
+(4226, '2025_06_21_000006_create_enum_admin_status_table', 3),
+(4227, '2025_06_21_000007_create_enum_stats_type_table', 3),
+(4228, '2025_06_21_000008_create_enum_report_type_table', 3),
+(4229, '2025_06_21_000009_create_enum_dev_role_table', 3),
+(4230, '2025_06_21_000010_create_enum_dev_status_table', 3),
+(4231, '2025_06_21_000011_create_roles_table', 3),
+(4232, '2025_06_21_000012_create_users_table', 3),
+(4233, '2025_06_21_000013_create_addresses_table', 3),
+(4234, '2025_06_21_000014_create_categories_table', 3),
+(4235, '2025_06_21_000015_create_products_table', 3),
+(4236, '2025_06_21_000016_create_product_images_table', 3),
+(4237, '2025_06_21_000017_create_reviews_table', 3),
+(4238, '2025_06_21_000018_create_carts_table', 3),
+(4239, '2025_06_21_000019_create_orders_table', 3),
+(4240, '2025_06_21_000020_create_order_details_table', 3),
+(4241, '2025_06_21_000021_create_payment_methods_table', 3),
+(4242, '2025_06_21_000022_create_payments_table', 3),
+(4243, '2025_06_21_000023_create_shippings_table', 3),
+(4244, '2025_06_21_000024_create_admin_roles_table', 3),
+(4245, '2025_06_21_000025_create_admin_statuses_table', 3),
+(4246, '2025_06_21_000026_create_admins_table', 3),
+(4247, '2025_06_21_000027_create_admin_permissions_table', 3),
+(4248, '2025_06_21_000028_create_admin_logs_table', 3),
+(4249, '2025_06_21_000029_create_dashboards_table', 3),
+(4250, '2025_06_21_000030_create_statistics_table', 3),
+(4251, '2025_06_21_000031_create_banners_table', 3),
+(4252, '2025_06_21_000032_create_promotions_table', 3),
+(4253, '2025_06_21_000033_create_newsletters_table', 3),
+(4254, '2025_06_21_000034_create_order_management_table', 3),
+(4255, '2025_06_21_000035_create_refund_management_table', 3),
+(4256, '2025_06_21_000036_create_dispute_management_table', 3),
+(4257, '2025_06_21_000037_create_stock_management_table', 3),
+(4258, '2025_06_21_000038_create_supplier_management_table', 3),
+(4259, '2025_06_21_000039_create_purchase_orders_table', 3),
+(4260, '2025_06_21_000040_create_customer_support_table', 3),
+(4261, '2025_06_21_000041_create_faq_table', 3),
+(4262, '2025_06_21_000042_create_feedback_table', 3),
+(4263, '2025_06_21_000043_create_audit_logs_table', 3),
+(4264, '2025_06_21_000044_create_security_logs_table', 3),
+(4265, '2025_06_21_000045_create_admin_sessions_table', 3),
+(4266, '2025_06_21_000046_create_dev_roles_table', 3),
+(4267, '2025_06_21_000047_create_dev_statuses_table', 3),
+(4268, '2025_06_21_000048_create_developers_table', 3),
+(4269, '2025_06_21_000049_create_developer_permissions_table', 3),
+(4270, '2025_06_21_000050_create_developer_logs_table', 3),
+(4271, '2025_06_21_000051_create_api_endpoints_table', 3),
+(4272, '2025_06_21_000052_create_api_documentations_table', 3),
+(4273, '2025_06_21_000053_create_api_metrics_table', 3),
+(4274, '2025_06_21_000054_create_system_health_table', 3),
+(4275, '2025_06_21_000055_create_error_logs_table', 3),
+(4276, '2025_06_21_000056_create_performances_table', 3),
+(4277, '2025_06_21_000057_create_database_configs_table', 3),
+(4278, '2025_06_21_000058_create_query_optimizations_table', 3),
+(4279, '2025_06_21_000059_create_database_backups_table', 3),
+(4280, '2025_06_21_000060_create_security_audits_table', 3),
+(4281, '2025_06_21_000061_create_vulnerabilities_table', 3),
+(4282, '2025_06_21_000062_create_security_configs_table', 3),
+(4283, '2025_06_21_000063_create_deployments_table', 3),
+(4284, '2025_06_21_000064_create_environments_table', 3),
+(4285, '2025_06_21_000065_create_release_notes_table', 3),
+(4286, '2025_06_21_000066_create_test_cases_table', 3),
+(4287, '2025_06_21_000067_create_test_reports_table', 3),
+(4288, '2025_06_21_000068_create_bug_reports_table', 3),
+(4289, '2025_06_21_000069_create_business_exception_table', 3),
+(4290, '2025_06_21_000070_create_validation_exception_table', 3),
+(4291, '2025_06_21_000071_create_resource_not_found_exception_table', 3),
+(4292, '2025_06_21_000072_create_payment_exception_table', 3),
+(4293, '2025_06_21_000073_create_shipping_exception_table', 3),
+(4294, '2025_06_30_000074_create_sessions_table', 3),
+(4295, '2025_06_30_000075_create_stats_types_table', 3),
+(4296, '2025_07_04_000076_create_cache_table', 3),
+(4297, '2025_07_07_000077_create_subscribers_table', 3),
+(4298, '2025_07_08_000078_create_policy_acceptances_table', 3),
+(4299, '2025_07_09_000079_create_testimonials_table', 3),
+(4300, '2025_07_09_000080_add_is_featured_to_products_table', 3),
+(4301, '2025_07_11_000081_create_payment_methods_views', 3),
+(4302, '2025_07_11_000082_create_report_types_table', 3),
+(4303, '2025_07_11_000083_create_reports_table', 3),
+(4304, '2025_07_11_000084_create_charts_table', 3),
+(4305, '2025_07_14_000085_create_role_user_table', 3),
+(4306, '2025_07_14_000086_drop_role_id_from_users_table', 3),
+(4307, '2025_07_15_000087_create_contacts_table', 3),
+(4308, '2025_07_16_082209_create_seeder_status_table', 3),
+(4309, '2025_07_16_114644_create_enum_roles_table', 3),
+(4310, '2025_07_18_000000_create_faq_table', 3),
+(4311, '2025_07_20_141500_make_message_nullable_on_contacts_table', 3),
+(4312, '2025_07_21_000000_add_promo_code_and_discount_to_carts_table', 3),
+(4313, '2025_07_21_000000_add_promo_code_to_contacts_table', 3),
+(4314, '2025_07_21_000000_create_newsletter_subscribers_table', 3),
+(4315, '2025_07_23_040342_add_promo_fields_to_promotions_table', 3),
+(4316, '2025_07_23_042518_add_promo_code_to_promotions_table', 3),
+(4317, '2025_07_23_082921_create_product_likes_table', 3),
+(4318, '2025_07_24_000001_add_payment_method_to_orders_table', 3),
+(4319, '2025_07_25_000001_add_plain_password_to_users_table', 3),
+(4320, '2025_07_29_040847_add_price_discount_to_carts_table', 3),
+(4321, '2025_07_29_110000_add_description_to_payment_methods_table', 3),
+(4322, '2025_07_29_131408_create_shipping_methods_table', 3),
+(4323, '2025_07_29_131408_update_shippings_table', 3),
+(4324, '2025_07_29_153301_update_orders_table', 3),
+(4325, '2025_07_30_074735_add_missing_fields_to_addresses_table', 3);
 
 -- --------------------------------------------------------
 
@@ -1111,14 +1117,16 @@ CREATE TABLE `orders` (
 --
 
 INSERT INTO `orders` (`id`, `user_id`, `order_code`, `order_date`, `enum_order_status_id`, `total_price`, `shipping_cost`, `note`, `payment_method`, `interface_id`, `created_at`, `updated_at`) VALUES
-(2001, 1, 'ORD-2001', '2025-07-29 22:52:08', 1, 100000.00, 10000.00, NULL, NULL, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(2002, 1, 'ORD-2002', '2025-07-29 22:52:08', 1, 150000.00, 15000.00, NULL, NULL, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(2003, 1, 'ORD-2003', '2025-07-29 22:52:08', 1, 200000.00, 20000.00, NULL, NULL, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(2004, 1, 'ORD-2004', '2025-07-29 22:52:08', 1, 250000.00, 25000.00, NULL, NULL, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(2005, 1, 'ORD-2005', '2025-07-29 22:52:08', 1, 120000.00, 12000.00, NULL, NULL, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(2006, 1, 'ORD-2006', '2025-07-29 22:52:08', 1, 140000.00, 14000.00, NULL, NULL, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(2007, 1, 'ORD-2007', '2025-07-29 22:52:08', 1, 150000.00, 15000.00, NULL, NULL, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(2008, 1, 'ORD-2008', '2025-07-29 22:52:08', 1, 100000.00, 0.00, NULL, NULL, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08');
+(2001, 1, 'ORD-2001', '2025-07-30 14:58:06', 1, 100000.00, 10000.00, NULL, NULL, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(2002, 1, 'ORD-2002', '2025-07-30 14:58:06', 1, 150000.00, 15000.00, NULL, NULL, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(2003, 1, 'ORD-2003', '2025-07-30 14:58:06', 1, 200000.00, 20000.00, NULL, NULL, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(2004, 1, 'ORD-2004', '2025-07-30 14:58:06', 1, 250000.00, 25000.00, NULL, NULL, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(2005, 1, 'ORD-2005', '2025-07-30 14:58:06', 1, 120000.00, 12000.00, NULL, NULL, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(2006, 1, 'ORD-2006', '2025-07-30 14:58:06', 1, 140000.00, 14000.00, NULL, NULL, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(2007, 1, 'ORD-2007', '2025-07-30 14:58:06', 1, 150000.00, 15000.00, NULL, NULL, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(2008, 1, 'ORD-2008', '2025-07-30 14:58:06', 1, 100000.00, 0.00, NULL, NULL, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(2009, 5, 'ORD-20250730-NYSOJU', '2025-07-30 11:28:22', 1, 50000.00, 25000.00, NULL, 'CASH', 1, '2025-07-30 04:28:22', '2025-07-30 04:28:22'),
+(2010, 5, 'ORD-20250730-MWP2X0', '2025-07-30 11:33:49', 1, 40000.00, 15000.00, NULL, 'CASH', 1, '2025-07-30 04:33:49', '2025-07-30 04:33:49');
 
 -- --------------------------------------------------------
 
@@ -1138,6 +1146,14 @@ CREATE TABLE `order_details` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `order_details`
+--
+
+INSERT INTO `order_details` (`id`, `order_id`, `product_id`, `quantity`, `price`, `subtotal`, `note`, `interface_id`, `created_at`, `updated_at`) VALUES
+(1, 2009, 56, 1, 25000.00, 25000.00, NULL, 1, '2025-07-30 04:28:22', '2025-07-30 04:28:22'),
+(2, 2010, 56, 1, 25000.00, 25000.00, NULL, 1, '2025-07-30 04:33:49', '2025-07-30 04:33:49');
 
 -- --------------------------------------------------------
 
@@ -1211,10 +1227,10 @@ CREATE TABLE `payment_methods` (
 --
 
 INSERT INTO `payment_methods` (`id`, `code`, `name`, `description`, `type`, `config`, `status`, `created_at`, `updated_at`) VALUES
-(1, 'CASH', 'Uang Tunai di Tempat', 'Bayar langsung secara tunai kepada kurir saat barang diterima di alamat tujuan.', 'LOCAL', '{}', 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(2, 'COD_QRIS', 'COD dengan QRIS/E-Wallet', 'Bayar di tempat tujuan melalui QRIS atau E-Wallet (Scan QR, OVO, GoPay, DANA, dll) kepada kurir.', 'LOCAL', '{}', 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(3, 'QRIS', 'Pembayaran QRIS', 'Bayar secara instan melalui QRIS dari semua aplikasi e-wallet. Transaksi digital, aman, dan cepat.', 'LOCAL', '{}', 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(4, 'EWALLET', 'E-Wallet', 'Pembayaran digital melalui OVO, GoPay, DANA, dan e-wallet lainnya. Transaksi instan dan tercatat.', 'LOCAL', '{}', 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08');
+(4, 'CASH', 'Uang Tunai di Tempat', 'Bayar langsung secara tunai kepada kurir saat barang diterima di alamat tujuan.', 'LOCAL', '{}', 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(5, 'COD_QRIS', 'COD dengan QRIS/E-Wallet', 'Bayar di tempat tujuan melalui QRIS atau E-Wallet (Scan QR, OVO, GoPay, DANA, dll) kepada kurir.', 'LOCAL', '{}', 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(6, 'QRIS', 'Pembayaran QRIS', 'Bayar secara instan melalui QRIS dari semua aplikasi e-wallet. Transaksi digital, aman, dan cepat.', 'LOCAL', '{}', 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(7, 'EWALLET', 'E-Wallet', 'Pembayaran digital melalui OVO, GoPay, DANA, dan e-wallet lainnya. Transaksi instan dan tercatat.', 'LOCAL', '{}', 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06');
 
 -- --------------------------------------------------------
 
@@ -1271,59 +1287,59 @@ CREATE TABLE `products` (
 --
 
 INSERT INTO `products` (`id`, `category_id`, `name`, `description`, `stock`, `price`, `weight`, `image_url`, `status`, `interface_id`, `is_featured`, `created_at`, `updated_at`) VALUES
-(54, 1, 'Jamani Dolar', 'Jamani Dolar (Zamioculcas zamiifolia) merupakan tanaman perennial tropis dari keluarga Araceae yang berasal dari Afrika Timur seperti Kenya, Tanzania, dan Afrika Selatan. Tumbuh dari rimpang tebal yang menyimpan cadangan air, tanaman ini menghasilkan daun majemuk menyirip berwarna hijau pekat dan mengkilap dengan 6–8 pasang foliol oval sepanjang 7–15 cm. ZZ Plant sangat toleran terhadap cahaya rendah hingga sedang dan mampu bertahan lama dalam kondisi kekeringan. Harga pasaran tanaman ini sekitar Rp70.000.', 10, 70000.00, 1.00, 'images/produk/jamani_dolar.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(55, 1, 'Dragon Sekel', 'Dragon Sekel atau Tengkorak (Alocasia baginda \'Dragon Scale\') adalah varietas Alocasia dari keluarga Araceae yang terkenal dengan motif daun unik menyerupai sisik naga. Daunnya hijau zamrud dengan urat perak metalik yang mencolok, memberikan kesan eksotis dan elegan. Tanaman ini sangat cocok untuk dekorasi interior karena toleransinya terhadap cahaya rendah hingga sedang serta kemampuannya bertahan dalam kondisi kering. Harga pasaran sekitar Rp125.000.', 8, 125000.00, 1.00, 'images/produk/dragon_sekel_atau_tengkorak.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(56, 1, 'Pakis Kuning', 'Pakis Kuning (Nephrolepis exaltata \'Golden\') adalah varietas pakis hias yang memiliki daun muda berwarna kuning cerah yang berubah menjadi hijau saat dewasa. Daunnya berbentuk pedang dan tumbuh merumpun, menciptakan tampilan alami dan menyegarkan. Tanaman ini ideal ditempatkan di area teduh dengan cahaya matahari tidak langsung dan mudah dirawat, memberikan sentuhan hijau segar pada lingkungan sekitar. Harga pasaran sekitar Rp25.000.', 20, 25000.00, 1.00, 'images/produk/pakis_kuning.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(57, 1, 'Kuping Gajah', 'Kuping Gajah (Anthurium crystallinum) adalah varietas Anthurium dari keluarga Araceae dengan daun besar berbentuk hati dan permukaan berkilau. Urat daun berwarna keputih-putihan yang mencolok menambah kesan elegan dan eksotis. Tanaman ini cocok untuk dekorasi interior, memiliki toleransi terhadap cahaya rendah hingga sedang serta tahan pada periode kekeringan. Harga pasaran sekitar Rp75.000.', 15, 75000.00, 1.00, 'images/produk/kuping_gajah.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(58, 1, 'Cemara Ekor Tupai', 'Cemara Ekor Tupai (Asparagus densiflorus) merupakan tanaman tahunan hijau abadi dari keluarga Asparagaceae yang berasal dari Afrika Selatan. Daunnya menyerupai ekor tupai dengan daun kecil berwarna hijau cerah yang tumbuh rimbun dan mengerucut. Tanaman ini cocok sebagai tanaman hias interior karena toleransi terhadap cahaya rendah hingga sedang serta kemampuannya bertahan pada kondisi kering. Harga pasaran sekitar Rp40.000.', 12, 40000.00, 1.00, 'images/produk/cemara_ekor_tupay.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(59, 2, 'Pot Tanah Liat', 'Pot Tanah Liat diameter 15 cm dibuat dari bahan tanah liat berkualitas tinggi dengan desain minimalis yang sesuai untuk berbagai tanaman hias kecil hingga sedang. Pot ini tersedia dalam warna coklat, hitam, dan putih, memberikan pilihan dekorasi menarik serta harga terjangkau untuk menambah estetika tanaman di rumah Anda. Harga pot ini sekitar Rp40.000.', 50, 40000.00, 2.00, 'images/produk/pot_tanah_coklat_hitam_putih_diameter_15.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(60, 1, 'Puting Cabe', 'Puting Cabe (Euphorbia milii) adalah tanaman hias berbunga dari keluarga Euphorbiaceae yang memiliki bunga kecil cerah serta duri tajam pada batangnya. Daunnya hijau rapat dengan bunga muncul dalam kelompok kecil, menciptakan tampilan eksotis. Tanaman ini tahan terhadap cahaya rendah hingga sedang dan mampu bertahan dalam kondisi kering berkat cadangan air pada batangnya. Harga pasaran sekitar Rp10.000.', 30, 10000.00, 0.30, 'images/produk/puting_cabe.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(61, 1, 'Cemara Perak', 'Cemara Perak (Juniperus chinensis) merupakan tanaman konifer hijau kekuningan berbentuk rimbun menyerupai pohon cemara mini. Tanaman ini cocok untuk taman, halaman, maupun sebagai tanaman indoor, memberikan kesan alami dan segar. Harga pasaran sekitar Rp50.000.', 10, 50000.00, 2.00, 'images/produk/cemara_perak.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(62, 1, 'Bringin Korea Tinggi 2M', 'Bringin Korea (Ficus microcarpa) adalah tanaman hias populer untuk taman dan interior dengan tinggi sekitar 2 meter, batang kokoh, dan daun hijau mengkilap yang memberikan suasana alami dan sejuk. Harga pasaran sekitar Rp2.000.000, mencerminkan kualitas dan ukuran yang besar. Tanaman ini mudah beradaptasi dengan berbagai kondisi cahaya dan perawatan sehingga cocok untuk pemula maupun penghobi.', 2, 2000000.00, 8.00, 'images/produk/bringin_korea_tinggi_2M.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(63, 1, 'Gestrum Kuning', 'Gestrum Kuning (Gestrum coromandelianum) adalah tanaman tropis dengan bunga kuning cerah dan daun hijau lebat yang dapat tumbuh hingga 2 meter. Tanaman ini cocok untuk taman atau halaman rumah, tahan berbagai kondisi cuaca dan mudah dirawat. Harga pasar sekitar Rp30.000.', 15, 30000.00, 1.00, 'images/produk/gestrum_kuning.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(64, 1, 'Brokoli Hijau', 'Brokoli Hijau adalah tanaman hias dengan daun hijau segar yang menyerupai sayur brokoli. Tanaman ini sering digunakan sebagai tanaman hias unik yang menambah sentuhan alami pada taman atau ruangan. Harga pasaran sekitar Rp10.000.', 25, 10000.00, 0.30, 'images/produk/brokoli_hijau.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(65, 1, 'Siklok', 'Siklok (Agave attenuata) atau Foxtail Agave adalah tanaman sukulen asal Meksiko dengan daun panjang runcing berwarna hijau keabu-abuan dengan pinggiran putih membentuk roseta yang elegan. Tahan terhadap panas dan kekeringan, cocok untuk taman tropis maupun subtropis serta perawatan mudah. Harga sekitar Rp70.000.', 10, 70000.00, 2.00, 'images/produk/siklok.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(66, 1, 'Sampang Dara', 'Sampang Dara (Excoecaria cochinchinensis) adalah perdu tropis dengan daun hijau cerah di bagian atas dan merah gelap di bagian bawah, tumbuh hingga 1–2 meter. Memberikan tampilan alami dan eksotis, tanaman ini cocok untuk taman indoor maupun outdoor. Harga sekitar Rp16.000, namun perlu hati-hati karena getahnya beracun saat perawatan.', 15, 16000.00, 1.00, 'images/produk/sampang_dara.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(68, 1, 'Teratai', 'Teratai (Nymphaea) adalah tanaman air dengan bunga besar indah yang mengapung di permukaan air. Warnanya bervariasi dari putih, merah muda hingga ungu, sering digunakan untuk mempercantik kolam atau taman air. Harga pasaran sekitar Rp75.000.', 10, 75000.00, 2.00, 'images/produk/teratai.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(69, 1, 'Airis Brazil', 'Airis Brazil (Iris variegata) adalah tanaman hias outdoor dengan daun panjang hijau cerah bergaris putih yang memberikan tampilan segar dan menarik, cocok untuk taman dan pot. Harga pasar sekitar Rp10.000.', 10, 10000.00, 0.30, 'images/produk/airis_brazil.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(70, 3, 'Batu Taman Hitam Putih', 'Batu Taman Hitam dan Putih adalah batu hias yang digunakan untuk dekorasi taman, tersedia dalam warna hitam dan putih yang memberikan kontras alami dan estetis pada taman. Harga sekitar Rp30.000.', 100, 30000.00, 2.00, 'images/produk/batu_taman_hitam_putih.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(71, 1, 'Maranti Bali', 'Maranti Bali (Stromanthe sanguinea) adalah tanaman hias tropis dari hutan hujan Brasil yang memiliki daun berwarna-warni merah, hijau, dan putih mencolok, sangat populer di kalangan penggemar tanaman hias. Harga pasaran sekitar Rp15.000.', 15, 15000.00, 0.70, 'images/produk/maranti_bali.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(72, 1, 'Kadaka Tanduk', 'Kadaka Tanduk (Platycerium) adalah tanaman paku-pakuan epifit yang biasanya hidup menempel pada batang tanaman lain, namun dapat juga ditanam dalam pot dan umum ditemukan di daerah lembap. Harga sekitar Rp30.000.', 10, 30000.00, 0.50, 'images/produk/kadaka_tanduk.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(73, 1, 'Jayen', 'Jayen (Episcia) adalah tanaman hias indoor dengan daun berbentuk hati dan bunga kecil berwarna cerah, cocok untuk dekorasi meja atau rak tanaman dalam ruangan. Harga sekitar Rp80.000.', 5, 80000.00, 0.20, 'images/produk/jayen.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(74, 1, 'Alamanda Kuning', 'Alamanda Kuning (Allamanda cathartica) adalah tanaman hias berbunga terompet emas berwarna kuning cerah dengan diameter 5–7,5 cm, populer untuk taman dan pagar hidup. Harga pasar sekitar Rp75.000.', 10, 75000.00, 1.00, 'images/produk/alamanda_kuning.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(75, 1, 'Sarbena Putih', 'Sarbena Putih (Sabrina) adalah tanaman hias gantung dengan bunga putih kecil yang menawan, ideal untuk taman minimalis atau teras rumah. Harga sekitar Rp10.000.', 20, 10000.00, 0.30, 'images/produk/sarbena_putih.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(76, 1, 'Sarbena Hijau', 'Sarbena Hijau adalah varian tanaman hias dengan daun hijau cerah yang memberikan kesan segar dan alami pada ruang hijau. Harga sekitar Rp10.000.', 20, 10000.00, 0.30, 'images/produk/sarbena_hijau.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(77, 1, 'Pitalub Kecil', 'Pitalub Kecil adalah tanaman hias kecil dengan daun lebat berwarna hijau, cocok sebagai penghias meja atau sudut ruangan, mudah dirawat dan sesuai untuk pemula. Harga pasaran sekitar Rp30.000.', 20, 30000.00, 0.30, 'images/produk/pitalub_kecil.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(78, 1, 'Aglonema Valentin', 'Aglonema Valentin adalah tanaman hias dengan daun hijau-merah muda yang populer untuk dekorasi interior dan mudah tumbuh subur di tempat teduh. Harga sekitar Rp70.000.', 10, 70000.00, 0.40, 'images/produk/aglonema_valentin.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(79, 2, 'Pot Kapsul', 'Pot Kapsul Coklat dan Hitam (diameter 35 cm, tinggi 60 cm) adalah pot dengan desain kapsul elegan yang cocok untuk tanaman besar atau bonsai. Harga sekitar Rp85.000.', 10, 85000.00, 3.00, 'images/produk/pot_kapsul_hitam_coklat_hitam_diameter_35_tinggi_60.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(80, 2, 'Pot Tanah Minimalis', 'Pot Tanah Coklat, Putih, dan Bintik Hitam (diameter 30 cm) adalah pot tanah liat minimalis yang sesuai untuk berbagai tanaman hias. Harga sekitar Rp65.000.', 15, 65000.00, 2.50, 'images/produk/pot_tanah_coklat_hitam_putih_diameter_30.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(81, 2, 'Pot Hitam Besar', 'Pot Hitam Diameter 40 cm adalah pot plastik hitam berukuran besar yang tahan lama dan ideal untuk tanaman hias berukuran sedang hingga besar. Pot ini dapat digunakan di dalam maupun luar ruangan. Harga sekitar Rp40.000.', 30, 40000.00, 2.50, 'images/produk/pot_hitam_diameter_40.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(82, 1, 'Cemara Tretes', 'Cemara Tretes (tinggi 120 cm) adalah tanaman cemara mini yang memberikan kesan asri dan elegan, sangat cocok untuk taman dan penghias ruang luar. Harga pasaran sekitar Rp250.000.', 3, 250000.00, 5.00, 'images/produk/cemara_tretes_tinggi_120cm.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(83, 1, 'Pitalub Tinggi', 'Pitalub Tinggi 70 cm adalah tanaman hias berukuran sedang dengan daun lebat, mudah dirawat dan sesuai sebagai penghias taman, khususnya bagi pemula. Harga sekitar Rp80.000.', 5, 80000.00, 0.80, 'images/produk/pitalub_tinggi_70cm.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(84, 1, 'Ketapang Kaligata', 'Ketapang Kaligata Tinggi 60 cm adalah tanaman hias kecil dengan daun khas yang memberikan kesan asri, sangat sesuai untuk taman minimalis. Harga sekitar Rp35.000.', 10, 35000.00, 0.60, 'images/produk/ketapang_kaligata_tinggi_60cm.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(85, 1, 'Berekele', 'Berekele adalah tanaman hias yang menambah warna dan tekstur pada taman tropis maupun sebagai tanaman pagar hidup. Harga sekitar Rp15.000.', 30, 15000.00, 0.30, 'images/produk/berekele.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(86, 4, 'Media Tanah', 'Media Tanah adalah media tanam berkualitas tinggi yang mendukung pertumbuhan berbagai tanaman hias dan dapat digunakan untuk tanaman dalam pot maupun di tanah terbuka. Harga sekitar Rp15.000 per kemasan.', 100, 15000.00, 1.00, 'images/produk/media_tanah.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(87, 1, 'Jamani Cobra', 'Jamani Cobra adalah tanaman hias eksotis dengan bentuk unik dan harga tinggi, sangat cocok untuk koleksi tanaman langka. Harga pasar sekitar Rp300.000.', 3, 300000.00, 0.60, 'images/produk/jamani_cobra.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(88, 1, 'Kamboja Jepang', 'Kamboja Jepang adalah tanaman hias berbunga cantik dan harum yang sering digunakan sebagai tanaman pekarangan di daerah tropis. Harga sekitar Rp50.000.', 8, 50000.00, 1.20, 'images/produk/kamboja_jepang.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(89, 1, 'Bringin Putih', 'Bringin Putih adalah tanaman hias dengan daun putih hijau yang menawan, memberikan kesan elegan untuk taman dan halaman. Harga sekitar Rp50.000.', 6, 50000.00, 1.00, 'images/produk/bringin_putih.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(90, 1, 'Bromelian Baby Pink', 'Bromelian Baby Pink adalah bromeliad dengan bunga pink kecil yang cantik, menjadi favorit tanaman eksotis untuk dekorasi interior. Harga sekitar Rp125.000.', 5, 125000.00, 0.60, 'images/produk/bromilian_baby_pink.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(91, 1, 'Asoka India', 'Asoka India adalah tanaman berbunga kecil yang sering digunakan sebagai pagar hidup, mudah dirawat dan sesuai untuk pemula. Harga sekitar Rp10.000.', 30, 10000.00, 0.20, 'images/produk/asoka_india.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(92, 1, 'Pandan Bali', 'Pandan Bali adalah tanaman pandan beraroma khas yang digunakan sebagai tanaman hias dan bumbu dapur di daerah tropis. Harga sekitar Rp150.000.', 10, 150000.00, 5.00, 'images/produk/pandan_bali.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(93, 1, 'Lidah Mertua', 'Lidah Mertua adalah tanaman hias indoor dengan daun panjang tajam yang mudah dirawat dan sesuai untuk dekorasi meja atau rak tanaman. Harga sekitar Rp25.000.', 15, 25000.00, 0.50, 'images/produk/lidah_mertua.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(94, 1, 'Bringin Korea Micro', 'Bringin Korea Micro adalah varian kecil dari Bringin Korea yang cocok untuk koleksi bonsai dengan bentuk daun menarik dan perawatan mudah. Harga pasar sekitar Rp1.500.000.', 2, 1500000.00, 3.00, 'images/produk/bringin_korea_micro.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(95, 1, 'Marigool', 'Marigool adalah tanaman berbunga oranye cerah yang populer sebagai tanaman hias dan penangkal serangga di taman rumah. Harga sekitar Rp25.000.', 25, 25000.00, 0.20, 'images/produk/marigool.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(96, 1, 'Kaktus Koboy', 'Kaktus Koboy (tinggi 70 cm) adalah kaktus besar berbentuk unik yang tahan kering dan mudah dirawat, sangat cocok untuk dekorasi rumah. Harga sekitar Rp150.000.', 12, 150000.00, 1.20, 'images/produk/kaktus_koboy_tinggi_70cm.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(97, 1, 'Bonsai Gestrum L', 'Bonsai Gestrum Ukuran L adalah bonsai besar dengan daun Gestrum yang indah, cocok untuk koleksi eksklusif dengan perawatan khusus. Harga pasar sekitar Rp1.200.000.', 1, 1200000.00, 3.00, 'images/produk/bonsai_gestrum(L).jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(98, 1, 'Bonsai Gestrum M', 'Bonsai Gestrum Ukuran M adalah bonsai berukuran sedang dengan daun Gestrum yang cantik, memberikan kesan elegan di rumah atau kantor. Harga sekitar Rp500.000.', 2, 500000.00, 2.00, 'images/produk/bonsai_gestrum(M).jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(99, 1, 'Bonsai Cemara Udang', 'Bonsai Cemara Udang adalah bonsai cemara unik yang menyerupai udang dan merupakan tanaman koleksi menarik dengan perawatan khusus. Harga pasar sekitar Rp650.000.', 1, 650000.00, 2.00, 'images/produk/bonsai_cemara_udang.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(100, 1, 'Bunga Kertas', 'Bunga Kertas adalah tanaman hias dengan warna-warni cerah yang mudah dirawat dan cocok untuk memperindah pagar atau taman. Tanaman ini sangat sesuai bagi pemula. Harga sekitar Rp30.000.', 20, 30000.00, 0.40, 'images/produk/bunga_kertas.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(101, 1, 'Jambu Kanci', 'Jambu Kanci (tinggi 50 cm) adalah tanaman buah jambu kanci kecil yang juga dapat dijadikan tanaman hias, cocok untuk taman dan kebun rumah. Harga pasar sekitar Rp60.000.', 8, 60000.00, 1.00, 'images/produk/jambu_kanci_tinggi_50cm.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(102, 1, 'Jeruk Lemon', 'Jeruk Lemon adalah tanaman buah jeruk lemon kecil yang memberikan aroma segar dan cocok untuk taman maupun kebun rumah. Harga sekitar Rp60.000.', 7, 60000.00, 1.00, 'images/produk/jeruk_lemon.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(103, 1, 'Asoka Singapur', 'Asoka Singapur adalah tanaman berbunga kecil yang populer sebagai pagar hidup, mudah dirawat dan sesuai untuk pemula. Harga sekitar Rp25.000.', 20, 25000.00, 0.20, 'images/produk/asoka_singapur.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(104, 1, 'Sikas', 'Sikas (tinggi 70 cm) adalah tanaman sikas berukuran besar yang cocok sebagai tanaman hias eksklusif dengan perawatan khusus. Harga pasar sekitar Rp1.700.000.', 1, 1700000.00, 6.00, 'images/produk/sikas_tinggi_70cm.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(105, 1, 'Kadaka Tempel', 'Kadaka Tempel adalah tanaman hias dengan daun menarik yang mudah dirawat dan sesuai untuk taman tropis maupun sebagai tanaman pagar hidup. Harga sekitar Rp35.000.', 10, 35000.00, 0.60, 'images/produk/kadaka_tempel.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(106, 1, 'Pucuk Merah', 'Pucuk Merah (tinggi 250 cm) adalah tanaman pucuk merah tinggi yang sering digunakan sebagai pagar hidup atau dekorasi taman, memberikan warna cerah yang menarik dan menambah estetika lingkungan. Harga sekitar Rp350.000.', 4, 350000.00, 2.20, 'images/produk/pucuk_merah_tinggi_250cm.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(107, 1, 'Kana', 'Kana (Canna indica) adalah tanaman tropis dengan daun lebar hijau cerah dan bunga besar berwarna merah, kuning, atau oranye yang mencolok. Tumbuh hingga 1–2 meter, cocok untuk taman dan halaman, tahan berbagai kondisi cuaca dan mudah dirawat sehingga sesuai untuk pemula. Harga pasar sekitar Rp30.000.', 25, 30000.00, 0.60, 'images/produk/kana.jpg', 1, 1, 0, '2025-07-29 15:52:08', '2025-07-29 15:52:08');
+(54, 1, 'Jamani Dolar', 'Jamani Dolar (Zamioculcas zamiifolia) merupakan tanaman perennial tropis dari keluarga Araceae yang berasal dari Afrika Timur seperti Kenya, Tanzania, dan Afrika Selatan. Tumbuh dari rimpang tebal yang menyimpan cadangan air, tanaman ini menghasilkan daun majemuk menyirip berwarna hijau pekat dan mengkilap dengan 6–8 pasang foliol oval sepanjang 7–15 cm. ZZ Plant sangat toleran terhadap cahaya rendah hingga sedang dan mampu bertahan lama dalam kondisi kekeringan. Harga pasaran tanaman ini sekitar Rp70.000.', 10, 70000.00, 1.00, 'images/produk/jamani_dolar.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(55, 1, 'Dragon Sekel', 'Dragon Sekel atau Tengkorak (Alocasia baginda \'Dragon Scale\') adalah varietas Alocasia dari keluarga Araceae yang terkenal dengan motif daun unik menyerupai sisik naga. Daunnya hijau zamrud dengan urat perak metalik yang mencolok, memberikan kesan eksotis dan elegan. Tanaman ini sangat cocok untuk dekorasi interior karena toleransinya terhadap cahaya rendah hingga sedang serta kemampuannya bertahan dalam kondisi kering. Harga pasaran sekitar Rp125.000.', 8, 125000.00, 1.00, 'images/produk/dragon_sekel_atau_tengkorak.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(56, 1, 'Pakis Kuning', 'Pakis Kuning (Nephrolepis exaltata \'Golden\') adalah varietas pakis hias yang memiliki daun muda berwarna kuning cerah yang berubah menjadi hijau saat dewasa. Daunnya berbentuk pedang dan tumbuh merumpun, menciptakan tampilan alami dan menyegarkan. Tanaman ini ideal ditempatkan di area teduh dengan cahaya matahari tidak langsung dan mudah dirawat, memberikan sentuhan hijau segar pada lingkungan sekitar. Harga pasaran sekitar Rp25.000.', 18, 25000.00, 1.00, 'images/produk/pakis_kuning.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 04:33:48'),
+(57, 1, 'Kuping Gajah', 'Kuping Gajah (Anthurium crystallinum) adalah varietas Anthurium dari keluarga Araceae dengan daun besar berbentuk hati dan permukaan berkilau. Urat daun berwarna keputih-putihan yang mencolok menambah kesan elegan dan eksotis. Tanaman ini cocok untuk dekorasi interior, memiliki toleransi terhadap cahaya rendah hingga sedang serta tahan pada periode kekeringan. Harga pasaran sekitar Rp75.000.', 15, 75000.00, 1.00, 'images/produk/kuping_gajah.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(58, 1, 'Cemara Ekor Tupai', 'Cemara Ekor Tupai (Asparagus densiflorus) merupakan tanaman tahunan hijau abadi dari keluarga Asparagaceae yang berasal dari Afrika Selatan. Daunnya menyerupai ekor tupai dengan daun kecil berwarna hijau cerah yang tumbuh rimbun dan mengerucut. Tanaman ini cocok sebagai tanaman hias interior karena toleransi terhadap cahaya rendah hingga sedang serta kemampuannya bertahan pada kondisi kering. Harga pasaran sekitar Rp40.000.', 12, 40000.00, 1.00, 'images/produk/cemara_ekor_tupay.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(59, 2, 'Pot Tanah Liat', 'Pot Tanah Liat diameter 15 cm dibuat dari bahan tanah liat berkualitas tinggi dengan desain minimalis yang sesuai untuk berbagai tanaman hias kecil hingga sedang. Pot ini tersedia dalam warna coklat, hitam, dan putih, memberikan pilihan dekorasi menarik serta harga terjangkau untuk menambah estetika tanaman di rumah Anda. Harga pot ini sekitar Rp40.000.', 50, 40000.00, 2.00, 'images/produk/pot_tanah_coklat_hitam_putih_diameter_15.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(60, 1, 'Puting Cabe', 'Puting Cabe (Euphorbia milii) adalah tanaman hias berbunga dari keluarga Euphorbiaceae yang memiliki bunga kecil cerah serta duri tajam pada batangnya. Daunnya hijau rapat dengan bunga muncul dalam kelompok kecil, menciptakan tampilan eksotis. Tanaman ini tahan terhadap cahaya rendah hingga sedang dan mampu bertahan dalam kondisi kering berkat cadangan air pada batangnya. Harga pasaran sekitar Rp10.000.', 30, 10000.00, 0.30, 'images/produk/puting_cabe.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(61, 1, 'Cemara Perak', 'Cemara Perak (Juniperus chinensis) merupakan tanaman konifer hijau kekuningan berbentuk rimbun menyerupai pohon cemara mini. Tanaman ini cocok untuk taman, halaman, maupun sebagai tanaman indoor, memberikan kesan alami dan segar. Harga pasaran sekitar Rp50.000.', 10, 50000.00, 2.00, 'images/produk/cemara_perak.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(62, 1, 'Bringin Korea Tinggi 2M', 'Bringin Korea (Ficus microcarpa) adalah tanaman hias populer untuk taman dan interior dengan tinggi sekitar 2 meter, batang kokoh, dan daun hijau mengkilap yang memberikan suasana alami dan sejuk. Harga pasaran sekitar Rp2.000.000, mencerminkan kualitas dan ukuran yang besar. Tanaman ini mudah beradaptasi dengan berbagai kondisi cahaya dan perawatan sehingga cocok untuk pemula maupun penghobi.', 2, 2000000.00, 8.00, 'images/produk/bringin_korea_tinggi_2M.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(63, 1, 'Gestrum Kuning', 'Gestrum Kuning (Gestrum coromandelianum) adalah tanaman tropis dengan bunga kuning cerah dan daun hijau lebat yang dapat tumbuh hingga 2 meter. Tanaman ini cocok untuk taman atau halaman rumah, tahan berbagai kondisi cuaca dan mudah dirawat. Harga pasar sekitar Rp30.000.', 15, 30000.00, 1.00, 'images/produk/gestrum_kuning.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(64, 1, 'Brokoli Hijau', 'Brokoli Hijau adalah tanaman hias dengan daun hijau segar yang menyerupai sayur brokoli. Tanaman ini sering digunakan sebagai tanaman hias unik yang menambah sentuhan alami pada taman atau ruangan. Harga pasaran sekitar Rp10.000.', 25, 10000.00, 0.30, 'images/produk/brokoli_hijau.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(65, 1, 'Siklok', 'Siklok (Agave attenuata) atau Foxtail Agave adalah tanaman sukulen asal Meksiko dengan daun panjang runcing berwarna hijau keabu-abuan dengan pinggiran putih membentuk roseta yang elegan. Tahan terhadap panas dan kekeringan, cocok untuk taman tropis maupun subtropis serta perawatan mudah. Harga sekitar Rp70.000.', 10, 70000.00, 2.00, 'images/produk/siklok.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(66, 1, 'Sampang Dara', 'Sampang Dara (Excoecaria cochinchinensis) adalah perdu tropis dengan daun hijau cerah di bagian atas dan merah gelap di bagian bawah, tumbuh hingga 1–2 meter. Memberikan tampilan alami dan eksotis, tanaman ini cocok untuk taman indoor maupun outdoor. Harga sekitar Rp16.000, namun perlu hati-hati karena getahnya beracun saat perawatan.', 15, 16000.00, 1.00, 'images/produk/sampang_dara.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(68, 1, 'Teratai', 'Teratai (Nymphaea) adalah tanaman air dengan bunga besar indah yang mengapung di permukaan air. Warnanya bervariasi dari putih, merah muda hingga ungu, sering digunakan untuk mempercantik kolam atau taman air. Harga pasaran sekitar Rp75.000.', 10, 75000.00, 2.00, 'images/produk/teratai.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(69, 1, 'Airis Brazil', 'Airis Brazil (Iris variegata) adalah tanaman hias outdoor dengan daun panjang hijau cerah bergaris putih yang memberikan tampilan segar dan menarik, cocok untuk taman dan pot. Harga pasar sekitar Rp10.000.', 10, 10000.00, 0.30, 'images/produk/airis_brazil.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(70, 3, 'Batu Taman Hitam Putih', 'Batu Taman Hitam dan Putih adalah batu hias yang digunakan untuk dekorasi taman, tersedia dalam warna hitam dan putih yang memberikan kontras alami dan estetis pada taman. Harga sekitar Rp30.000.', 100, 30000.00, 2.00, 'images/produk/batu_taman_hitam_putih.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(71, 1, 'Maranti Bali', 'Maranti Bali (Stromanthe sanguinea) adalah tanaman hias tropis dari hutan hujan Brasil yang memiliki daun berwarna-warni merah, hijau, dan putih mencolok, sangat populer di kalangan penggemar tanaman hias. Harga pasaran sekitar Rp15.000.', 15, 15000.00, 0.70, 'images/produk/maranti_bali.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(72, 1, 'Kadaka Tanduk', 'Kadaka Tanduk (Platycerium) adalah tanaman paku-pakuan epifit yang biasanya hidup menempel pada batang tanaman lain, namun dapat juga ditanam dalam pot dan umum ditemukan di daerah lembap. Harga sekitar Rp30.000.', 10, 30000.00, 0.50, 'images/produk/kadaka_tanduk.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(73, 1, 'Jayen', 'Jayen (Episcia) adalah tanaman hias indoor dengan daun berbentuk hati dan bunga kecil berwarna cerah, cocok untuk dekorasi meja atau rak tanaman dalam ruangan. Harga sekitar Rp80.000.', 5, 80000.00, 0.20, 'images/produk/jayen.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(74, 1, 'Alamanda Kuning', 'Alamanda Kuning (Allamanda cathartica) adalah tanaman hias berbunga terompet emas berwarna kuning cerah dengan diameter 5–7,5 cm, populer untuk taman dan pagar hidup. Harga pasar sekitar Rp75.000.', 10, 75000.00, 1.00, 'images/produk/alamanda_kuning.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(75, 1, 'Sarbena Putih', 'Sarbena Putih (Sabrina) adalah tanaman hias gantung dengan bunga putih kecil yang menawan, ideal untuk taman minimalis atau teras rumah. Harga sekitar Rp10.000.', 20, 10000.00, 0.30, 'images/produk/sarbena_putih.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(76, 1, 'Sarbena Hijau', 'Sarbena Hijau adalah varian tanaman hias dengan daun hijau cerah yang memberikan kesan segar dan alami pada ruang hijau. Harga sekitar Rp10.000.', 20, 10000.00, 0.30, 'images/produk/sarbena_hijau.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(77, 1, 'Pitalub Kecil', 'Pitalub Kecil adalah tanaman hias kecil dengan daun lebat berwarna hijau, cocok sebagai penghias meja atau sudut ruangan, mudah dirawat dan sesuai untuk pemula. Harga pasaran sekitar Rp30.000.', 20, 30000.00, 0.30, 'images/produk/pitalub_kecil.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(78, 1, 'Aglonema Valentin', 'Aglonema Valentin adalah tanaman hias dengan daun hijau-merah muda yang populer untuk dekorasi interior dan mudah tumbuh subur di tempat teduh. Harga sekitar Rp70.000.', 10, 70000.00, 0.40, 'images/produk/aglonema_valentin.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(79, 2, 'Pot Kapsul', 'Pot Kapsul Coklat dan Hitam (diameter 35 cm, tinggi 60 cm) adalah pot dengan desain kapsul elegan yang cocok untuk tanaman besar atau bonsai. Harga sekitar Rp85.000.', 10, 85000.00, 3.00, 'images/produk/pot_kapsul_hitam_coklat_hitam_diameter_35_tinggi_60.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(80, 2, 'Pot Tanah Minimalis', 'Pot Tanah Coklat, Putih, dan Bintik Hitam (diameter 30 cm) adalah pot tanah liat minimalis yang sesuai untuk berbagai tanaman hias. Harga sekitar Rp65.000.', 15, 65000.00, 2.50, 'images/produk/pot_tanah_coklat_hitam_putih_diameter_30.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(81, 2, 'Pot Hitam Besar', 'Pot Hitam Diameter 40 cm adalah pot plastik hitam berukuran besar yang tahan lama dan ideal untuk tanaman hias berukuran sedang hingga besar. Pot ini dapat digunakan di dalam maupun luar ruangan. Harga sekitar Rp40.000.', 30, 40000.00, 2.50, 'images/produk/pot_hitam_diameter_40.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(82, 1, 'Cemara Tretes', 'Cemara Tretes (tinggi 120 cm) adalah tanaman cemara mini yang memberikan kesan asri dan elegan, sangat cocok untuk taman dan penghias ruang luar. Harga pasaran sekitar Rp250.000.', 3, 250000.00, 5.00, 'images/produk/cemara_tretes_tinggi_120cm.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(83, 1, 'Pitalub Tinggi', 'Pitalub Tinggi 70 cm adalah tanaman hias berukuran sedang dengan daun lebat, mudah dirawat dan sesuai sebagai penghias taman, khususnya bagi pemula. Harga sekitar Rp80.000.', 5, 80000.00, 0.80, 'images/produk/pitalub_tinggi_70cm.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(84, 1, 'Ketapang Kaligata', 'Ketapang Kaligata Tinggi 60 cm adalah tanaman hias kecil dengan daun khas yang memberikan kesan asri, sangat sesuai untuk taman minimalis. Harga sekitar Rp35.000.', 10, 35000.00, 0.60, 'images/produk/ketapang_kaligata_tinggi_60cm.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(85, 1, 'Berekele', 'Berekele adalah tanaman hias yang menambah warna dan tekstur pada taman tropis maupun sebagai tanaman pagar hidup. Harga sekitar Rp15.000.', 30, 15000.00, 0.30, 'images/produk/berekele.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(86, 4, 'Media Tanah', 'Media Tanah adalah media tanam berkualitas tinggi yang mendukung pertumbuhan berbagai tanaman hias dan dapat digunakan untuk tanaman dalam pot maupun di tanah terbuka. Harga sekitar Rp15.000 per kemasan.', 100, 15000.00, 1.00, 'images/produk/media_tanah.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(87, 1, 'Jamani Cobra', 'Jamani Cobra adalah tanaman hias eksotis dengan bentuk unik dan harga tinggi, sangat cocok untuk koleksi tanaman langka. Harga pasar sekitar Rp300.000.', 3, 300000.00, 0.60, 'images/produk/jamani_cobra.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(88, 1, 'Kamboja Jepang', 'Kamboja Jepang adalah tanaman hias berbunga cantik dan harum yang sering digunakan sebagai tanaman pekarangan di daerah tropis. Harga sekitar Rp50.000.', 8, 50000.00, 1.20, 'images/produk/kamboja_jepang.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(89, 1, 'Bringin Putih', 'Bringin Putih adalah tanaman hias dengan daun putih hijau yang menawan, memberikan kesan elegan untuk taman dan halaman. Harga sekitar Rp50.000.', 6, 50000.00, 1.00, 'images/produk/bringin_putih.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(90, 1, 'Bromelian Baby Pink', 'Bromelian Baby Pink adalah bromeliad dengan bunga pink kecil yang cantik, menjadi favorit tanaman eksotis untuk dekorasi interior. Harga sekitar Rp125.000.', 5, 125000.00, 0.60, 'images/produk/bromilian_baby_pink.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(91, 1, 'Asoka India', 'Asoka India adalah tanaman berbunga kecil yang sering digunakan sebagai pagar hidup, mudah dirawat dan sesuai untuk pemula. Harga sekitar Rp10.000.', 30, 10000.00, 0.20, 'images/produk/asoka_india.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(92, 1, 'Pandan Bali', 'Pandan Bali adalah tanaman pandan beraroma khas yang digunakan sebagai tanaman hias dan bumbu dapur di daerah tropis. Harga sekitar Rp150.000.', 10, 150000.00, 5.00, 'images/produk/pandan_bali.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(93, 1, 'Lidah Mertua', 'Lidah Mertua adalah tanaman hias indoor dengan daun panjang tajam yang mudah dirawat dan sesuai untuk dekorasi meja atau rak tanaman. Harga sekitar Rp25.000.', 15, 25000.00, 0.50, 'images/produk/lidah_mertua.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(94, 1, 'Bringin Korea Micro', 'Bringin Korea Micro adalah varian kecil dari Bringin Korea yang cocok untuk koleksi bonsai dengan bentuk daun menarik dan perawatan mudah. Harga pasar sekitar Rp1.500.000.', 2, 1500000.00, 3.00, 'images/produk/bringin_korea_micro.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(95, 1, 'Marigool', 'Marigool adalah tanaman berbunga oranye cerah yang populer sebagai tanaman hias dan penangkal serangga di taman rumah. Harga sekitar Rp25.000.', 25, 25000.00, 0.20, 'images/produk/marigool.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(96, 1, 'Kaktus Koboy', 'Kaktus Koboy (tinggi 70 cm) adalah kaktus besar berbentuk unik yang tahan kering dan mudah dirawat, sangat cocok untuk dekorasi rumah. Harga sekitar Rp150.000.', 12, 150000.00, 1.20, 'images/produk/kaktus_koboy_tinggi_70cm.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(97, 1, 'Bonsai Gestrum L', 'Bonsai Gestrum Ukuran L adalah bonsai besar dengan daun Gestrum yang indah, cocok untuk koleksi eksklusif dengan perawatan khusus. Harga pasar sekitar Rp1.200.000.', 1, 1200000.00, 3.00, 'images/produk/bonsai_gestrum(L).jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(98, 1, 'Bonsai Gestrum M', 'Bonsai Gestrum Ukuran M adalah bonsai berukuran sedang dengan daun Gestrum yang cantik, memberikan kesan elegan di rumah atau kantor. Harga sekitar Rp500.000.', 2, 500000.00, 2.00, 'images/produk/bonsai_gestrum(M).jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(99, 1, 'Bonsai Cemara Udang', 'Bonsai Cemara Udang adalah bonsai cemara unik yang menyerupai udang dan merupakan tanaman koleksi menarik dengan perawatan khusus. Harga pasar sekitar Rp650.000.', 1, 650000.00, 2.00, 'images/produk/bonsai_cemara_udang.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(100, 1, 'Bunga Kertas', 'Bunga Kertas adalah tanaman hias dengan warna-warni cerah yang mudah dirawat dan cocok untuk memperindah pagar atau taman. Tanaman ini sangat sesuai bagi pemula. Harga sekitar Rp30.000.', 20, 30000.00, 0.40, 'images/produk/bunga_kertas.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(101, 1, 'Jambu Kanci', 'Jambu Kanci (tinggi 50 cm) adalah tanaman buah jambu kanci kecil yang juga dapat dijadikan tanaman hias, cocok untuk taman dan kebun rumah. Harga pasar sekitar Rp60.000.', 8, 60000.00, 1.00, 'images/produk/jambu_kanci_tinggi_50cm.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(102, 1, 'Jeruk Lemon', 'Jeruk Lemon adalah tanaman buah jeruk lemon kecil yang memberikan aroma segar dan cocok untuk taman maupun kebun rumah. Harga sekitar Rp60.000.', 7, 60000.00, 1.00, 'images/produk/jeruk_lemon.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(103, 1, 'Asoka Singapur', 'Asoka Singapur adalah tanaman berbunga kecil yang populer sebagai pagar hidup, mudah dirawat dan sesuai untuk pemula. Harga sekitar Rp25.000.', 20, 25000.00, 0.20, 'images/produk/asoka_singapur.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(104, 1, 'Sikas', 'Sikas (tinggi 70 cm) adalah tanaman sikas berukuran besar yang cocok sebagai tanaman hias eksklusif dengan perawatan khusus. Harga pasar sekitar Rp1.700.000.', 1, 1700000.00, 6.00, 'images/produk/sikas_tinggi_70cm.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(105, 1, 'Kadaka Tempel', 'Kadaka Tempel adalah tanaman hias dengan daun menarik yang mudah dirawat dan sesuai untuk taman tropis maupun sebagai tanaman pagar hidup. Harga sekitar Rp35.000.', 10, 35000.00, 0.60, 'images/produk/kadaka_tempel.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(106, 1, 'Pucuk Merah', 'Pucuk Merah (tinggi 250 cm) adalah tanaman pucuk merah tinggi yang sering digunakan sebagai pagar hidup atau dekorasi taman, memberikan warna cerah yang menarik dan menambah estetika lingkungan. Harga sekitar Rp350.000.', 4, 350000.00, 2.20, 'images/produk/pucuk_merah_tinggi_250cm.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(107, 1, 'Kana', 'Kana (Canna indica) adalah tanaman tropis dengan daun lebar hijau cerah dan bunga besar berwarna merah, kuning, atau oranye yang mencolok. Tumbuh hingga 1–2 meter, cocok untuk taman dan halaman, tahan berbagai kondisi cuaca dan mudah dirawat sehingga sesuai untuk pemula. Harga pasar sekitar Rp30.000.', 25, 30000.00, 0.60, 'images/produk/kana.jpg', 1, 1, 0, '2025-07-30 07:58:06', '2025-07-30 07:58:06');
 
 -- --------------------------------------------------------
 
@@ -1346,112 +1362,112 @@ CREATE TABLE `product_images` (
 --
 
 INSERT INTO `product_images` (`id`, `product_id`, `image_url`, `is_primary`, `interface_id`, `created_at`, `updated_at`) VALUES
-(1, 54, 'images/produk/jamani_dolar.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(2, 54, 'images/produk/jamani_dolar.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(3, 55, 'images/produk/dragon_sekel_atau_tengkorak.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(4, 55, 'images/produk/dragon_sekel_atau_tengkorak.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(5, 56, 'images/produk/pakis_kuning.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(6, 56, 'images/produk/pakis_kuning.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(7, 57, 'images/produk/kuping_gajah.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(8, 57, 'images/produk/kuping_gajah.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(9, 58, 'images/produk/cemara_ekor_tupay.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(10, 58, 'images/produk/cemara_ekor_tupay.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(11, 59, 'images/produk/pot_tanah_coklat_hitam_putih_diameter_15.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(12, 59, 'images/produk/pot_tanah_coklat_hitam_putih_diameter_15.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(13, 60, 'images/produk/puting_cabe.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(14, 60, 'images/produk/puting_cabe.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(15, 61, 'images/produk/cemara_perak.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(16, 61, 'images/produk/cemara_perak.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(17, 62, 'images/produk/bringin_korea_tinggi_2M.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(18, 62, 'images/produk/bringin_korea_tinggi_2M.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(19, 63, 'images/produk/gestrum_kuning.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(20, 63, 'images/produk/gestrum_kuning.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(21, 64, 'images/produk/brokoli_hijau.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(22, 64, 'images/produk/brokoli_hijau.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(23, 65, 'images/produk/siklok.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(24, 65, 'images/produk/siklok.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(25, 66, 'images/produk/sampang_dara.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(26, 66, 'images/produk/sampang_dara.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(27, 68, 'images/produk/teratai.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(28, 68, 'images/produk/teratai.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(29, 69, 'images/produk/airis_brazil.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(30, 69, 'images/produk/airis_brazil.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(31, 70, 'images/produk/batu_taman_hitam_putih.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(32, 70, 'images/produk/batu_taman_hitam_putih.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(33, 71, 'images/produk/maranti_bali.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(34, 71, 'images/produk/maranti_bali.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(35, 72, 'images/produk/kadaka_tanduk.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(36, 72, 'images/produk/kadaka_tanduk.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(37, 73, 'images/produk/jayen.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(38, 73, 'images/produk/jayen.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(39, 74, 'images/produk/alamanda_kuning.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(40, 74, 'images/produk/alamanda_kuning.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(41, 75, 'images/produk/sarbena_putih.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(42, 75, 'images/produk/sarbena_putih.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(43, 76, 'images/produk/sarbena_hijau.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(44, 76, 'images/produk/sarbena_hijau.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(45, 77, 'images/produk/pitalub_kecil.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(46, 77, 'images/produk/pitalub_kecil.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(47, 78, 'images/produk/aglonema_valentin.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(48, 78, 'images/produk/aglonema_valentin.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(49, 79, 'images/produk/pot_kapsul_hitam_coklat_hitam_diameter_35_tinggi_60.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(50, 79, 'images/produk/pot_kapsul_hitam_coklat_hitam_diameter_35_tinggi_60.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(51, 80, 'images/produk/pot_tanah_coklat_hitam_putih_diameter_30.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(52, 80, 'images/produk/pot_tanah_coklat_hitam_putih_diameter_30.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(53, 81, 'images/produk/pot_hitam_diameter_40.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(54, 81, 'images/produk/pot_hitam_diameter_40.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(55, 82, 'images/produk/cemara_tretes_tinggi_120cm.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(56, 82, 'images/produk/cemara_tretes_tinggi_120cm.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(57, 83, 'images/produk/pitalub_tinggi_70cm.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(58, 83, 'images/produk/pitalub_tinggi_70cm.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(59, 84, 'images/produk/ketapang_kaligata_tinggi_60cm.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(60, 84, 'images/produk/ketapang_kaligata_tinggi_60cm.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(61, 85, 'images/produk/berekele.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(62, 85, 'images/produk/berekele.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(63, 86, 'images/produk/media_tanah.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(64, 86, 'images/produk/media_tanah.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(65, 87, 'images/produk/jamani_cobra.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(66, 87, 'images/produk/jamani_cobra.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(67, 88, 'images/produk/kamboja_jepang.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(68, 88, 'images/produk/kamboja_jepang.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(69, 89, 'images/produk/bringin_putih.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(70, 89, 'images/produk/bringin_putih.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(71, 90, 'images/produk/bromilian_baby_pink.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(72, 90, 'images/produk/bromilian_baby_pink.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(73, 91, 'images/produk/asoka_india.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(74, 91, 'images/produk/asoka_india.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(75, 92, 'images/produk/pandan_bali.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(76, 92, 'images/produk/pandan_bali.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(77, 93, 'images/produk/lidah_mertua.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(78, 93, 'images/produk/lidah_mertua.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(79, 94, 'images/produk/bringin_korea_micro.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(80, 94, 'images/produk/bringin_korea_micro.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(81, 95, 'images/produk/marigool.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(82, 95, 'images/produk/marigool.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(83, 96, 'images/produk/kaktus_koboy_tinggi_70cm.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(84, 96, 'images/produk/kaktus_koboy_tinggi_70cm.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(85, 97, 'images/produk/bonsai_gestrum(L).jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(86, 97, 'images/produk/bonsai_gestrum(L).png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(87, 98, 'images/produk/bonsai_gestrum(M).jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(88, 98, 'images/produk/bonsai_gestrum(M).png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(89, 99, 'images/produk/bonsai_cemara_udang.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(90, 99, 'images/produk/bonsai_cemara_udang.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(91, 100, 'images/produk/bunga_kertas.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(92, 100, 'images/produk/bunga_kertas.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(93, 101, 'images/produk/jambu_kanci_tinggi_50cm.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(94, 101, 'images/produk/jambu_kanci_tinggi_50cm.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(95, 102, 'images/produk/jeruk_lemon.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(96, 102, 'images/produk/jeruk_lemon.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(97, 103, 'images/produk/asoka_singapur.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(98, 103, 'images/produk/asoka_singapur.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(99, 104, 'images/produk/sikas_tinggi_70cm.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(100, 104, 'images/produk/sikas_tinggi_70cm.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(101, 105, 'images/produk/kadaka_tempel.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(102, 105, 'images/produk/kadaka_tempel.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(103, 106, 'images/produk/pucuk_merah_tinggi_250cm.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(104, 106, 'images/produk/pucuk_merah_tinggi_250cm.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(105, 107, 'images/produk/kana.jpg', 1, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(106, 107, 'images/produk/tanaman_kana.png', 0, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08');
+(1, 54, 'images/produk/jamani_dolar.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(2, 54, 'images/produk/jamani_dolar.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(3, 55, 'images/produk/dragon_sekel_atau_tengkorak.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(4, 55, 'images/produk/dragon_sekel_atau_tengkorak.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(5, 56, 'images/produk/pakis_kuning.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(6, 56, 'images/produk/pakis_kuning.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(7, 57, 'images/produk/kuping_gajah.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(8, 57, 'images/produk/kuping_gajah.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(9, 58, 'images/produk/cemara_ekor_tupay.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(10, 58, 'images/produk/cemara_ekor_tupay.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(11, 59, 'images/produk/pot_tanah_coklat_hitam_putih_diameter_15.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(12, 59, 'images/produk/pot_tanah_coklat_hitam_putih_diameter_15.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(13, 60, 'images/produk/puting_cabe.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(14, 60, 'images/produk/puting_cabe.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(15, 61, 'images/produk/cemara_perak.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(16, 61, 'images/produk/cemara_perak.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(17, 62, 'images/produk/bringin_korea_tinggi_2M.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(18, 62, 'images/produk/bringin_korea_tinggi_2M.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(19, 63, 'images/produk/gestrum_kuning.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(20, 63, 'images/produk/gestrum_kuning.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(21, 64, 'images/produk/brokoli_hijau.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(22, 64, 'images/produk/brokoli_hijau.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(23, 65, 'images/produk/siklok.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(24, 65, 'images/produk/siklok.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(25, 66, 'images/produk/sampang_dara.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(26, 66, 'images/produk/sampang_dara.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(27, 68, 'images/produk/teratai.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(28, 68, 'images/produk/teratai.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(29, 69, 'images/produk/airis_brazil.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(30, 69, 'images/produk/airis_brazil.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(31, 70, 'images/produk/batu_taman_hitam_putih.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(32, 70, 'images/produk/batu_taman_hitam_putih.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(33, 71, 'images/produk/maranti_bali.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(34, 71, 'images/produk/maranti_bali.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(35, 72, 'images/produk/kadaka_tanduk.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(36, 72, 'images/produk/kadaka_tanduk.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(37, 73, 'images/produk/jayen.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(38, 73, 'images/produk/jayen.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(39, 74, 'images/produk/alamanda_kuning.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(40, 74, 'images/produk/alamanda_kuning.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(41, 75, 'images/produk/sarbena_putih.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(42, 75, 'images/produk/sarbena_putih.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(43, 76, 'images/produk/sarbena_hijau.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(44, 76, 'images/produk/sarbena_hijau.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(45, 77, 'images/produk/pitalub_kecil.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(46, 77, 'images/produk/pitalub_kecil.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(47, 78, 'images/produk/aglonema_valentin.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(48, 78, 'images/produk/aglonema_valentin.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(49, 79, 'images/produk/pot_kapsul_hitam_coklat_hitam_diameter_35_tinggi_60.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(50, 79, 'images/produk/pot_kapsul_hitam_coklat_hitam_diameter_35_tinggi_60.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(51, 80, 'images/produk/pot_tanah_coklat_hitam_putih_diameter_30.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(52, 80, 'images/produk/pot_tanah_coklat_hitam_putih_diameter_30.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(53, 81, 'images/produk/pot_hitam_diameter_40.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(54, 81, 'images/produk/pot_hitam_diameter_40.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(55, 82, 'images/produk/cemara_tretes_tinggi_120cm.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(56, 82, 'images/produk/cemara_tretes_tinggi_120cm.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(57, 83, 'images/produk/pitalub_tinggi_70cm.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(58, 83, 'images/produk/pitalub_tinggi_70cm.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(59, 84, 'images/produk/ketapang_kaligata_tinggi_60cm.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(60, 84, 'images/produk/ketapang_kaligata_tinggi_60cm.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(61, 85, 'images/produk/berekele.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(62, 85, 'images/produk/berekele.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(63, 86, 'images/produk/media_tanah.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(64, 86, 'images/produk/media_tanah.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(65, 87, 'images/produk/jamani_cobra.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(66, 87, 'images/produk/jamani_cobra.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(67, 88, 'images/produk/kamboja_jepang.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(68, 88, 'images/produk/kamboja_jepang.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(69, 89, 'images/produk/bringin_putih.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(70, 89, 'images/produk/bringin_putih.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(71, 90, 'images/produk/bromilian_baby_pink.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(72, 90, 'images/produk/bromilian_baby_pink.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(73, 91, 'images/produk/asoka_india.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(74, 91, 'images/produk/asoka_india.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(75, 92, 'images/produk/pandan_bali.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(76, 92, 'images/produk/pandan_bali.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(77, 93, 'images/produk/lidah_mertua.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(78, 93, 'images/produk/lidah_mertua.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(79, 94, 'images/produk/bringin_korea_micro.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(80, 94, 'images/produk/bringin_korea_micro.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(81, 95, 'images/produk/marigool.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(82, 95, 'images/produk/marigool.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(83, 96, 'images/produk/kaktus_koboy_tinggi_70cm.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(84, 96, 'images/produk/kaktus_koboy_tinggi_70cm.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(85, 97, 'images/produk/bonsai_gestrum(L).jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(86, 97, 'images/produk/bonsai_gestrum(L).png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(87, 98, 'images/produk/bonsai_gestrum(M).jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(88, 98, 'images/produk/bonsai_gestrum(M).png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(89, 99, 'images/produk/bonsai_cemara_udang.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(90, 99, 'images/produk/bonsai_cemara_udang.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(91, 100, 'images/produk/bunga_kertas.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(92, 100, 'images/produk/bunga_kertas.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(93, 101, 'images/produk/jambu_kanci_tinggi_50cm.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(94, 101, 'images/produk/jambu_kanci_tinggi_50cm.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(95, 102, 'images/produk/jeruk_lemon.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(96, 102, 'images/produk/jeruk_lemon.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(97, 103, 'images/produk/asoka_singapur.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(98, 103, 'images/produk/asoka_singapur.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(99, 104, 'images/produk/sikas_tinggi_70cm.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(100, 104, 'images/produk/sikas_tinggi_70cm.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(101, 105, 'images/produk/kadaka_tempel.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(102, 105, 'images/produk/kadaka_tempel.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(103, 106, 'images/produk/pucuk_merah_tinggi_250cm.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(104, 106, 'images/produk/pucuk_merah_tinggi_250cm.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(105, 107, 'images/produk/kana.jpg', 1, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(106, 107, 'images/produk/tanaman_kana.png', 0, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06');
 
 -- --------------------------------------------------------
 
@@ -1495,8 +1511,7 @@ CREATE TABLE `promotions` (
 INSERT INTO `promotions` (`id`, `promo_code`, `title`, `description`, `discount_type`, `discount_value`, `start_date`, `end_date`, `status`, `created_at`, `updated_at`, `interface_id`) VALUES
 (2, 'PROMOJULI10', 'Diskon 10% untuk Tanaman Hias', 'Dapatkan diskon 10% untuk pembelian minimal Rp200.000 tanaman hias.', 'percent', 10.00, '2025-07-01 00:00:00', '2025-07-31 00:00:00', 1, '2025-07-24 00:53:22', NULL, 1),
 (3, 'PROMO-SV294G', 'Promo Newsletter untuk wdawdaaw02@gmail.com', 'Promo khusus subscriber newsletter.', 'percent', 10.00, '2025-07-24 11:43:32', '2025-08-23 11:43:32', 1, '2025-07-24 04:43:32', NULL, 1),
-(4, 'PROMO-EKNQ2W', 'Promo Newsletter untuk admin@azkagarden.com', 'Promo khusus subscriber newsletter.', 'percent', 10.00, '2025-07-29 15:53:39', '2025-08-28 15:53:39', 1, '2025-07-29 15:53:39', NULL, 1),
-(5, 'PROMO-UK83VB', 'Promo Newsletter untuk admin01@gmail.com', 'Promo khusus subscriber newsletter.', 'percent', 10.00, '2025-07-30 00:31:59', '2025-08-29 00:31:59', 1, '2025-07-30 00:31:59', NULL, 1);
+(4, 'PROMO-INY4MR', 'Promo Newsletter untuk redeemself0@gmail.com', 'Promo khusus subscriber newsletter.', 'percent', 10.00, '2025-07-30 11:39:55', '2025-08-29 11:39:55', 1, '2025-07-30 11:39:55', NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -1640,11 +1655,11 @@ CREATE TABLE `roles` (
 --
 
 INSERT INTO `roles` (`id`, `enum_role_id`, `name`, `created_at`, `updated_at`) VALUES
-(1, 3, 'ADMIN', '2025-07-29 08:51:26', '2025-07-29 08:51:26'),
-(2, 4, 'USER', '2025-07-29 08:51:26', '2025-07-29 08:51:26'),
-(3, 2, 'GUEST', '2025-07-29 08:51:26', '2025-07-29 08:51:26'),
-(4, 1, 'CUSTOMER', '2025-07-29 08:51:26', '2025-07-29 08:51:26'),
-(5, 5, 'DEVELOPER', '2025-07-29 08:51:26', '2025-07-29 08:51:26');
+(1, 3, 'ADMIN', '2025-07-30 00:51:31', '2025-07-30 00:51:31'),
+(2, 4, 'USER', '2025-07-30 00:51:31', '2025-07-30 00:51:31'),
+(3, 2, 'GUEST', '2025-07-30 00:51:31', '2025-07-30 00:51:31'),
+(4, 1, 'CUSTOMER', '2025-07-30 00:51:31', '2025-07-30 00:51:31'),
+(5, 5, 'DEVELOPER', '2025-07-30 00:51:31', '2025-07-30 00:51:31');
 
 -- --------------------------------------------------------
 
@@ -1664,12 +1679,12 @@ CREATE TABLE `role_user` (
 --
 
 INSERT INTO `role_user` (`user_id`, `role_id`, `created_at`, `updated_at`) VALUES
-(1, 2, '2025-07-29 08:52:24', '2025-07-29 08:52:24'),
-(1, 3, '2025-07-29 08:52:24', '2025-07-29 08:52:24'),
-(1, 4, '2025-07-29 08:52:24', '2025-07-29 08:52:24'),
-(2, 2, '2025-07-29 17:31:22', '2025-07-29 17:31:22'),
-(2, 3, '2025-07-29 17:31:22', '2025-07-29 17:31:22'),
-(2, 4, '2025-07-29 17:31:22', '2025-07-29 17:31:22');
+(5, 2, '2025-07-30 01:03:22', '2025-07-30 01:03:22'),
+(5, 3, '2025-07-30 01:03:22', '2025-07-30 01:03:22'),
+(5, 4, '2025-07-30 01:03:22', '2025-07-30 01:03:22'),
+(6, 2, '2025-07-30 01:45:14', '2025-07-30 01:45:14'),
+(6, 3, '2025-07-30 01:45:14', '2025-07-30 01:45:14'),
+(6, 4, '2025-07-30 01:45:14', '2025-07-30 01:45:14');
 
 -- --------------------------------------------------------
 
@@ -1773,14 +1788,16 @@ CREATE TABLE `shippings` (
 --
 
 INSERT INTO `shippings` (`id`, `order_id`, `courier`, `service`, `tracking_number`, `shipping_cost`, `status`, `estimated_delivery`, `interface_id`, `created_at`, `updated_at`) VALUES
-(1, 2001, 'KURIR TOKO', 'Internal', NULL, 10000.00, 'WAITING_DELIVERY', NULL, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(2, 2002, 'KURIR TOKO', 'Internal', NULL, 15000.00, 'WAITING_DELIVERY', NULL, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(3, 2003, 'KURIR TOKO', 'Internal', NULL, 20000.00, 'WAITING_DELIVERY', NULL, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(4, 2004, 'GOSEND', 'Sameday', NULL, 25000.00, 'WAITING_PICKUP', NULL, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(5, 2005, 'JNE', 'REG', NULL, 12000.00, 'WAITING_PICKUP', NULL, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(6, 2006, 'JNT', 'EZ', NULL, 14000.00, 'WAITING_PICKUP', NULL, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(7, 2007, 'SICEPAT', 'BEST', NULL, 15000.00, 'WAITING_PICKUP', NULL, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08'),
-(8, 2008, 'AMBIL_SENDIRI', '-', NULL, 0.00, 'READY_FOR_PICKUP', NULL, 1, '2025-07-29 15:52:08', '2025-07-29 15:52:08');
+(1, 2001, 'KURIR TOKO', 'Internal', NULL, 10000.00, 'WAITING_DELIVERY', NULL, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(2, 2002, 'KURIR TOKO', 'Internal', NULL, 15000.00, 'WAITING_DELIVERY', NULL, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(3, 2003, 'KURIR TOKO', 'Internal', NULL, 20000.00, 'WAITING_DELIVERY', NULL, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(4, 2004, 'GOSEND', 'Sameday', NULL, 25000.00, 'WAITING_PICKUP', NULL, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(5, 2005, 'JNE', 'REG', NULL, 12000.00, 'WAITING_PICKUP', NULL, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(6, 2006, 'JNT', 'EZ', NULL, 14000.00, 'WAITING_PICKUP', NULL, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(7, 2007, 'SICEPAT', 'BEST', NULL, 15000.00, 'WAITING_PICKUP', NULL, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(8, 2008, 'AMBIL_SENDIRI', '-', NULL, 0.00, 'READY_FOR_PICKUP', NULL, 1, '2025-07-30 07:58:06', '2025-07-30 07:58:06'),
+(9, 2009, 'GOSEND', 'Sameday', NULL, 25000.00, 'WAITING_PICKUP', NULL, 1, '2025-07-30 04:28:22', '2025-07-30 04:28:22'),
+(10, 2010, 'SICEPAT', 'BEST', NULL, 15000.00, 'WAITING_PICKUP', NULL, 1, '2025-07-30 04:33:49', '2025-07-30 04:33:49');
 
 -- --------------------------------------------------------
 
@@ -1818,14 +1835,14 @@ CREATE TABLE `shipping_methods` (
 --
 
 INSERT INTO `shipping_methods` (`id`, `code`, `name`, `service`, `cost`, `description`, `is_active`, `sort_order`, `settings`, `created_at`, `updated_at`) VALUES
-(1, 'JNT', 'J&T Express', 'EZ', 14000.00, 'Pengiriman reguler via J&T Express (Rp14,000)', 1, 1, NULL, '2025-07-29 08:51:26', '2025-07-29 08:51:26'),
-(2, 'GOSEND', 'GoSend', 'Sameday', 25000.00, 'Pengiriman cepat via GoSend (estimasi Rp25,000 sesuai jarak)', 1, 4, NULL, '2025-07-29 08:51:26', '2025-07-29 08:51:26'),
-(3, 'JNE', 'JNE', 'REG', 12000.00, 'Pengiriman reguler via JNE (Rp12,000)', 1, 2, NULL, '2025-07-29 08:51:26', '2025-07-29 08:51:26'),
-(4, 'SICEPAT', 'SiCepat', 'BEST', 15000.00, 'Pengiriman reguler via SiCepat (Rp15,000)', 1, 3, NULL, '2025-07-29 08:51:26', '2025-07-29 08:51:26'),
-(5, 'KURIR_TOKO_DEKAT', 'Kurir Toko (<5km)', 'Internal-Dekat', 10000.00, 'Pengiriman langsung dari toko Azka Garden (jarak <5km)', 1, 5, '{\"max_distance\": 5, \"distance_range\": \"less_than_5km\"}', '2025-07-29 08:51:26', '2025-07-29 08:51:26'),
-(6, 'KURIR_TOKO', 'Kurir Toko (5-10km)', 'Internal', 15000.00, 'Pengiriman langsung dari toko Azka Garden (jarak 5-10km)', 1, 6, '{\"max_distance\": 10, \"min_distance\": 5, \"distance_range\": \"5_to_10km\"}', '2025-07-29 08:51:26', '2025-07-29 08:51:26'),
-(7, 'KURIR_TOKO_JAUH', 'Kurir Toko (>10km)', 'Internal-Jauh', 20000.00, 'Pengiriman langsung dari toko Azka Garden (jarak >10km)', 1, 7, '{\"min_distance\": 10, \"distance_range\": \"more_than_10km\"}', '2025-07-29 08:51:26', '2025-07-29 08:51:26'),
-(8, 'AMBIL_SENDIRI', 'Ambil Sendiri', '-', 0.00, 'Ambil langsung di toko (GRATIS)', 1, 0, NULL, '2025-07-29 08:51:26', '2025-07-29 08:51:26');
+(1, 'JNT', 'J&T Express', 'EZ', 14000.00, 'Pengiriman reguler via J&T Express (Rp14,000)', 1, 1, NULL, '2025-07-30 00:51:32', '2025-07-30 00:51:32'),
+(2, 'GOSEND', 'GoSend', 'Sameday', 25000.00, 'Pengiriman cepat via GoSend (estimasi Rp25,000 sesuai jarak)', 1, 4, NULL, '2025-07-30 00:51:32', '2025-07-30 00:51:32'),
+(3, 'JNE', 'JNE', 'REG', 12000.00, 'Pengiriman reguler via JNE (Rp12,000)', 1, 2, NULL, '2025-07-30 00:51:32', '2025-07-30 00:51:32'),
+(4, 'SICEPAT', 'SiCepat', 'BEST', 15000.00, 'Pengiriman reguler via SiCepat (Rp15,000)', 1, 3, NULL, '2025-07-30 00:51:32', '2025-07-30 00:51:32'),
+(5, 'KURIR_TOKO_DEKAT', 'Kurir Toko (<5km)', 'Internal-Dekat', 10000.00, 'Pengiriman langsung dari toko Azka Garden (jarak <5km)', 1, 5, '{\"max_distance\": 5, \"distance_range\": \"less_than_5km\"}', '2025-07-30 00:51:32', '2025-07-30 00:51:32'),
+(6, 'KURIR_TOKO', 'Kurir Toko (5-10km)', 'Internal', 15000.00, 'Pengiriman langsung dari toko Azka Garden (jarak 5-10km)', 1, 6, '{\"max_distance\": 10, \"min_distance\": 5, \"distance_range\": \"5_to_10km\"}', '2025-07-30 00:51:32', '2025-07-30 00:51:32'),
+(7, 'KURIR_TOKO_JAUH', 'Kurir Toko (>10km)', 'Internal-Jauh', 20000.00, 'Pengiriman langsung dari toko Azka Garden (jarak >10km)', 1, 7, '{\"min_distance\": 10, \"distance_range\": \"more_than_10km\"}', '2025-07-30 00:51:32', '2025-07-30 00:51:32'),
+(8, 'AMBIL_SENDIRI', 'Ambil Sendiri', '-', 0.00, 'Ambil langsung di toko (GRATIS)', 1, 0, NULL, '2025-07-30 00:51:32', '2025-07-30 00:51:32');
 
 -- --------------------------------------------------------
 
@@ -1992,8 +2009,12 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `name`, `email`, `email_verified_at`, `password`, `plain_password`, `phone`, `last_login`, `interface_id`, `remember_token`, `created_at`, `updated_at`) VALUES
-(1, 'Admin User', 'admin@azkagarden.com', NULL, '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', NULL, '081281349115', NULL, 1, NULL, '2025-07-29 15:52:08', '2025-07-29 08:52:24'),
-(2, 'Roberto', 'admin01@gmail.com', NULL, '$2y$12$WFR3B3jgt8HyFHaO.7C/iOft7DTs0GF.kTGdfT02yiTxfRB3yjv2i', 'Roberto2025', '081281349115', '2025-07-30 00:31:12', 1, NULL, '2025-07-29 17:31:12', '2025-07-29 17:31:22');
+(1, 'Admin User', 'admin@azkagarden.com', '2025-07-30 00:51:32', '$2y$12$l5rgIqK3X8FdFBZHWaCcH.Wnle.ZC257uYtpvIh/1U2CMgPlweeMq', NULL, NULL, NULL, 1, 'hBNGwYHOoq', '2025-07-30 00:51:32', '2025-07-30 00:51:32'),
+(2, 'Lisandro Hyatt IV', 'lonnie.kilback@example.net', '2025-07-30 00:51:33', '$2y$12$fXUW9l0dyoMVvIr3/wGpnO2xpQeEYJQPkO3e4HKk.2KiRYjYDWhr6', NULL, '1-813-708-4070', NULL, 1, 'pyQ2ff03bl', '2025-07-30 00:51:33', '2025-07-30 00:51:33'),
+(3, 'Prof. Irwin Stroman', 'elang@example.com', '2025-07-30 00:51:33', '$2y$12$d1bZQutXb6InQ2ChoyZ/Tuk.heMxoZ7/KG9VwJPpxYFOrWk.0FHC.', NULL, '1-219-604-6203', NULL, 1, 'D9D7qcAj8l', '2025-07-30 00:51:33', '2025-07-30 00:51:33'),
+(4, 'Jazmyn Schulist', 'vincenzo.kunze@example.net', '2025-07-30 00:51:34', '$2y$12$50WRd0QpxFo7LV3couTXbezDSl3p0LYlQh/SvrzTN6S6/AGU4AHTS', NULL, '(680) 330-9635', NULL, 1, '28CH70nl6S', '2025-07-30 00:51:34', '2025-07-30 00:51:34'),
+(5, 'Robee', 'redeemself0@gmail.com', NULL, '$2y$12$w7yEa/fo/ltquzKvvYeIJ.aUfwviGgj47f.Ye24Q56SJv7Dozb2k.', 'Robee2025', '081281349115', '2025-07-30 07:57:51', 1, NULL, '2025-07-30 00:57:51', '2025-07-30 01:03:22'),
+(6, 'Roberto Ocaviantyo Tahta Laksmana', 'Robee@gmail.com', NULL, '$2y$12$4u6oZgOJdUrP8jaQBHfY3OjWobZhWXUFteOnJQRKw/CcGRl2Eg31S', 'Roberto2025', '088212121221', '2025-07-30 08:44:44', 1, NULL, '2025-07-30 01:44:44', '2025-07-30 01:45:14');
 
 -- --------------------------------------------------------
 
@@ -2701,7 +2722,7 @@ ALTER TABLE `vulnerabilities`
 -- AUTO_INCREMENT for table `addresses`
 --
 ALTER TABLE `addresses`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `admins`
@@ -2779,7 +2800,7 @@ ALTER TABLE `bug_reports`
 -- AUTO_INCREMENT for table `carts`
 --
 ALTER TABLE `carts`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `categories`
@@ -2797,7 +2818,7 @@ ALTER TABLE `charts`
 -- AUTO_INCREMENT for table `contacts`
 --
 ALTER TABLE `contacts`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `customer_support`
@@ -2965,7 +2986,7 @@ ALTER TABLE `interface_methods`
 -- AUTO_INCREMENT for table `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3692;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4326;
 
 --
 -- AUTO_INCREMENT for table `newsletters`
@@ -2983,13 +3004,13 @@ ALTER TABLE `newsletter_subscribers`
 -- AUTO_INCREMENT for table `orders`
 --
 ALTER TABLE `orders`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2009;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2011;
 
 --
 -- AUTO_INCREMENT for table `order_details`
 --
 ALTER TABLE `order_details`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `order_management`
@@ -3007,7 +3028,7 @@ ALTER TABLE `payments`
 -- AUTO_INCREMENT for table `payment_methods`
 --
 ALTER TABLE `payment_methods`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `performances`
@@ -3043,7 +3064,7 @@ ALTER TABLE `product_likes`
 -- AUTO_INCREMENT for table `promotions`
 --
 ALTER TABLE `promotions`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `purchase_orders`
@@ -3127,7 +3148,7 @@ ALTER TABLE `sessions`
 -- AUTO_INCREMENT for table `shippings`
 --
 ALTER TABLE `shippings`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `shipping_methods`
@@ -3193,7 +3214,7 @@ ALTER TABLE `test_reports`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `vulnerabilities`

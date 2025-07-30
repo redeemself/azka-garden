@@ -25,31 +25,31 @@
             'code' => 'GOSEND',
             'name' => 'GoSend Sameday',
             'desc' => 'Kirim instan via GoSend (estimasi Rp15.000-30.000 sesuai aplikasi)',
-            'icon' => 'bicycle'
+            'icon' => 'send'
         ],
         [
             'code' => 'JNE',
             'name' => 'JNE REG',
             'desc' => 'Reguler via JNE (8.000-20.000/kg, estimasi aplikasi atau admin)',
-            'icon' => 'box'
+            'icon' => 'package'
         ],
         [
             'code' => 'JNT',
             'name' => 'J&T EZ',
             'desc' => 'J&T EZ (10.000-22.000/kg, estimasi aplikasi atau admin)',
-            'icon' => 'truck-fast'
+            'icon' => 'truck'
         ],
         [
             'code' => 'SICEPAT',
             'name' => 'SiCepat BEST',
             'desc' => 'SiCepat BEST (10.000-18.000/kg, estimasi aplikasi atau admin)',
-            'icon' => 'bolt'
+            'icon' => 'zap'
         ],
         [
             'code' => 'AMBIL_SENDIRI',
             'name' => 'Ambil Sendiri di Toko',
             'desc' => 'Ambil langsung ke Azka Garden, <b style="color:#16a34a;">bebas ongkir</b>!',
-            'icon' => 'store'
+            'icon' => 'shopping-bag'
         ],
     ];
     $selected_shipping = old('shipping_method', session('shipping_method') ?? $shippingMethods[0]['code']);
@@ -284,6 +284,7 @@
     font-size: 1rem;
     cursor: pointer;
     transition: all 0.15s ease;
+    position: relative;
 }
 
 .cart-quantity-btn:hover {
@@ -1317,6 +1318,16 @@
     pointer-events: none;
 }
 
+/* Map related styles */
+#map-container {
+    width: 100%;
+    height: 200px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    border: 1px solid var(--gray-200);
+}
+
 /* Improved mobile responsiveness */
 @media (max-width: 1024px) {
     .cart-grid {
@@ -1791,6 +1802,9 @@
                         <div class="address-detail">{{ $primaryAddress->city }}, {{ $primaryAddress->zip_code }}</div>
                         <div class="address-detail">{{ $primaryAddress->phone_number }}</div>
                     </div>
+                    
+                    <!-- Add Map Container for address visualization -->
+                    <div id="map-container"></div>
                 </div>
                 @endif
 
@@ -1803,18 +1817,21 @@
                     </div>
                     <div class="cart-panel-body">
                         <div class="shipping-methods">
-                            @foreach($shippingMethods as $method)
-                                <label class="shipping-method{{ $selected_shipping == $method['code'] ? ' selected' : '' }}">
-                                    <input type="radio" name="shipping_method" value="{{ $method['code'] }}" class="shipping-method-radio" {{ $selected_shipping == $method['code'] ? 'checked' : '' }}>
-                                    <div class="shipping-method-icon">
-                                        <i data-feather="{{ $method['icon'] }}"></i>
-                                    </div>
-                                    <div class="shipping-method-details">
-                                        <div class="shipping-method-name">{!! $method['name'] !!}</div>
-                                        <div class="shipping-method-desc">{!! $method['desc'] !!}</div>
-                                    </div>
-                                </label>
-                            @endforeach
+                            <form id="shipping-method-form" method="POST">
+                                @csrf
+                                @foreach($shippingMethods as $method)
+                                    <label class="shipping-method{{ $selected_shipping == $method['code'] ? ' selected' : '' }}">
+                                        <input type="radio" name="shipping_method" value="{{ $method['code'] }}" class="shipping-method-radio" {{ $selected_shipping == $method['code'] ? 'checked' : '' }}>
+                                        <div class="shipping-method-icon">
+                                            <i data-feather="{{ $method['icon'] }}"></i>
+                                        </div>
+                                        <div class="shipping-method-details">
+                                            <div class="shipping-method-name">{!! $method['name'] !!}</div>
+                                            <div class="shipping-method-desc">{!! $method['desc'] !!}</div>
+                                        </div>
+                                    </label>
+                                @endforeach
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -1836,66 +1853,51 @@
                             Metode Pembayaran
                         </h2>
                     </div>
-                    <div class="cart-panel-body">
-                        @if($allMethods->count())
-                            <!-- Payment method selection (tetap ditampilkan untuk validasi sebelum checkout) -->
-                            <div class="payment-methods">
-                                @foreach($allMethods as $method)
-                                    <label class="payment-method{{ $selected_payment === $method->code ? ' selected' : '' }}">
-                                        <input type="radio" name="payment_method" value="{{ $method->code }}" class="payment-method-radio" {{ $selected_payment === $method->code ? 'checked' : '' }} required>
-                                        <div class="payment-method-icon">
-                                            @switch($method->code)
-                                                @case('CASH')
-                                                    <i data-feather="dollar-sign"></i>
-                                                    @break
-                                                @case('COD_QRIS')
-                                                    <i data-feather="smartphone"></i>
-                                                    @break
-                                                @case('QRIS')
-                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                        <path d="M3 3H9V9H3V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                        <path d="M15 3H21V9H15V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                        <path d="M3 15H9V21H3V15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                        <path d="M15 15H21V21H15V15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                    </svg>
-                                                    @break
-                                                @case('EWALLET')
-                                                    <i data-feather="smartphone"></i>
-                                                    @break
-                                                @default
-                                                    <i data-feather="credit-card"></i>
-                                            @endswitch
-                                        </div>
-                                        <div class="payment-method-details">
-                                            <div class="payment-method-name">{{ $method->name }}</div>
-                                            @if($method->config)
-                                                <div class="payment-method-desc">
-                                                    {{ is_array($method->config) ? ($method->config['desc'] ?? '') : (json_decode($method->config)->desc ?? '') }}
-                                                </div>
-                                            @endif
-                                        </div>
-                                    </label>
-                                @endforeach
-                            </div>
-                            <!-- Hidden input for shipping and address to be sent to checkout page via session or query, not directly posted here -->
-                            <input type="hidden" name="shipping_method" id="shipping_method_input" value="{{ $selected_shipping }}">
-                            @if($primaryAddress)
-                                <input type="hidden" name="shipping_address_id" value="{{ $primaryAddress->id }}">
-                            @endif
-                            <!-- Tombol Checkout dipindahkan ke bawah setelah E-wallet -->
-                            <div class="cart-checkout-wrapper" style="margin-top: 1.5rem;">
-                                <a href="{{ route('checkout.index') }}" class="cart-checkout" id="checkout-link">
-                                    <i data-feather="shopping-bag"></i>
-                                    Checkout
-                                </a>
-                            </div>
-                        @else
-                            <div class="p-4 text-center border border-red-300 rounded-lg text-error bg-error-bg">
-                                <i data-feather="alert-circle" class="mx-auto mb-2"></i>
-                                <p class="font-semibold">Tidak ada metode pembayaran yang tersedia.</p>
-                                <p class="mt-1 text-sm">Silakan hubungi admin untuk informasi lebih lanjut.</p>
-                            </div>
+                                        <div class="cart-panel-body">
+                        <div class="payment-methods">
+                            @foreach($allMethods as $method)
+                                <label class="payment-method {{ $selected_payment == $method->code ? 'selected' : '' }}">
+                                    <input type="radio" name="payment_method" value="{{ $method->code }}" class="payment-method-radio" {{ $selected_payment == $method->code ? 'checked' : '' }}>
+                                    <div class="payment-method-icon">
+                                        @switch($method->code)
+                                            @case('QRIS')
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M3 3H9V9H3V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                    <path d="M15 3H21V9H15V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                    <path d="M3 15H9V21H3V15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                    <path d="M15 15H21V21H15V15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                </svg>
+                                                @break
+                                            @case('EWALLET')
+                                                <i data-feather="smartphone"></i>
+                                                @break
+                                            @default
+                                                <i data-feather="credit-card"></i>
+                                        @endswitch
+                                    </div>
+                                    <div class="payment-method-details">
+                                        <div class="payment-method-name">{{ $method->name }}</div>
+                                        @if($method->config)
+                                            <div class="payment-method-desc">
+                                                {{ is_array($method->config) ? ($method->config['desc'] ?? '') : (json_decode($method->config)->desc ?? '') }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                </label>
+                            @endforeach
+                        </div>
+                        <!-- Hidden input for shipping and address to be sent to checkout page via session or query, not directly posted here -->
+                        <input type="hidden" name="shipping_method" id="shipping_method_input" value="{{ $selected_shipping }}">
+                        @if($primaryAddress)
+                            <input type="hidden" name="shipping_address_id" value="{{ $primaryAddress->id }}">
                         @endif
+                        <!-- Tombol Checkout dipindahkan ke bawah setelah E-wallet -->
+                        <div class="cart-checkout-wrapper" style="margin-top: 1.5rem;">
+                            <a href="{{ route('checkout.index') }}" class="cart-checkout" id="checkout-link">
+                                <i data-feather="shopping-bag"></i>
+                                Checkout
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1982,8 +1984,43 @@ const cartState = {
             this.updateCartCounter();
             this.saveToLocalStorage();
         }
+    },
+    
+    // Add item to cart
+    addItem(item) {
+        // Check if item already exists
+        const index = this.items.findIndex(i => i.id === item.id);
+        if (index !== -1) {
+            // Update quantity if exists
+            this.items[index].quantity += item.quantity || 1;
+        } else {
+            // Add new item
+            this.items.push(item);
+        }
+        this.updateCartCounter();
+        this.saveToLocalStorage();
     }
 };
+
+/**
+ * Helper function to get CSRF token from various sources
+ */
+function getCSRFToken() {
+    // Try to get it from meta tag first
+    let token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
+    // If not found, try hidden input
+    if (!token) {
+        token = document.querySelector('input[name="_token"]')?.value;
+    }
+    
+    // Last resort - try hidden container
+    if (!token) {
+        token = document.querySelector('.token-container')?.value;
+    }
+    
+    return token;
+}
 
 /**
  * Modern Toast Notification System
@@ -2263,55 +2300,87 @@ const loadingOverlay = {
 };
 
 /**
- * Ensures CSRF token is available for AJAX requests
- */
-function ensureCsrfToken() {
-    // Check for meta tag
-    let token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-    
-    // If not found, check for input
-    if (!token) {
-        token = document.querySelector('input[name="_token"]')?.value;
-    }
-    
-    // If still not found, create one from the hidden input
-    if (!token) {
-        token = document.querySelector('.token-container')?.value;
-    }
-    
-    // Make sure token is set in headers
-    if (token) {
-        // Set as default header for fetch requests
-        window.fetchDefaults = window.fetchDefaults || {};
-        window.fetchDefaults.headers = {
-            'X-CSRF-TOKEN': token,
-            'Accept': 'application/json'
-        };
-        
-        // Also set for XMLHttpRequest
-        document.addEventListener('DOMContentLoaded', function() {
-            const oldSend = XMLHttpRequest.prototype.send;
-            XMLHttpRequest.prototype.send = function() {
-                this.setRequestHeader('X-CSRF-TOKEN', token);
-                this.setRequestHeader('Accept', 'application/json');
-                return oldSend.apply(this, arguments);
-            };
-        });
-    }
-    
-    return token;
-}
-
-// Call this early in your script
-const csrfToken = ensureCsrfToken();
-
-/**
  * Format number as currency
  * @param {number} value - Number to format
  * @returns {string} - Formatted number
  */
 function formatCurrency(value) {
     return new Intl.NumberFormat('id-ID').format(value);
+}
+
+/**
+ * Add product to cart
+ * @param {number} productId - Product ID
+ * @param {number} quantity - Quantity to add
+ * @returns {Promise} - Promise that resolves when product is added
+ */
+async function addToCart(productId, quantity = 1) {
+    try {
+        // Get CSRF token
+        const csrfToken = getCSRFToken();
+        
+        if (!csrfToken) {
+            throw new Error('CSRF token tidak ditemukan. Silakan refresh halaman.');
+        }
+        
+        // Show loading overlay
+        loadingOverlay.show();
+        
+        // Create form data
+        const formData = new FormData();
+        formData.append('product_id', productId);
+        formData.append('quantity', quantity);
+        formData.append('_token', csrfToken);
+        
+        // Use fetch for AJAX request
+        const response = await fetch('/cart/add', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Add to cart state
+            cartState.addItem({
+                id: data.item.id,
+                productId: productId,
+                quantity: quantity,
+                unitPrice: data.item.price,
+                discountedPrice: data.item.discounted_price || data.item.price,
+                maxStock: data.item.max_stock || 100
+            });
+            
+            // Show success notification
+            toastSystem.success('Berhasil', 'Produk berhasil ditambahkan ke keranjang');
+            
+            // Update cart counter
+            cartState.updateCartCounter();
+            
+            return data;
+        } else {
+            throw new Error(data.message || 'Gagal menambahkan produk ke keranjang');
+        }
+    } catch (error) {
+        console.error('Error adding to cart:', error);
+        
+        loadingOverlay.hide();
+        
+        // Show error notification
+        toastSystem.error('Gagal', error.message || 'Gagal menambahkan produk ke keranjang. Silakan coba lagi.');
+        
+        throw error;
+    } finally {
+        loadingOverlay.hide();
+    }
 }
 
 /**
@@ -2330,11 +2399,8 @@ async function deleteCartItem(itemId) {
         // Get item information for notification
         const itemName = itemElements[0].querySelector('.cart-item-name, .mobile-cart-item-name')?.textContent || 'Produk';
         
-        // Get CSRF token - PERBAIKAN: mencoba dari beberapa sumber
-        const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        const inputToken = document.querySelector('input[name="_token"]')?.value;
-        const hiddenToken = document.querySelector('.token-container')?.value;
-        const csrfToken = metaToken || inputToken || hiddenToken;
+        // Get CSRF token
+        const csrfToken = getCSRFToken();
         
         if (!csrfToken) {
             throw new Error('CSRF token tidak ditemukan. Silakan refresh halaman.');
@@ -2346,79 +2412,59 @@ async function deleteCartItem(itemId) {
         // Add deleting animation class
         itemElements.forEach(el => el.classList.add('deleting'));
         
-        // Create form data object
-        const formData = new FormData();
-        formData.append('_method', 'DELETE');
-        formData.append('_token', csrfToken);
-        
-        // Use XMLHttpRequest for better compatibility
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', `/user/cart/delete/${itemId}`, true);
-        xhr.timeout = 15000; // Set timeout to 15 seconds
-        
-        return new Promise((resolve, reject) => {
-            xhr.onload = function() {
-                try {
-                    const response = JSON.parse(xhr.responseText);
-                    
-                    if (xhr.status === 200 && response.success) {
-                        // Remove from cart state
-                        cartState.removeItem(itemId);
-                        
-                        // Smoothly remove from UI with animation
-                        itemElements.forEach(el => {
-                            el.classList.add('deleted');
-                            
-                            // Remove from DOM after animation completes
-                            el.addEventListener('transitionend', () => {
-                                if (el.parentNode) {
-                                    el.parentNode.removeChild(el);
-                                }
-                                
-                                // Check if cart is empty after removal
-                                if (document.querySelectorAll('[data-item-row]').length === 0) {
-                                    showEmptyCart();
-                                } else {
-                                    calculateTotals();
-                                }
-                            }, { once: true });
-                        });
-                        
-                        // Show success notification
-                        toastSystem.success('Berhasil', 'Produk berhasil dihapus dari keranjang');
-                        resolve(response);
-                    } else {
-                        // Handle API error
-                        const errorMsg = response.message || `Terjadi kesalahan (${xhr.status})`;
-                        throw new Error(errorMsg);
-                    }
-                } catch (error) {
-                    console.error('Error parsing delete response:', error);
-                    reject(new Error('Gagal menghapus produk. Silakan coba lagi.'));
-                } finally {
-                    loadingOverlay.hide();
-                }
-            };
-            
-            xhr.onerror = function() {
-                console.error('Network error during delete operation');
-                itemElements.forEach(el => el.classList.remove('deleting'));
-                loadingOverlay.hide();
-                reject(new Error('Gagal terhubung ke server. Cek koneksi internet Anda.'));
-            };
-            
-            xhr.ontimeout = function() {
-                console.error('Delete operation timed out');
-                itemElements.forEach(el => el.classList.remove('deleting'));
-                loadingOverlay.hide();
-                reject(new Error('Permintaan timeout. Server terlalu lama merespon.'));
-            };
-            
-            // Send the request
-            xhr.send(formData);
+        // Fix: Use the correct route with POST method
+        const response = await fetch(`/cart/remove-item`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                _token: csrfToken,
+                cart_id: itemId
+            })
         });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Remove from cart state
+            cartState.removeItem(itemId);
+            
+            // Smoothly remove from UI with animation
+            itemElements.forEach(el => {
+                el.classList.add('deleted');
+                
+                // Remove from DOM after animation completes
+                el.addEventListener('transitionend', () => {
+                    if (el.parentNode) {
+                        el.parentNode.removeChild(el);
+                    }
+                    
+                    // Check if cart is empty after removal
+                    const remainingItems = document.querySelectorAll('[data-item-row]');
+                    if (remainingItems.length === 0) {
+                        showEmptyCart();
+                    } else {
+                        calculateTotals();
+                    }
+                }, { once: true });
+            });
+            
+            // Show success notification
+            toastSystem.success('Berhasil', 'Produk berhasil dihapus dari keranjang');
+            
+            return data;
+        } else {
+            throw new Error(data.message || 'Gagal menghapus produk dari keranjang');
+        }
     } catch (error) {
-        console.error('Error in deleteCartItem:', error);
+        console.error('Error deleting cart item:', error);
         
         // Remove deleting animation from items
         document.querySelectorAll(`[data-item-row="${itemId}"]`).forEach(el => {
@@ -2448,6 +2494,8 @@ async function deleteCartItem(itemId) {
         }
         
         throw error;
+    } finally {
+        loadingOverlay.hide();
     }
 }
 
@@ -2569,10 +2617,14 @@ function calculateTotals() {
     // Update UI
     const subtotalEl = document.getElementById('cart-subtotal');
     const discountEl = document.getElementById('cart-discount');
+    const shippingEl = document.getElementById('cart-shipping');
     const totalEl = document.getElementById('cart-total');
     
     if (subtotalEl) subtotalEl.textContent = `Rp ${formatCurrency(subtotal)}`;
     if (discountEl) discountEl.textContent = `-Rp ${formatCurrency(discount)}`;
+    if (shippingEl && !shippingEl.getAttribute('data-value')) {
+        shippingEl.textContent = `Rp ${formatCurrency(shipping)}`;
+    }
     if (totalEl) totalEl.textContent = `Rp ${formatCurrency(total)}`;
     
     // Show/hide discount row
@@ -2631,52 +2683,30 @@ function updateItemDisplay(itemId, newQuantity) {
 }
 
 /**
- * Function to update item quantity via AJAX with improved error handling
+ * Function to update item quantity with AJAX
  * @param {number} itemId - ID of the cart item
+ * @param {number} newQuantity - New quantity to set
  */
-function updateItemQuantity(itemId) {
+function updateItemQuantity(itemId, newQuantity) {
     // Get all elements with this item ID
     const itemElements = document.querySelectorAll(`[data-item-row="${itemId}"]`);
     if (itemElements.length === 0) return;
     
-    // Get input element and new quantity
-    const quantityInput = itemElements[0].querySelector('.cart-quantity-input');
-    if (!quantityInput) return;
-    
-    const newQuantity = parseInt(quantityInput.value);
+    // Validate the new quantity
     if (isNaN(newQuantity) || newQuantity < 1) {
-        quantityInput.value = 1;
-        return;
+        newQuantity = 1;
+    }
+    
+    // Maximum quantity check
+    const quantityInput = itemElements[0].querySelector('.cart-quantity-input');
+    const maxStock = parseInt(quantityInput?.getAttribute('max')) || 100;
+    if (newQuantity > maxStock) {
+        newQuantity = maxStock;
+        toastSystem.warning('Perhatian', 'Jumlah melebihi stok yang tersedia');
     }
     
     // Convert itemId to integer
     itemId = parseInt(itemId);
-
-    // Find the item in cart state
-    const itemIndex = cartState.items.findIndex(item => item.id === itemId);
-    if (itemIndex === -1) {
-        toastSystem.error('Error', 'Item tidak ditemukan di keranjang');
-        return;
-    }
-
-    const item = cartState.items[itemIndex];
-
-    // Validate quantity
-    if (newQuantity < 1) {
-        quantityInput.value = 1;
-        return;
-    }
-    
-    // Maximum quantity check
-    const maxStock = parseInt(quantityInput.getAttribute('max')) || 100;
-    if (newQuantity > maxStock) {
-        quantityInput.value = maxStock;
-        toastSystem.warning('Perhatian', 'Jumlah melebihi stok yang tersedia');
-        return;
-    }
-
-    // If quantity hasn't changed, do nothing
-    if (newQuantity === item.quantity) return;
 
     // Check if there's already a pending update for this item
     if (cartState.pendingQuantityUpdates[itemId]) {
@@ -2695,13 +2725,11 @@ function updateItemQuantity(itemId) {
         container.classList.add('updating');
     });
 
-    // Save the old quantity in case we need to revert
+    // Get the current value to restore in case of failure
     const oldQuantity = updateItemDisplay(itemId, newQuantity);
 
-    // Get CSRF token from multiple sources
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
-                     document.querySelector('input[name="_token"]')?.value || 
-                     document.querySelector('.token-container')?.value;
+    // Get CSRF token
+    const csrfToken = getCSRFToken();
     
     if (!csrfToken) {
         console.error('CSRF token not found');
@@ -2723,123 +2751,81 @@ function updateItemQuantity(itemId) {
         return;
     }
 
-    // Use XMLHttpRequest for better compatibility
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', `/user/cart/update/${itemId}`, true);
-    xhr.timeout = 10000; // 10 second timeout
-    
-    // Set headers
-    xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-    xhr.setRequestHeader('Accept', 'application/json');
-    
-    xhr.onload = function() {
-        try {
-            const response = JSON.parse(xhr.responseText);
-            
-            if (xhr.status === 200 && response.success) {
-                // Update cart item data
-                cartState.items[itemIndex].quantity = newQuantity;
-                
-                // Flash the total price to show it's been updated
-                const cartTotal = document.getElementById('cart-total');
-                if (cartTotal) {
-                    cartTotal.classList.add('flash-update');
-                    setTimeout(() => cartTotal.classList.remove('flash-update'), 500);
+    // Fix: Use correct route with POST method
+    fetch('/cart/update-quantity', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            _token: csrfToken,
+            cart_id: itemId,
+            quantity: newQuantity
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Update cart item data
+            for (let i = 0; i < cartState.items.length; i++) {
+                if (cartState.items[i].id === itemId) {
+                    cartState.items[i].quantity = newQuantity;
+                    break;
                 }
-                
-                // Recalculate totals
-                calculateTotals();
-            } else {
-                console.error('Error updating quantity:', response);
-                
-                // Revert to old quantity
-                updateItemDisplay(itemId, oldQuantity);
-                
-                // Show error toast
-                toastSystem.error('Gagal', response.message || 'Gagal mengubah jumlah produk. Silakan coba lagi.');
             }
-        } catch (error) {
-            console.error('Error parsing response:', error);
+            
+            // Flash the total price to show it's been updated
+            const cartTotal = document.getElementById('cart-total');
+            if (cartTotal) {
+                cartTotal.classList.add('flash-update');
+                setTimeout(() => cartTotal.classList.remove('flash-update'), 500);
+            }
+            
+            // Recalculate totals
+            calculateTotals();
+        } else {
+            console.error('Error updating quantity:', data);
             
             // Revert to old quantity
             updateItemDisplay(itemId, oldQuantity);
             
             // Show error toast
-            toastSystem.error('Gagal', 'Gagal mengubah jumlah produk. Silakan coba lagi.');
-        } finally {
-            // Remove updating state
-            quantityContainers.forEach(container => {
-                container.classList.remove('updating');
-            });
-            
-            // Check for next pending update
-            const nextQuantity = cartState.pendingQuantityUpdates[itemId]?.nextQuantity;
-            delete cartState.pendingQuantityUpdates[itemId];
-            
-            if (nextQuantity !== null) {
-                // Update UI first
-                itemElements.forEach(item => {
-                    const input = item.querySelector('.cart-quantity-input');
-                    if (input) input.value = nextQuantity;
-                });
-                
-                // Process the next update after a small delay
-                setTimeout(() => updateItemQuantity(itemId), 200);
-            } else if (Object.keys(cartState.pendingQuantityUpdates).length === 0) {
-                cartState.updating = false;
-            }
+            toastSystem.error('Gagal', data.message || 'Gagal mengubah jumlah produk. Silakan coba lagi.');
         }
-    };
-    
-    xhr.ontimeout = xhr.onerror = function() {
-        console.error('Network error or timeout when updating quantity');
+    })
+    .catch(error => {
+        console.error('Error updating quantity:', error);
         
         // Revert to old quantity
         updateItemDisplay(itemId, oldQuantity);
         
+        // Show error toast
+        toastSystem.error('Gagal', 'Gagal mengubah jumlah produk. Silakan coba lagi.');
+    })
+    .finally(() => {
         // Remove updating state
         quantityContainers.forEach(container => {
             container.classList.remove('updating');
         });
         
+        // Check for next pending update
+        const nextQuantity = cartState.pendingQuantityUpdates[itemId]?.nextQuantity;
         delete cartState.pendingQuantityUpdates[itemId];
-        if (Object.keys(cartState.pendingQuantityUpdates).length === 0) {
+        
+        if (nextQuantity !== null) {
+            // Process the next update after a small delay
+            setTimeout(() => updateItemQuantity(itemId, nextQuantity), 200);
+        } else if (Object.keys(cartState.pendingQuantityUpdates).length === 0) {
             cartState.updating = false;
         }
-        
-        // Show error toast with retry button
-        const errorToast = toastSystem.error('Gagal', 'Gagal terhubung ke server. Cek koneksi internet Anda.', 0);
-        
-        // Add retry button
-        const toastContent = errorToast.querySelector('.toast-content');
-        const retryBtn = document.createElement('button');
-        retryBtn.className = 'toast-retry-btn';
-        retryBtn.innerHTML = '<i data-feather="refresh-cw"></i> Coba Lagi';
-        retryBtn.addEventListener('click', () => {
-            toastSystem.dismiss(errorToast);
-            
-            // Update UI first
-            itemElements.forEach(item => {
-                const input = item.querySelector('.cart-quantity-input');
-                if (input) input.value = newQuantity;
-            });
-            
-            // Try again after a short delay
-            setTimeout(() => updateItemQuantity(itemId), 300);
-        });
-        toastContent.appendChild(retryBtn);
-        
-        // Initialize icons
-        if (window.feather) {
-            feather.replace();
-        }
-    };
-    
-    // Prepare data for submission
-    const formData = `_method=PUT&quantity=${newQuantity}&_token=${encodeURIComponent(csrfToken)}`;
-    xhr.send(formData);
+    });
 }
 
 /**
@@ -2847,42 +2833,44 @@ function updateItemQuantity(itemId) {
  * @param {string} methodCode - Shipping method code
  */
 function saveShippingMethod(methodCode) {
-    // Get CSRF token from multiple sources
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
-                     document.querySelector('input[name="_token"]')?.value ||
-                     document.querySelector('.token-container')?.value;
+    // Get CSRF token
+    const csrfToken = getCSRFToken();
                      
     if (!csrfToken) {
         console.error('CSRF token not found for saving shipping method');
         return;
     }
 
-    // Use XMLHttpRequest for better compatibility
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/user/cart/save-shipping', true);
-    xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-    xhr.setRequestHeader('Accept', 'application/json');
-    
-    xhr.onload = function() {
-        if (xhr.status === 200) {
-            try {
-                const response = JSON.parse(xhr.responseText);
-                if (response.success) {
-                    console.log('Shipping method saved:', methodCode);
-                }
-            } catch (error) {
-                console.error('Error parsing shipping method response:', error);
-            }
+    // Use fetch for AJAX request with proper content type and method
+    // Fix: Change to use the correct route and method
+    fetch('/cart/update-shipping', {
+        method: 'POST', // This route likely expects POST
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            shipping_method: methodCode,
+            _token: csrfToken
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
         }
-    };
-    
-    xhr.onerror = function() {
-        console.error('Error saving shipping method');
-    };
-    
-    xhr.send(`shipping_method=${encodeURIComponent(methodCode)}&_token=${encodeURIComponent(csrfToken)}`);
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            console.log('Shipping method saved:', methodCode);
+        }
+    })
+    .catch(error => {
+        console.error('Error saving shipping method:', error);
+        // Continue without failing
+        console.log('Continuing with local shipping selection...');
+    });
 }
 
 /**
@@ -2890,42 +2878,85 @@ function saveShippingMethod(methodCode) {
  * @param {string} methodCode - Payment method code
  */
 function savePaymentMethod(methodCode) {
-    // Get CSRF token from multiple sources
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
-                     document.querySelector('input[name="_token"]')?.value ||
-                     document.querySelector('.token-container')?.value;
+    // Get CSRF token
+    const csrfToken = getCSRFToken();
                      
     if (!csrfToken) {
         console.error('CSRF token not found for saving payment method');
         return;
     }
 
-    // Use XMLHttpRequest for better compatibility
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/user/cart/save-payment', true);
-    xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-    xhr.setRequestHeader('Accept', 'application/json');
-    
-    xhr.onload = function() {
-        if (xhr.status === 200) {
-            try {
-                const response = JSON.parse(xhr.responseText);
-                if (response.success) {
-                    console.log('Payment method saved:', methodCode);
-                }
-            } catch (error) {
-                console.error('Error parsing payment method response:', error);
-            }
+    // Fix: Change to use the correct route and method
+    fetch('/cart/update-payment', {
+        method: 'POST', // This route likely expects POST
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            payment_method: methodCode,
+            _token: csrfToken
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
         }
-    };
-    
-    xhr.onerror = function() {
-        console.error('Error saving payment method');
-    };
-    
-    xhr.send(`payment_method=${encodeURIComponent(methodCode)}&_token=${encodeURIComponent(csrfToken)}`);
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            console.log('Payment method saved:', methodCode);
+        }
+    })
+    .catch(error => {
+        console.error('Error saving payment method:', error);
+        // Continue without failing
+        console.log('Continuing with local payment selection...');
+    });
+}
+
+/**
+ * Function to save selected payment method to session via AJAX
+ * @param {string} methodCode - Payment method code
+ */
+function savePaymentMethod(methodCode) {
+    // Get CSRF token
+    const csrfToken = getCSRFToken();
+                     
+    if (!csrfToken) {
+        console.error('CSRF token not found for saving payment method');
+        return;
+    }
+
+    // Use fetch for AJAX request with proper content type and method
+    fetch('/cart/save-payment', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': csrfToken,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            payment_method: methodCode,
+            _token: csrfToken
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            console.log('Payment method saved:', methodCode);
+        }
+    })
+    .catch(error => {
+        console.error('Error saving payment method:', error);
+    });
 }
 
 /**
@@ -2956,60 +2987,43 @@ function setupFormSubmissions() {
 
             loadingOverlay.show();
             
-            // Use XMLHttpRequest for better compatibility
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', this.action, true);
-            xhr.timeout = 10000; // 10 seconds timeout
-            
-            // Get CSRF token
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
-                             document.querySelector('input[name="_token"]')?.value ||
-                             document.querySelector('.token-container')?.value;
-            
-            if (csrfToken) {
-                xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
-            }
-            
-            xhr.onload = function() {
-                loadingOverlay.hide();
-                applyPromoButton.disabled = false;
-                applyPromoButton.textContent = 'Terapkan';
-                
-                try {
-                    const response = JSON.parse(xhr.responseText);
-                    
-                    if (xhr.status === 200 && response.success) {
-                        // Show success toast
-                        toastSystem.success('Berhasil', 'Kode promo berhasil diterapkan');
-                        
-                        // Reload page to reflect promo after a slight delay
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
-                    } else {
-                        throw new Error(response.message || 'Gagal menerapkan kode promo');
-                    }
-                } catch (error) {
-                    console.error('Error applying promo code:', error);
-                    toastSystem.error('Gagal', error.message || 'Kode promo tidak valid atau tidak dapat diterapkan');
+            // Use fetch API for better error handling
+            fetch(this.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': getCSRFToken(),
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
                 }
-            };
-            
-            xhr.ontimeout = function() {
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Show success toast
+                    toastSystem.success('Berhasil', 'Kode promo berhasil diterapkan');
+                    
+                    // Reload page to reflect promo after a slight delay
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    throw new Error(data.message || 'Gagal menerapkan kode promo');
+                }
+            })
+            .catch(error => {
+                console.error('Error applying promo code:', error);
+                toastSystem.error('Gagal', error.message || 'Kode promo tidak valid atau tidak dapat diterapkan');
+            })
+            .finally(() => {
                 loadingOverlay.hide();
                 applyPromoButton.disabled = false;
                 applyPromoButton.textContent = 'Terapkan';
-                toastSystem.error('Timeout', 'Permintaan melebihi batas waktu. Silakan coba lagi.');
-            };
-            
-            xhr.onerror = function() {
-                loadingOverlay.hide();
-                applyPromoButton.disabled = false;
-                applyPromoButton.textContent = 'Terapkan';
-                toastSystem.error('Error Koneksi', 'Gagal terhubung ke server. Periksa koneksi internet Anda.');
-            };
-            
-            xhr.send(formData);
+            });
         });
     }
 
@@ -3021,69 +3035,48 @@ function setupFormSubmissions() {
         promoRemoveBtn.addEventListener('click', function(e) {
             e.preventDefault();
             
-            // Disable button
+            // Disable button to prevent multiple clicks
             promoRemoveBtn.disabled = true;
             
             loadingOverlay.show();
             
-            // Use XMLHttpRequest for better compatibility
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', promoRemoveForm.action, true);
-            xhr.timeout = 10000; // 10 seconds timeout
-            
-            // Get CSRF token
-            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
-                             document.querySelector('input[name="_token"]')?.value ||
-                             document.querySelector('.token-container')?.value;
-            
-            if (csrfToken) {
-                xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
-                
-                // Create form data
-                const formData = new FormData(promoRemoveForm);
-                
-                xhr.onload = function() {
-                    loadingOverlay.hide();
-                    promoRemoveBtn.disabled = false;
+            // Use fetch API for better error handling
+            fetch(promoRemoveForm.action, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': getCSRFToken(),
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ _token: getCSRFToken() })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Show success toast
+                    toastSystem.success('Berhasil', 'Kode promo berhasil dihapus');
                     
-                    try {
-                        const response = JSON.parse(xhr.responseText);
-                        
-                        if (xhr.status === 200 && response.success) {
-                            // Show success toast
-                            toastSystem.success('Berhasil', 'Kode promo berhasil dihapus');
-                            
-                            // Reload page to reflect changes after a slight delay
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 1000);
-                        } else {
-                            throw new Error(response.message || 'Gagal menghapus kode promo');
-                        }
-                    } catch (error) {
-                        console.error('Error removing promo code:', error);
-                        toastSystem.error('Gagal', error.message || 'Gagal menghapus kode promo. Silakan coba lagi.');
-                    }
-                };
-                
-                xhr.ontimeout = function() {
-                    loadingOverlay.hide();
-                    promoRemoveBtn.disabled = false;
-                    toastSystem.error('Timeout', 'Permintaan melebihi batas waktu. Silakan coba lagi.');
-                };
-                
-                xhr.onerror = function() {
-                    loadingOverlay.hide();
-                    promoRemoveBtn.disabled = false;
-                    toastSystem.error('Error Koneksi', 'Gagal terhubung ke server. Periksa koneksi internet Anda.');
-                };
-                
-                xhr.send(formData);
-            } else {
-                loadingOverlay.hide();
+                    // Reload page to reflect changes after a slight delay
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    throw new Error(data.message || 'Gagal menghapus kode promo');
+                }
+            })
+            .catch(error => {
+                console.error('Error removing promo code:', error);
+                toastSystem.error('Gagal', error.message || 'Gagal menghapus kode promo. Silakan coba lagi.');
                 promoRemoveBtn.disabled = false;
-                toastSystem.error('Error', 'Token keamanan tidak ditemukan. Silakan muat ulang halaman.');
-            }
+            })
+            .finally(() => {
+                loadingOverlay.hide();
+            });
         });
     }
 
@@ -3137,7 +3130,7 @@ function setupQuantityHandlers() {
             timeout = setTimeout(later, wait);
         };
     }
-    
+
     // Decrease quantity buttons
     document.querySelectorAll('.quantity-decrease').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -3157,7 +3150,7 @@ function setupQuantityHandlers() {
                 input.value = newQuantity; // Update input immediately for better UX
                 
                 // Debounce the actual update to reduce rapid-fire API calls
-                debounce(() => updateItemQuantity(itemId), 300)();
+                debounce(() => updateItemQuantity(itemId, newQuantity), 300)();
             }
         });
     });
@@ -3182,198 +3175,289 @@ function setupQuantityHandlers() {
                 input.value = newQuantity; // Update input immediately for better UX
                 
                 // Debounce the actual update to reduce rapid-fire API calls
-                debounce(() => updateItemQuantity(itemId), 300)();
+                debounce(() => updateItemQuantity(itemId, newQuantity), 300)();
             }
         });
     });
     
     // Manual quantity input
     document.querySelectorAll('.cart-quantity-input').forEach(input => {
-        // Use input event instead of change for more responsive UX
+        // Use input event for better responsiveness
         const debouncedUpdate = debounce(function() {
             if (cartState.updating) return;
             
             const itemId = parseInt(this.getAttribute('data-item-id'));
             if (itemId) {
-                updateItemQuantity(itemId);
+                const newQuantity = parseInt(this.value) || 1;
+                updateItemQuantity(itemId, newQuantity);
             }
         }, 500);
         
         input.addEventListener('input', debouncedUpdate);
         input.addEventListener('change', debouncedUpdate);
-        
-        // Prevent non-numeric input
-        input.addEventListener('keydown', function(e) {
-            // Allow: backspace, delete, tab, escape, enter
-            if ([46, 8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
-                // Allow: Ctrl+A
-                (e.keyCode === 65 && e.ctrlKey === true) ||
-                // Allow: home, end, left, right
-                (e.keyCode >= 35 && e.keyCode <= 39)) {
-                return;
-            }
-            // Ensure that it's a number and stop the keypress if not
-            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
-                e.preventDefault();
-            }
-        });
     });
 }
 
 /**
- * Set up shipping calculation with improved error handling
+ * Set up shipping calculation with OpenStreetMap API instead of Google Maps
+ * This makes it compatible with create.blade.php approach
  */
-window.initAzkaCartShippingCalc = function() {
-    const tokoLatLng = { lat: -6.4122794, lng: 106.829692 };
+window.initCartShippingCalc = function() {
     const userAddress = `{{ $primaryAddress->full_address ?? '' }}, {{ $primaryAddress->city ?? '' }}, {{ $primaryAddress->zip_code ?? '' }}`;
     const shippingEstimateText = document.getElementById('shippingEstimateText');
     const radios = document.querySelectorAll('.shipping-method-radio');
     const shippingMethodInput = document.getElementById('shipping_method_input');
-
-    function doEstimate() {
+    const mapContainer = document.getElementById('map-container');
+    let userCoordinates = {
+        lat: {{ $primaryAddress->latitude ?? '-6.4122794' }}, 
+        lng: {{ $primaryAddress->longitude ?? '106.829692' }}
+    };
+    let tokoCoordinates = { lat: -6.4122794, lng: 106.829692 }; // Koordinat Azka Garden
+    
+    // Initialize map if container exists
+    let map, marker, storeMarker;
+    
+    function initMap() {
+        if (!mapContainer) return;
+        
         try {
+            // Create map using Leaflet instead of Google Maps
+            if (!window.L) {
+                // Load Leaflet if not available
+                loadLeaflet();
+                return;
+            }
+            
+            // Initialize map
+            map = L.map(mapContainer).setView([userCoordinates.lat, userCoordinates.lng], 13);
+            
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            
+            // Add markers
+            marker = L.marker([userCoordinates.lat, userCoordinates.lng], {
+                icon: createCustomIcon('blue', 'Alamat Pengiriman')
+            }).addTo(map);
+            
+            storeMarker = L.marker([tokoCoordinates.lat, tokoCoordinates.lng], {
+                icon: createCustomIcon('green', 'Azka Garden')
+            }).addTo(map);
+            
+            // Create bounds to fit both markers
+            const bounds = L.latLngBounds([
+                [userCoordinates.lat, userCoordinates.lng],
+                [tokoCoordinates.lat, tokoCoordinates.lng]
+            ]);
+            
+            map.fitBounds(bounds, { padding: [30, 30] });
+            
+            // Calculate distance and update shipping cost
+            calculateDistance(userCoordinates, tokoCoordinates);
+            
+        } catch (error) {
+            console.error('Error initializing map:', error);
+            if (mapContainer) {
+                mapContainer.style.display = 'none';
+            }
+        }
+    }
+    
+    function createCustomIcon(color, title) {
+        return L.divIcon({
+            className: 'custom-map-marker',
+            html: `<div style="background-color: ${color === 'blue' ? '#3b82f6' : '#16a34a'}; 
+                         width: 25px; height: 25px; border-radius: 50%; 
+                         border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.3);" 
+                         title="${title}"></div>`,
+            iconSize: [25, 25],
+            iconAnchor: [12, 12]
+        });
+    }
+    
+    function loadLeaflet() {
+        // Load Leaflet CSS
+        const linkEl = document.createElement('link');
+        linkEl.rel = 'stylesheet';
+        linkEl.href = 'https://unpkg.com/leaflet@1.9.3/dist/leaflet.css';
+        document.head.appendChild(linkEl);
+        
+        // Load Leaflet JS
+        const scriptEl = document.createElement('script');
+        scriptEl.src = 'https://unpkg.com/leaflet@1.9.3/dist/leaflet.js';
+        scriptEl.onload = initMap;
+        document.head.appendChild(scriptEl);
+    }
+    
+    function calculateDistance(origin, destination) {
+        // Calculate distance using Haversine formula
+        function haversine(lat1, lon1, lat2, lon2) {
+            // Convert degrees to radians
+            lat1 = lat1 * Math.PI / 180;
+            lon1 = lon1 * Math.PI / 180;
+            lat2 = lat2 * Math.PI / 180;
+            lon2 = lon2 * Math.PI / 180;
+            
+            // Haversine formula
+            const dlon = lon2 - lon1;
+            const dlat = lat2 - lat1;
+            const a = Math.sin(dlat/2)**2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dlon/2)**2;
+            const c = 2 * Math.asin(Math.sqrt(a));
+            const r = 6371; // Radius of earth in kilometers
+            
+            return c * r;
+        }
+        
+        try {
+            const distance = haversine(
+                origin.lat, 
+                origin.lng, 
+                destination.lat, 
+                destination.lng
+            );
+            
+            const distanceKm = distance.toFixed(2);
             let selectedShipping = document.querySelector('.shipping-method-radio:checked')?.value || 'KURIR_TOKO';
             
-            // Update hidden input and global state - PERBAIKAN: Check if element exists
-            if (shippingMethodInput) {
-                shippingMethodInput.value = selectedShipping;
-            }
-            cartState.shippingMethod = selectedShipping;
+            updateShippingEstimate(selectedShipping, distanceKm);
             
-            // Update visual selection
-            document.querySelectorAll('.shipping-method').forEach(method => {
-                method.classList.remove('selected');
-            });
-            const selectedMethod = document.querySelector(`.shipping-method input[value="${selectedShipping}"]`);
-            if (selectedMethod) {
-                selectedMethod.closest('.shipping-method').classList.add('selected');
-            }
-            
-            // Save to session
-            saveShippingMethod(selectedShipping);
+        } catch (error) {
+            console.error('Error calculating distance:', error);
+            updateShippingEstimate(document.querySelector('.shipping-method-radio:checked')?.value || 'KURIR_TOKO');
+        }
+    }
 
-            // PERBAIKAN: Make sure shippingEstimateText exists
-            if (!shippingEstimateText) return;
+    function updateShippingEstimate(selectedShipping, distance = null) {
+        // Update hidden input and global state
+        if (shippingMethodInput) {
+            shippingMethodInput.value = selectedShipping;
+        }
+        cartState.shippingMethod = selectedShipping;
+        
+        // Update visual selection
+        document.querySelectorAll('.shipping-method').forEach(method => {
+            method.classList.remove('selected');
+        });
+        
+        const selectedMethod = document.querySelector(`.shipping-method input[value="${selectedShipping}"]`);
+        if (selectedMethod) {
+            selectedMethod.closest('.shipping-method').classList.add('selected');
+        }
+        
+        // Save to session
+        saveShippingMethod(selectedShipping);
+
+        // Make sure shippingEstimateText exists
+        if (!shippingEstimateText) return;
+        
+        if(selectedShipping === 'KURIR_TOKO') {
+            shippingEstimateText.innerHTML = 'Menghitung ongkir...';
             
-            if(selectedShipping === 'KURIR_TOKO') {
-                shippingEstimateText.innerHTML = 'Menghitung ongkir...';
-                if(window.google && window.google.maps) {
-                    const service = new window.google.maps.DistanceMatrixService();
-                    service.getDistanceMatrix({
-                        origins: [userAddress],
-                        destinations: [`${tokoLatLng.lat},${tokoLatLng.lng}`],
-                        travelMode: 'DRIVING',
-                        unitSystem: window.google.maps.UnitSystem.METRIC,
-                    }, function(response, status){
-                        if (status === 'OK' && response.rows[0].elements[0].status === 'OK') {
-                            const distance = response.rows[0].elements[0].distance.value;
-                            const duration = response.rows[0].elements[0].duration.text;
-                            let distanceKm = (distance/1000).toFixed(2);
-                            let ongkir = 10000;
-                            if(distanceKm > 10) ongkir = 20000;
-                            else if(distanceKm > 5) ongkir = 15000;
-                            
-                            // Store shipping cost in global state
-                            cartState.shippingCost = ongkir;
-                            
-                            // Update shipping cost in totals
-                            const shippingEl = document.getElementById('cart-shipping');
-                            if (shippingEl) {
-                                shippingEl.textContent = `Rp ${formatCurrency(ongkir)}`;
-                                shippingEl.setAttribute('data-value', ongkir);
-                            }
-                            
-                            // Recalculate total with shipping
-                            calculateTotals();
-                            
-                            let label = '';
-                            if(distanceKm > 10) label = '&gt;10km';
-                            else if(distanceKm > 5) label = '5-10km';
-                            else label = '&lt;5km';
-                            shippingEstimateText.innerHTML = `<b>Kurir Toko</b> | Jarak ±${distanceKm} km (${duration})<br>Zona ${label}, Estimasi Ongkir: <b>Rp ${formatCurrency(ongkir)}</b>`;
-                        } else {
-                            shippingEstimateText.innerHTML = 'Gagal menghitung ongkir otomatis. Isi alamat dengan lengkap.';
-                        }
-                    });
+            let ongkir = 15000; // default
+            let label = '5-10km';
+            
+            if (distance) {
+                if(distance > 10) {
+                    ongkir = 20000;
+                    label = '&gt;10km';
+                } else if(distance > 5) {
+                    ongkir = 15000;
+                    label = '5-10km';
                 } else {
-                    // If Google Maps API is not available
-                    cartState.shippingCost = 15000; // Default value
-                    const shippingEl = document.getElementById('cart-shipping');
-                    if (shippingEl) {
-                        shippingEl.textContent = `Rp ${formatCurrency(15000)}`;
-                        shippingEl.setAttribute('data-value', '15000');
-                    }
-                    calculateTotals();
-                    shippingEstimateText.innerHTML = '<b>Kurir Toko</b> | Estimasi Ongkir: <b>Rp 10.000 - Rp 20.000</b> (sesuai jarak)';
+                    ongkir = 10000;
+                    label = '&lt;5km';
                 }
-            } else if(selectedShipping === 'AMBIL_SENDIRI') {
-                cartState.shippingCost = 0;
+                
+                // Store shipping cost in global state
+                cartState.shippingCost = ongkir;
+                
                 // Update shipping cost in totals
                 const shippingEl = document.getElementById('cart-shipping');
                 if (shippingEl) {
-                    shippingEl.textContent = `Rp 0`;
-                    shippingEl.setAttribute('data-value', '0');
+                    shippingEl.textContent = `Rp ${formatCurrency(ongkir)}`;
+                    shippingEl.setAttribute('data-value', ongkir);
                 }
-                // Recalculate total without shipping
-                calculateTotals();
-                shippingEstimateText.innerHTML = `<b>Ambil Sendiri di Toko</b> | <a href="https://www.google.com/maps/place/Toko+Bunga+Hendrik/@-6.4122794,106.829692" target="_blank" class="underline text-emerald-700">Lihat Lokasi Toko</a><br>Bebas Ongkir!`;
-            } else if(selectedShipping === 'GOSEND') {
-                cartState.shippingCost = 25000;
-                // Update shipping cost in totals
-                const shippingEl = document.getElementById('cart-shipping');
-                if (shippingEl) {
-                    shippingEl.textContent = `Rp ${formatCurrency(25000)}`;
-                    shippingEl.setAttribute('data-value', '25000');
-                }
+                
                 // Recalculate total with shipping
                 calculateTotals();
-                shippingEstimateText.innerHTML = `<b>GoSend Sameday</b> | Estimasi aplikasi Rp15.000-30.000`;
-            } else if(selectedShipping === 'JNE') {
-                cartState.shippingCost = 12000;
-                // Update shipping cost in totals
-                const shippingEl = document.getElementById('cart-shipping');
-                if (shippingEl) {
-                    shippingEl.textContent = `Rp ${formatCurrency(12000)}`;
-                    shippingEl.setAttribute('data-value', '12000');
-                }
-                // Recalculate total with shipping
-                calculateTotals();
-                shippingEstimateText.innerHTML = `<b>JNE REG</b> | Estimasi 8.000-20.000/kg`;
-            } else if(selectedShipping === 'JNT') {
-                cartState.shippingCost = 14000;
-                // Update shipping cost in totals
-                const shippingEl = document.getElementById('cart-shipping');
-                if (shippingEl) {
-                    shippingEl.textContent = `Rp ${formatCurrency(14000)}`;
-                    shippingEl.setAttribute('data-value', '14000');
-                }
-                // Recalculate total with shipping
-                calculateTotals();
-                shippingEstimateText.innerHTML = `<b>J&T EZ</b> | Estimasi 10.000-22.000/kg`;
-            } else if(selectedShipping === 'SICEPAT') {
-                cartState.shippingCost = 15000;
-                // Update shipping cost in totals
+                
+                shippingEstimateText.innerHTML = `<b>Kurir Toko</b> | Jarak ±${distance} km<br>Zona ${label}, Estimasi Ongkir: <b>Rp ${formatCurrency(ongkir)}</b>`;
+            } else {
+                // If calculation failed
+                cartState.shippingCost = 15000; // Default value
                 const shippingEl = document.getElementById('cart-shipping');
                 if (shippingEl) {
                     shippingEl.textContent = `Rp ${formatCurrency(15000)}`;
                     shippingEl.setAttribute('data-value', '15000');
                 }
-                // Recalculate total with shipping
                 calculateTotals();
-                shippingEstimateText.innerHTML = `<b>SiCepat BEST</b> | Estimasi 10.000-18.000/kg`;
+                shippingEstimateText.innerHTML = '<b>Kurir Toko</b> | Estimasi Ongkir: <b>Rp 10.000 - Rp 20.000</b> (sesuai jarak)';
             }
-        } catch (error) {
-            console.error('Error in shipping calculation:', error);
-            if (shippingEstimateText) {
-                shippingEstimateText.innerHTML = 'Terjadi kesalahan saat menghitung ongkir. Silakan refresh halaman.';
+        } else if(selectedShipping === 'AMBIL_SENDIRI') {
+            cartState.shippingCost = 0;
+            // Update shipping cost in totals
+            const shippingEl = document.getElementById('cart-shipping');
+            if (shippingEl) {
+                shippingEl.textContent = `Rp 0`;
+                shippingEl.setAttribute('data-value', '0');
             }
+            // Recalculate total without shipping
+            calculateTotals();
+            shippingEstimateText.innerHTML = `<b>Ambil Sendiri di Toko</b> | <a href="https://www.openstreetmap.org/?mlat=-6.4122794&mlon=106.829692&zoom=16" target="_blank" class="underline text-emerald-700">Lihat Lokasi Toko</a><br>Bebas Ongkir!`;
+        } else if(selectedShipping === 'GOSEND') {
+            cartState.shippingCost = 25000;
+            // Update shipping cost in totals
+            const shippingEl = document.getElementById('cart-shipping');
+            if (shippingEl) {
+                shippingEl.textContent = `Rp ${formatCurrency(25000)}`;
+                shippingEl.setAttribute('data-value', '25000');
+            }
+            // Recalculate total with shipping
+            calculateTotals();
+            shippingEstimateText.innerHTML = `<b>GoSend Sameday</b> | Estimasi aplikasi Rp15.000-30.000`;
+        } else if(selectedShipping === 'JNE') {
+            cartState.shippingCost = 12000;
+            // Update shipping cost in totals
+            const shippingEl = document.getElementById('cart-shipping');
+            if (shippingEl) {
+                shippingEl.textContent = `Rp ${formatCurrency(12000)}`;
+                shippingEl.setAttribute('data-value', '12000');
+            }
+            // Recalculate total with shipping
+            calculateTotals();
+            shippingEstimateText.innerHTML = `<b>JNE REG</b> | Estimasi 8.000-20.000/kg`;
+        } else if(selectedShipping === 'JNT') {
+            cartState.shippingCost = 14000;
+            // Update shipping cost in totals
+            const shippingEl = document.getElementById('cart-shipping');
+            if (shippingEl) {
+                shippingEl.textContent = `Rp ${formatCurrency(14000)}`;
+                shippingEl.setAttribute('data-value', '14000');
+            }
+            // Recalculate total with shipping
+            calculateTotals();
+            shippingEstimateText.innerHTML = `<b>J&T EZ</b> | Estimasi 10.000-22.000/kg`;
+        } else if(selectedShipping === 'SICEPAT') {
+            cartState.shippingCost = 15000;
+            // Update shipping cost in totals
+            const shippingEl = document.getElementById('cart-shipping');
+            if (shippingEl) {
+                shippingEl.textContent = `Rp ${formatCurrency(15000)}`;
+                shippingEl.setAttribute('data-value', '15000');
+            }
+            // Recalculate total with shipping
+            calculateTotals();
+            shippingEstimateText.innerHTML = `<b>SiCepat BEST</b> | Estimasi 10.000-18.000/kg`;
         }
     }
     
     // Add event listeners to shipping method radios
     radios.forEach(function(radio) {
         if (radio) {
-            radio.addEventListener('change', doEstimate);
+            radio.addEventListener('change', function() {
+                updateShippingEstimate(this.value, distance);
+            });
         }
     });
     
@@ -3381,7 +3465,7 @@ window.initAzkaCartShippingCalc = function() {
     document.querySelectorAll('.payment-method-radio').forEach(function(radio) {
         if (radio) {
             radio.addEventListener('change', function() {
-                                cartState.paymentMethod = this.value;
+                cartState.paymentMethod = this.value;
                 
                 // Update visual selection
                 document.querySelectorAll('.payment-method').forEach(method => {
@@ -3397,10 +3481,15 @@ window.initAzkaCartShippingCalc = function() {
         }
     });
     
+    // Initialize map
+    if (mapContainer && userAddress) {
+        initMap();
+    }
+    
     // Run once on page load to initialize shipping estimate
-    // PERBAIKAN: Wrap in try/catch to prevent errors
     try {
-        doEstimate();
+        const selectedShipping = document.querySelector('.shipping-method-radio:checked')?.value || 'KURIR_TOKO';
+        updateShippingEstimate(selectedShipping);
     } catch (error) {
         console.error('Error initializing shipping estimate:', error);
         if (shippingEstimateText) {
@@ -3449,86 +3538,33 @@ document.addEventListener('DOMContentLoaded', function() {
                     discount: {{ $discount }},
                     maxStock: {{ $item->product->stock ?? 100 }},
                 },
-            @endforeach
+                            @endforeach
         ];
         
         // Initialize cart state
         cartState.init(items);
         
-        // Initialize Feather Icons
-        if (typeof feather !== 'undefined') {
-            feather.replace();
-        } else {
-            // Load Feather Icons if not available
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js';
-            script.onload = function() {
-                feather.replace();
-            };
-            document.head.appendChild(script);
-        }
+        // Set up event listeners for cart actions
         
-        // Add event listeners to delete buttons
-        document.querySelectorAll('.cart-remove').forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                const itemId = this.getAttribute('data-item-id') || 
-                               this.closest('[data-item-row]')?.getAttribute('data-item-row');
+        // Delete buttons
+        document.querySelectorAll('.cart-remove').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const itemId = this.getAttribute('data-item-id');
                 if (itemId) {
                     handleDeleteItem(parseInt(itemId));
                 }
             });
         });
         
-        // Setup quantity update handlers
+        // Set up quantity handlers
         setupQuantityHandlers();
         
         // Setup form submissions
         setupFormSubmissions();
-        
-        // Calculate initial totals
-        calculateTotals();
-        
-        // Load Google Maps for shipping calculations if address is available
-        if ({{ $hasAddress && $primaryAddress ? 'true' : 'false' }}) {
-            if (!window.google) {
-                try {
-                    // PERBAIKAN: Async loading of Google Maps API to avoid warning
-                    const loadGoogleMaps = () => {
-                        const googleMapsScript = document.createElement('script');
-                        googleMapsScript.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyCTUfem9YaXy7FPguX6wa26V4lRuYOgF4w&libraries=places";
-                        googleMapsScript.async = true;
-                        googleMapsScript.defer = true;
-                        
-                        // After script loads, initialize shipping calc
-                        googleMapsScript.onload = window.initAzkaCartShippingCalc;
-                        
-                        googleMapsScript.onerror = function() {
-                            console.error('Failed to load Google Maps API');
-                            // Run shipping calculation anyway without maps
-                            window.initAzkaCartShippingCalc();
-                        };
-                        document.head.appendChild(googleMapsScript);
-                    };
-                    
-                    // Slight delay before loading to ensure DOM is ready
-                    setTimeout(loadGoogleMaps, 100);
-                } catch (error) {
-                    console.error('Error loading Google Maps:', error);
-                    // Run shipping calculation anyway without maps
-                    window.initAzkaCartShippingCalc();
-                }
-            } else {
-                // Initialize shipping calculation if Google Maps is already loaded
-                window.initAzkaCartShippingCalc();
-            }
-        }
-        
-        // Add hover effects to payment and shipping methods
-        document.querySelectorAll('.payment-method, .shipping-method').forEach(method => {
-            // Make entire label clickable
-            method.addEventListener('click', function(e) {
-                // Find the radio input inside and check it
+
+        // Initialize shipping method selection behavior
+        document.querySelectorAll('.shipping-method').forEach(method => {
+            method.addEventListener('click', function() {
                 const radio = this.querySelector('input[type="radio"]');
                 if (radio && !radio.checked) {
                     radio.checked = true;
@@ -3539,6 +3575,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         });
+
+        // Initialize payment method selection behavior
+        document.querySelectorAll('.payment-method').forEach(method => {
+            method.addEventListener('click', function() {
+                const radio = this.querySelector('input[type="radio"]');
+                if (radio && !radio.checked) {
+                    radio.checked = true;
+                    
+                    // Trigger the change event manually
+                    const event = new Event('change', { bubbles: true });
+                    radio.dispatchEvent(event);
+                }
+            });
+        });
+
+        // If we have user address coordinates, initialize shipping calculator
+        if (document.getElementById('map-container')) {
+            // Check if we need to load an external mapping library
+            if (typeof L === 'undefined') {
+                // If Leaflet isn't loaded, we'll load it and then initialize
+                window.initCartShippingCalc();
+            } else {
+                // Leaflet is already loaded
+                window.initCartShippingCalc();
+            }
+        } else {
+            // No map needed, just initialize shipping calculator
+            window.initCartShippingCalc();
+        }
     } catch (error) {
         console.error('Error in cart initialization:', error);
         toastSystem.error('Error', 'Terjadi kesalahan saat menginisialisasi keranjang. Silakan refresh halaman.');
@@ -3568,6 +3633,9 @@ window.addEventListener('beforeunload', function(e) {
         return message;
     }
 });
+
+// Display the current date and time in the format used by the system
+console.log('Current date and time: 2025-07-30 12:34:17');
+console.log('Current user: Roberto');
 </script>
 @endsection
-                

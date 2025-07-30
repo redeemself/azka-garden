@@ -27,7 +27,7 @@ use App\Http\Controllers\User\AddressController;
  * ==================================
  * AZKA GARDEN E-COMMERCE APPLICATION
  * Routes Configuration
- * Last updated: 2025-07-30 08:01:43
+ * Last updated: 2025-07-30 12:50:57
  * Author: mulyadafa
  * ==================================
  */
@@ -123,6 +123,26 @@ Route::middleware('guest')->group(function () {
 // USER LOGOUT ROUTE
 // -----------------------------
 Route::middleware('auth')->post('logout', [UserAuthController::class, 'logout'])->name('logout');
+
+// -----------------------------
+// DIRECT CART ROUTES - ADDED TO FIX 405 ERRORS
+// These routes match the paths used in JavaScript without /user prefix
+// -----------------------------
+Route::middleware(['auth'])->controller(CartController::class)->group(function () {
+    // Update routes for AJAX requests (fixes 405 Method Not Allowed errors)
+    Route::post('/cart/update-shipping', 'updateShipping')->name('cart.update-shipping');
+    Route::post('/cart/update-payment', 'updatePayment')->name('cart.update-payment');
+    Route::post('/cart/update-quantity', 'updateQuantity')->name('cart.update-quantity');
+    Route::post('/cart/remove-item', 'removeItem')->name('cart.remove-item');
+    
+    // Optional backward compatibility routes with the paths used in JavaScript
+    Route::post('/cart/{id}/update', 'update')->name('cart.item.update');
+    Route::post('/cart/{id}/delete', 'destroy')->name('cart.item.delete');
+    
+    // Mapping to existing functionality
+    Route::post('/cart/save-shipping', 'saveShipping')->name('cart.external.save-shipping');
+    Route::post('/cart/save-payment', 'savePayment')->name('cart.external.save-payment');
+});
 
 // -----------------------------
 // AUTHENTICATED USER ROUTES
