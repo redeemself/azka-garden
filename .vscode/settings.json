@@ -21,9 +21,5 @@
     "tailwindCSS.includeLanguages": {
         "postcss": "css"
     },
-    "workbench.colorCustomizations": {
-        "statusBar.background": "#166534",
-        "statusBar.foreground": "#ffffff"
-    },
-    "// Updated": "2025-07-30 03:33:52 by mulyadafa"
+    "// Updated": "2025-07-30 03:44:59 by mulyadafa"
 }

@@ -3,24 +3,32 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Database\Seeders\EnumSeeder;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\InterfaceSeeder;
-<<<<<<< HEAD
 use Database\Seeders\EnumRolesSeeder;
 use Database\Seeders\ShippingSeeder;
 use Database\Seeders\ShippingMethodSeeder;
-=======
-use Database\Seeders\EnumRolesSeeder;  // <- Pastikan import Seeder ini
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
+use Database\Seeders\CategorySeeder;
+use Database\Seeders\ProductSeeder;
+use Database\Seeders\PromotionSeeder;
+use Database\Seeders\PaymentMethodSeeder;
 
+/**
+ * Database Seeder
+ * 
+ * Main seeder class that orchestrates the execution of all seeders
+ * 
+ * @updated 2025-07-30 03:52:17 UTC by mulyadafa
+ */
 class DatabaseSeeder extends Seeder
 {
     /**
      * Seed the application's database.
-<<<<<<< HEAD
      * 
-     * Updated: 2025-07-29 13:26:26 UTC by mulyadafa
+     * Updated: 2025-07-30 03:52:17 UTC by mulyadafa
      * Added shipping-related seeders for proper ongkos kirim handling
      */
     public function run(): void
@@ -58,26 +66,32 @@ class DatabaseSeeder extends Seeder
         $this->command->info('6. Seeding Shipping Methods...');
         $this->call(ShippingMethodSeeder::class);
         
-        // Additional seeders can be added here as needed
-        $this->command->info('');
-        $this->command->info('Available additional seeders (uncomment to use):');
-        $this->command->info('   // $this->call(UserSeeder::class);');
-        $this->command->info('   // $this->call(ProductSeeder::class);');
-        $this->command->info('   // $this->call(CategorySeeder::class);');
-        $this->command->info('   // $this->call(PaymentMethodSeeder::class);');
-        $this->command->info('   // $this->call(PromotionSeeder::class);');
-
-        // Future seeders placeholder (uncomment when ready)
-        // $this->call(UserSeeder::class);
-        // $this->call(ProductSeeder::class);
-        // $this->call(CategorySeeder::class);
-        // $this->call(PaymentMethodSeeder::class);
-        // $this->call(PromotionSeeder::class);
+        // 7. Create admin user
+        $this->command->info('7. Creating admin user...');
+        \App\Models\User::factory()->create([
+            'name' => 'Admin User',
+            'email' => 'admin@azkagarden.com',
+            'password' => Hash::make('password123'),
+            'role' => 'admin',
+        ]);
+        
+        // 8. Create test users
+        $this->command->info('8. Creating test users...');
+        \App\Models\User::factory(10)->create();
+        
+        // 9. Seed additional data
+        $this->command->info('9. Seeding additional data...');
+        $this->call([
+            CategorySeeder::class,
+            ProductSeeder::class,
+            PromotionSeeder::class,
+            PaymentMethodSeeder::class,
+        ]);
 
         // Display completion summary
         $this->command->info('');
         $this->command->info('=== Database Seeding Completed Successfully ===');
-        $this->command->info('Total seeders executed: 6');
+        $this->command->info('Total seeders executed: 9');
         $this->command->info('Key shipping updates applied:');
         $this->command->info('  ✓ JNT shipping cost: Rp14,000 (corrected)');
         $this->command->info('  ✓ KURIR_TOKO: Distance-based pricing');
@@ -88,25 +102,3 @@ class DatabaseSeeder extends Seeder
         $this->command->info('Executed by: mulyadafa');
     }
 }
-=======
-     */
-    public function run(): void
-    {
-        // 1. Seed semua tabel enum (lookup)
-        $this->call(EnumSeeder::class);
-
-        // 2. Seed tabel enum_roles (tambah ini)
-        $this->call(EnumRolesSeeder::class);
-
-        // 3. Seed tabel roles, menggunakan data dari enum_roles
-        $this->call(RoleSeeder::class);
-
-        // 4. Seed tabel interfaces (lookup antarmuka)
-        $this->call(InterfaceSeeder::class);
-
-        // Jika Anda punya seeder lain, bisa ditambahkan di sini:
-        // $this->call(UserSeeder::class);
-        // $this->call(ProductSeeder::class);
-    }
-}
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
