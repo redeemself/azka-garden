@@ -20,9 +20,16 @@ use App\Http\Middleware\RedirectIfAuthenticated;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\DevMiddleware;
 use App\Http\Middleware\UserMiddleware;
+use App\Http\Middleware\AddJsContentTypeHeaders; // Added for MIME type fixing
 use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
 use App\Http\Middleware\EnsurePolicyAccepted;
 
+/**
+ * HTTP Kernel Configuration
+ *
+ * @updated 2025-07-30 05:35:35 by mulyadafa
+ * - Added AddJsContentTypeHeaders middleware to fix JavaScript MIME type errors
+ */
 class Kernel extends HttpKernel
 {
     /**
@@ -36,6 +43,7 @@ class Kernel extends HttpKernel
         PreventRequestsDuringMaintenance::class,
         TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
+        AddJsContentTypeHeaders::class, // Added to fix JavaScript MIME type errors
     ];
 
     /**
@@ -79,6 +87,5 @@ class Kernel extends HttpKernel
         'policy.accepted'   => EnsurePolicyAccepted::class,
 
         // 'check.user.address' => \App\Http\Middleware\CheckUserAddress::class, // HAPUS BARIS INI
-
     ];
 }

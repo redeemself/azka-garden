@@ -6,10 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-<<<<<<< HEAD
 use Illuminate\Support\Facades\Log;
-=======
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
 use Illuminate\Support\Str;
 use App\Models\Order;
 use App\Models\OrderDetail;
@@ -18,18 +15,22 @@ use App\Models\Product;
 use App\Models\Promotion;
 use App\Models\PaymentMethod;
 use Carbon\Carbon;
-<<<<<<< HEAD
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Contracts\View\View;
 
 /**
  * OrderController
- * 
- * Updated: 2025-07-29 15:12:41 UTC by mulyadafa
- * Fixed property access issues and improved checkout flow
+ *
+ * Handles all order-related functionality including creation, payment,
+ * confirmation, cancellation, and status management.
+ *
+ * @updated 2025-07-30 04:19:57 by mulyadafa
  */
 class OrderController extends Controller
 {
+    /**
+     * Pastikan hanya user terautentikasi dan validasi untuk akses halaman confirm
+     */
     public function __construct()
     {
         $this->middleware('auth');
@@ -50,24 +51,12 @@ class OrderController extends Controller
         })->only(['confirm', 'create']);
     }
 
-    public function index(): View
-=======
-
-class OrderController extends Controller
-{
-    /**
-     * Pastikan hanya user terautentikasi
-     */
-    public function __construct()
-    {
-        $this->middleware('auth');
-    }
-
     /**
      * Tampilkan semua order milik user, dikelompokkan sesuai status (aktif, dibatalkan, kadaluarsa, selesai)
+     *
+     * @return View
      */
-    public function index()
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
+    public function index(): View
     {
         $orders = Order::where('user_id', Auth::id())
             ->with([
@@ -79,21 +68,18 @@ class OrderController extends Controller
             ->orderByDesc('order_date')
             ->get();
 
-<<<<<<< HEAD
-=======
         // Group orders by status for table display
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
-        $getStatusValue = function($status) {
+        $getStatusValue = function ($status) {
             if (is_object($status)) return $status->value;
             if (is_array($status)) return $status['value'] ?? $status[0] ?? $status;
             return $status;
         };
 
         $isExpired = fn($val) => strtoupper($val) === 'EXPIRED' || (isset($val) && strtolower($val) === 'expired');
-        $isCanceled = fn($val) => in_array(strtoupper($val), ['CANCELED','FAILED']);
+        $isCanceled = fn($val) => in_array(strtoupper($val), ['CANCELED', 'FAILED']);
         $isPending = fn($val) => in_array(strtoupper($val), ['PENDING', 'WAITING_PAYMENT']);
 
-        $expiredOrders = $orders->filter(function($order) use ($getStatusValue) {
+        $expiredOrders = $orders->filter(function ($order) use ($getStatusValue) {
             $statusVal = $getStatusValue($order->status);
             $isExpiredStatus = strtoupper($statusVal) === 'EXPIRED';
             $isExpiredPayment = isset($order->payment)
@@ -102,17 +88,17 @@ class OrderController extends Controller
             return $isExpiredStatus || $isExpiredPayment;
         });
 
-        $canceledOrders = $orders->filter(function($order) use ($getStatusValue, $isCanceled) {
+        $canceledOrders = $orders->filter(function ($order) use ($getStatusValue, $isCanceled) {
             $statusVal = $getStatusValue($order->status);
             return $isCanceled($statusVal);
         });
 
-        $activeOrders = $orders->filter(function($order) use ($getStatusValue, $isCanceled, $isExpired) {
+        $activeOrders = $orders->filter(function ($order) use ($getStatusValue, $isCanceled, $isExpired) {
             $statusVal = $getStatusValue($order->status);
             return !$isCanceled($statusVal) && !$isExpired($statusVal);
         });
 
-        $pendingOrders = $activeOrders->filter(function($order) use ($getStatusValue, $isPending) {
+        $pendingOrders = $activeOrders->filter(function ($order) use ($getStatusValue, $isPending) {
             $statusVal = $getStatusValue($order->status);
             $isPendingStatus = $isPending($statusVal);
             $isExpiredPayment = isset($order->payment)
@@ -121,7 +107,7 @@ class OrderController extends Controller
             return $isPendingStatus && !$isExpiredPayment;
         });
 
-        $confirmedOrders = $activeOrders->filter(function($order) use ($getStatusValue, $isPending) {
+        $confirmedOrders = $activeOrders->filter(function ($order) use ($getStatusValue, $isPending) {
             $statusVal = $getStatusValue($order->status);
             $isPendingStatus = $isPending($statusVal);
             return !$isPendingStatus;
@@ -136,18 +122,15 @@ class OrderController extends Controller
         ]);
     }
 
-<<<<<<< HEAD
-    public function history(): View
-    {
-=======
     /**
      * Tampilkan riwayat pesanan yang sudah selesai/dibatalkan.
+     *
+     * @return View
      */
-    public function history()
+    public function history(): View
     {
         // Ambil hanya order yang statusnya sudah selesai/dibatalkan
         // 4 = COMPLETED, 5 = CANCELED
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         $orders = Order::where('user_id', Auth::id())
             ->whereIn('enum_order_status_id', [4, 5])
             ->with(['details.product.images', 'shipping', 'payment.method'])
@@ -159,14 +142,13 @@ class OrderController extends Controller
         ]);
     }
 
-<<<<<<< HEAD
-    public function show($order): View
-=======
     /**
      * Tampilkan detail order.
+     *
+     * @param mixed $order
+     * @return View
      */
-    public function show($order)
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
+    public function show($order): View
     {
         $order = Order::where('id', $order)
             ->where('user_id', Auth::id())
@@ -187,7 +169,14 @@ class OrderController extends Controller
         ]);
     }
 
-<<<<<<< HEAD
+    /**
+     * Konfirmasi pesanan sebelum pembayaran.
+     * - Jika ada orderId, tampilkan detail order.
+     * - Jika tidak ada orderId (checkout belum dilakukan), tampilkan isi keranjang.
+     *
+     * @param mixed $orderId
+     * @return View
+     */
     public function confirm($orderId = null): View
     {
         Log::info('Confirm method called', [
@@ -205,6 +194,7 @@ class OrderController extends Controller
         ]);
 
         if ($orderId) {
+            // Order sudah dibuat, tampilkan konfirmasi dari order
             $order = Order::where('id', $orderId)
                 ->where('user_id', Auth::id())
                 ->with(['details.product.images', 'shipping', 'payment.method', 'status'])
@@ -225,6 +215,7 @@ class OrderController extends Controller
             ]);
             return view('user.orders.confirm', compact('order'));
         } else {
+            // Belum bikin order, tampilkan isi keranjang
             $cartItems = Cart::with(['product.images', 'product.category'])
                 ->where('user_id', Auth::id())
                 ->get();
@@ -258,93 +249,63 @@ class OrderController extends Controller
                 'timestamp' => now()->format('Y-m-d H:i:s'),
                 'user' => 'mulyadafa'
             ]);
-=======
-    /**
-     * Konfirmasi pesanan sebelum pembayaran.
-     * - Jika ada orderId, tampilkan detail order.
-     * - Jika tidak ada orderId (checkout belum dilakukan), tampilkan isi keranjang.
-     */
-    public function confirm($orderId = null)
-    {
-        if ($orderId) {
-            // Order sudah dibuat, tampilkan konfirmasi dari order
-            $order = Order::where('id', $orderId)
-                ->where('user_id', Auth::id())
-                ->with(['details.product', 'shipping', 'payment.method', 'status'])
-                ->firstOrFail();
-            return view('user.orders.confirm', compact('order'));
-        } else {
-            // Belum bikin order, tampilkan isi keranjang
-            $cartItems = Cart::with('product')->where('user_id', Auth::id())->get();
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             return view('user.orders.confirm', compact('cartItems'));
         }
     }
 
-<<<<<<< HEAD
-    public function cancelDraft(Request $request): RedirectResponse
-    {
-        $preserveCart = $request->has('preserve_cart');
-=======
     /**
      * Cancel a draft order and return to cart page while preserving items
      *
      * @param Request $request
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
-    public function cancelDraft(Request $request)
+    public function cancelDraft(Request $request): RedirectResponse
     {
         // Preserve cart by just clearing session data related to the checkout process
         $preserveCart = $request->has('preserve_cart');
-        
+
         // Clear checkout-related session data
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         if (!$preserveCart) {
             // If not preserving cart, we would clear cart items here
             // But since we want to keep them, we just clear checkout session data
         }
-<<<<<<< HEAD
-=======
-        
+
         // Clear checkout-specific session variables but keep the cart
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         session()->forget([
             'checkout_started',
             'checkout_step',
             'draft_order',
-<<<<<<< HEAD
-            'shipping_method',
-            'payment_method',
-            'shipping_address_id'
-        ]);
-=======
             'shipping_method',     // Clear shipping method
             'payment_method',      // Clear payment method
             'shipping_address_id'  // Clear selected address
         ]);
-        
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
+
         return redirect()->route('user.cart.index')
             ->with('info', 'Checkout dibatalkan. Item di keranjang tetap tersimpan.');
     }
 
-<<<<<<< HEAD
-    public function pay($order): View
-=======
     /**
      * Proses pembayaran pesanan (POST {order}/pay)
+     *
+     * @param mixed $order
+     * @return View
      */
-    public function pay($order)
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
+    public function pay($order): View
     {
         $order = Order::where('id', $order)
             ->where('user_id', Auth::id())
             ->with(['details.product', 'shipping', 'payment.method'])
             ->firstOrFail();
-<<<<<<< HEAD
+
         return view('user.orders.pay', compact('order'));
     }
 
+    /**
+     * Redirect to checkout success page after order is created
+     *
+     * @param mixed $orderId
+     * @return RedirectResponse
+     */
     public function checkoutSuccess($orderId): RedirectResponse
     {
         Log::info('Checkout success page accessed', [
@@ -355,18 +316,30 @@ class OrderController extends Controller
         return redirect()->route('user.orders.confirm', $orderId);
     }
 
+    /**
+     * Get valid shipping costs from configuration
+     *
+     * @return array
+     */
     private function getValidShippingCosts(): array
     {
         return [
-            'JNT' => 14000.00,
-            'GOSEND' => 25000.00,
-            'JNE' => 12000.00,
-            'SICEPAT' => 15000.00,
-            'KURIR_TOKO' => 15000.00,
-            'AMBIL_SENDIRI' => 0.00
+            'JNT' => 14000.00,          // ID 15 - J&T EZ
+            'GOSEND' => 25000.00,       // ID 13 - GoSend Sameday
+            'JNE' => 12000.00,          // ID 14 - JNE REG
+            'SICEPAT' => 15000.00,      // ID 16 - SiCepat BEST
+            'KURIR_TOKO' => 15000.00,   // ID 11 - Default middle tier (5-10km)
+            'AMBIL_SENDIRI' => 0.00     // ID 17 - Free pickup
         ];
     }
 
+    /**
+     * Calculate shipping cost based on method and address
+     *
+     * @param string $method
+     * @param mixed $selectedAddress
+     * @return float
+     */
     private function calculateShippingCost(string $method, $selectedAddress = null): float
     {
         $costs = $this->getValidShippingCosts();
@@ -389,6 +362,13 @@ class OrderController extends Controller
         return (float) ($costs[$method] ?? 0.0);
     }
 
+    /**
+     * Validate shipping method against allowed methods
+     *
+     * @param string $method
+     * @return array
+     * @throws \InvalidArgumentException
+     */
     private function validateShippingMethod(string $method): array
     {
         $validShippingCosts = $this->getValidShippingCosts();
@@ -398,6 +378,14 @@ class OrderController extends Controller
         return $validShippingCosts;
     }
 
+    /**
+     * Calculate order totals including discount, tax, and shipping
+     *
+     * @param mixed $cartItems
+     * @param mixed $promotion
+     * @param float $shippingCost
+     * @return array
+     */
     private function calculateOrderTotals($cartItems, $promotion, float $shippingCost): array
     {
         $subtotalProducts = 0.0;
@@ -435,6 +423,14 @@ class OrderController extends Controller
         ];
     }
 
+    /**
+     * Create order details from cart items with promotion calculation
+     *
+     * @param Order $order
+     * @param mixed $cartItems
+     * @param mixed $promotion
+     * @return void
+     */
     private function createOrderDetails(Order $order, $cartItems, $promotion): void
     {
         $diskon_type = $promotion ? $promotion->discount_type : null;
@@ -463,6 +459,14 @@ class OrderController extends Controller
         }
     }
 
+    /**
+     * Create shipping record for order
+     *
+     * @param Order $order
+     * @param string $shippingMethod
+     * @param float $shippingCost
+     * @return void
+     */
     private function createShippingRecord(Order $order, string $shippingMethod, float $shippingCost): void
     {
         if ($shippingMethod === 'AMBIL_SENDIRI') {
@@ -488,6 +492,12 @@ class OrderController extends Controller
         ]);
     }
 
+    /**
+     * Proses checkout order dari keranjang.
+     *
+     * @param Request $request
+     * @return RedirectResponse
+     */
     public function create(Request $request): RedirectResponse
     {
         $user = Auth::user();
@@ -606,6 +616,22 @@ class OrderController extends Controller
         }
     }
 
+    /**
+     * Process the creation of order with transaction handling
+     *
+     * @param mixed $user
+     * @param mixed $cartItems
+     * @param string $shippingMethod
+     * @param float $shippingCost
+     * @param string $paymentCode
+     * @param mixed $paymentMethod
+     * @param mixed $selectedAddress
+     * @param mixed $promotion
+     * @param array $totals
+     * @param Request $request
+     * @return RedirectResponse
+     * @throws \Exception
+     */
     private function processOrderCreation(
         $user,
         $cartItems,
@@ -648,100 +674,10 @@ class OrderController extends Controller
             $order = Order::create($orderData);
             $this->createOrderDetails($order, $cartItems, $promotion);
             $this->createShippingRecord($order, $shippingMethod, $shippingCost);
-=======
-
-        // Logika proses pembayaran, misal redirect ke gateway, tampil instruksi, dll
-        return view('user.orders.pay', compact('order'));
-    }
-
-    /**
-     * Proses checkout order dari keranjang.
-     * Metode ini HARUS bernama 'create' agar sesuai dengan route POST user.orders.create
-     */
-    public function create(Request $request)
-    {
-        $user = Auth::user();
-        $cartItems = Cart::where('user_id', $user->id)->with('product')->get();
-
-        if ($cartItems->isEmpty()) {
-            return redirect()->route('user.cart.index')->withErrors('Keranjang kosong!');
-        }
-
-        // Validasi metode pembayaran dari database
-        $validCodes = PaymentMethod::where('status', 1)->pluck('code')->toArray();
-        $request->validate([
-            'payment_method' => 'required|in:' . implode(',', $validCodes),
-        ]);
-        $paymentCode = $request->payment_method;
-        $paymentMethod = PaymentMethod::where('code', $paymentCode)->first();
-
-        // Cek kode promo
-        $promoCode = session('promo_code') ?? null;
-        $promotion = $promoCode ? Promotion::where('promo_code', $promoCode)->first() : null;
-        $diskon_type = $promotion->discount_type ?? null;
-        $diskon_value = $promotion->discount_value ?? null;
-
-        // Hitung total
-        $total = 0;
-        foreach ($cartItems as $item) {
-            $harga_satuan = $item->product->price ?? 0;
-            $qty = $item->quantity ?? 0;
-            $item_diskon = 0;
-            if ($promotion && $diskon_type === 'percent') {
-                $percent = $diskon_value ?: 10;
-                $item_diskon = round($harga_satuan * ($percent / 100));
-            } elseif ($promotion && $diskon_type === 'fixed' && $diskon_value) {
-                $item_diskon = $diskon_value;
-            }
-            $harga_diskon = max(0, $harga_satuan - $item_diskon);
-            $total += $harga_diskon * $qty;
-        }
-
-        DB::beginTransaction();
-        try {
-            // Buat order baru
-            $order = Order::create([
-                'user_id' => $user->id,
-                'order_code' => 'ORD-' . strtoupper(Str::random(8)),
-                'order_date' => now(),
-                'enum_order_status_id' => 1, // WAITING_PAYMENT
-                'total_price' => $total,
-                'shipping_cost' => 0,
-                'note' => $request->note,
-                'payment_method' => $paymentCode,
-                'interface_id' => 1,
-            ]);
-
-            // Buat order_details
-            foreach ($cartItems as $item) {
-                $harga_satuan = $item->product->price ?? 0;
-                $qty = $item->quantity ?? 0;
-                $item_diskon = 0;
-                if ($promotion && $diskon_type === 'percent') {
-                    $percent = $diskon_value ?: 10;
-                    $item_diskon = round($harga_satuan * ($percent / 100));
-                } elseif ($promotion && $diskon_type === 'fixed' && $diskon_value) {
-                    $item_diskon = $diskon_value;
-                }
-                $harga_diskon = max(0, $harga_satuan - $item_diskon);
-
-                OrderDetail::create([
-                    'order_id' => $order->id,
-                    'product_id' => $item->product_id,
-                    'quantity' => $qty,
-                    'price' => $harga_satuan,
-                    'subtotal' => $harga_diskon * $qty,
-                    'interface_id' => 1,
-                ]);
-            }
-
-            // Buat relasi ke tabel payments (SESUAI MIGRASI)
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             if ($paymentMethod) {
                 $order->payments()->create([
                     'method_id' => $paymentMethod->id,
                     'transaction_code' => strtoupper(uniqid('TRX')),
-<<<<<<< HEAD
                     'total' => $finalTotal,
                     'enum_payment_status_id' => 1,
                     'interface_id' => 1,
@@ -781,110 +717,55 @@ class OrderController extends Controller
         }
     }
 
-    public function cancel($orderId): RedirectResponse
-=======
-                    'total' => $order->total_price + $order->shipping_cost,
-                    'enum_payment_status_id' => 1, // PENDING
-                    'interface_id' => 1,
-                ]);
-            }
-
-            // Kosongkan keranjang
-            Cart::where('user_id', $user->id)->delete();
-
-            DB::commit();
-
-            // Lanjutkan proses sesuai metode pembayaran
-            if ($paymentCode == 'stripe') {
-                // Redirect/integrasi Stripe
-                return redirect()->route('stripe.checkout', ['order' => $order->id]);
-            }
-            // Untuk metode lokal, tampilkan halaman konfirmasi pesanan!
-            return redirect()->route('user.orders.confirm', $order->id)
-                ->with('success', 'Order berhasil dibuat! Silakan konfirmasi pesanan Anda.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->withErrors('Checkout gagal: ' . $e->getMessage());
-        }
-    }
-
     /**
      * Batalkan order (POST {order}/cancel dan PATCH {order}/cancel)
      * Ubah status order menjadi CANCELED agar tampil di tabel pesanan dibatalkan
+     *
+     * @param mixed $orderId
+     * @return RedirectResponse
      */
-    public function cancel($orderId)
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
+    public function cancel($orderId): RedirectResponse
     {
         $order = Order::where('id', $orderId)
             ->where('user_id', Auth::id())
             ->first();
-<<<<<<< HEAD
-        if (!$order) {
-            abort(403, 'Order tidak ditemukan atau anda tidak berhak.');
-        }
-=======
 
         if (!$order) {
             abort(403, 'Order tidak ditemukan atau anda tidak berhak.');
         }
 
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         $canceledId = DB::table('enum_order_status')->where('value', 'CANCELED')->value('id');
         if (!$canceledId) {
             return back()->withErrors('Status CANCELED tidak ditemukan di enum_order_status. Silakan cek database.');
         }
         $order->enum_order_status_id = $canceledId;
         $order->save();
-<<<<<<< HEAD
-        return redirect()->route('user.orders.index')->with('success', 'Order berhasil dibatalkan!');
-    }
-
-    public function complete($orderId): RedirectResponse
-=======
 
         return redirect()->route('user.orders.index')->with('success', 'Order berhasil dibatalkan!');
     }
 
     /**
      * Tandai pesanan sebagai selesai (PATCH {order}/complete)
+     *
+     * @param mixed $orderId
+     * @return RedirectResponse
      */
-    public function complete($orderId)
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
+    public function complete($orderId): RedirectResponse
     {
         $order = Order::where('id', $orderId)
             ->where('user_id', Auth::id())
             ->first();
-<<<<<<< HEAD
-        if (!$order) {
-            abort(403, 'Order tidak ditemukan atau anda tidak berhak.');
-        }
-=======
 
         if (!$order) {
             abort(403, 'Order tidak ditemukan atau anda tidak berhak.');
         }
 
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         $completedId = DB::table('enum_order_status')->where('value', 'COMPLETED')->value('id');
         if (!$completedId) {
             return back()->withErrors('Status COMPLETED tidak ditemukan di enum_order_status. Silakan cek database.');
         }
         $order->enum_order_status_id = $completedId;
         $order->save();
-<<<<<<< HEAD
-        return redirect()->route('user.orders.index')->with('success', 'Pesanan telah ditandai selesai!');
-    }
-
-    public function expire($orderId): RedirectResponse
-    {
-        $order = Order::where('id', $orderId)
-            ->where('user_id', Auth::id())
-            ->with('payment')
-            ->first();
-        if (!$order) {
-            abort(403, 'Order tidak ditemukan atau anda tidak berhak.');
-        }
-=======
 
         return redirect()->route('user.orders.index')->with('success', 'Pesanan telah ditandai selesai!');
     }
@@ -892,8 +773,11 @@ class OrderController extends Controller
     /**
      * PATCH: Tandai pesanan sebagai kadaluarsa (EXPIRED)
      * Sekarang juga mengubah status payment menjadi EXPIRED jika ada relasi.
+     *
+     * @param mixed $orderId
+     * @return RedirectResponse
      */
-    public function expire($orderId)
+    public function expire($orderId): RedirectResponse
     {
         $order = Order::where('id', $orderId)
             ->where('user_id', Auth::id())
@@ -904,21 +788,15 @@ class OrderController extends Controller
             abort(403, 'Order tidak ditemukan atau anda tidak berhak.');
         }
 
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         $expiredId = DB::table('enum_order_status')->where('value', 'EXPIRED')->value('id');
         if (!$expiredId) {
             return back()->withErrors('Status EXPIRED tidak ditemukan di enum_order_status. Silakan cek database.');
         }
-<<<<<<< HEAD
-        $order->enum_order_status_id = $expiredId;
-        $order->save();
-=======
         // Update status order
         $order->enum_order_status_id = $expiredId;
         $order->save();
 
         // Update status payment (opsional, best practice)
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         if ($order->payment) {
             $expiredPaymentId = DB::table('enum_payment_status')->where('value', 'EXPIRED')->value('id');
             if ($expiredPaymentId) {
@@ -926,10 +804,16 @@ class OrderController extends Controller
                 $order->payment->save();
             }
         }
-<<<<<<< HEAD
+
         return redirect()->route('user.orders.index')->with('success', 'Pesanan telah dikadaluarsakan.');
     }
 
+    /**
+     * Batalkan konfirmasi sebelum order dibuat (hapus semua produk di keranjang, kembali ke keranjang)
+     *
+     * @param Request $request
+     * @return RedirectResponse
+     */
     public function cancelConfirm(Request $request): RedirectResponse
     {
         Cart::where('user_id', Auth::id())->delete();
@@ -948,65 +832,37 @@ class OrderController extends Controller
         return redirect()->route('user.cart.index')->with('success', 'Checkout dibatalkan. Semua produk di keranjang telah dihapus.');
     }
 
-    public function finish($orderId): RedirectResponse
-=======
-
-        return redirect()->route('user.orders.index')->with('success', 'Pesanan telah dikadaluarsakan.');
-    }
-
-    /**
-     * Batalkan konfirmasi sebelum order dibuat (hapus semua produk di keranjang, kembali ke keranjang)
-     */
-    public function cancelConfirm(Request $request)
-    {
-        Cart::where('user_id', Auth::id())->delete();
-
-        return redirect()->route('user.cart.index')->with('success', 'Checkout dibatalkan. Semua produk di keranjang telah dihapus.');
-    }
-
     /**
      * Tandai pesanan sebagai selesai (POST {order}/finish)
+     *
+     * @param mixed $orderId
+     * @return RedirectResponse
      */
-    public function finish($orderId)
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
+    public function finish($orderId): RedirectResponse
     {
         $order = Order::where('id', $orderId)
             ->where('user_id', Auth::id())
             ->first();
-<<<<<<< HEAD
-        if (!$order) {
-            abort(403, 'Order tidak ditemukan atau anda tidak berhak.');
-        }
-=======
 
         if (!$order) {
             abort(403, 'Order tidak ditemukan atau anda tidak berhak.');
         }
 
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         $completedId = DB::table('enum_order_status')->where('value', 'COMPLETED')->value('id');
         if (!$completedId) {
             return back()->withErrors('Status COMPLETED tidak ditemukan di enum_order_status. Silakan cek database.');
         }
         $order->enum_order_status_id = $completedId;
         $order->save();
-<<<<<<< HEAD
-        return redirect()->route('user.orders.index')->with('success', 'Pesanan telah ditandai selesai!');
-    }
-
-    public function clearExpired(Request $request)
-    {
-        $user = Auth::user();
-        $canceledId = DB::table('enum_order_status')->where('value', 'CANCELED')->value('id');
-        $expiredId  = DB::table('enum_order_status')->where('value', 'EXPIRED')->value('id');
-        $deleteIds = array_filter([$canceledId, $expiredId]);
-=======
 
         return redirect()->route('user.orders.index')->with('success', 'Pesanan telah ditandai selesai!');
     }
 
     /**
      * Bersihkan pesanan kadaluarsa, dibatalkan, dan waktu habis milik user.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse|RedirectResponse
      */
     public function clearExpired(Request $request)
     {
@@ -1018,19 +874,14 @@ class OrderController extends Controller
         $deleteIds = array_filter([$canceledId, $expiredId]);
 
         // Hapus orders pada tabel 'orders' yang status dibatalkan/expired milik user
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         if (!empty($deleteIds)) {
             Order::where('user_id', $user->id)
                 ->whereIn('enum_order_status_id', $deleteIds)
                 ->delete();
         }
-<<<<<<< HEAD
-        DB::table('expired_orders')->where('user_id', $user->id)->delete();
-=======
 
         DB::table('expired_orders')->where('user_id', $user->id)->delete();
 
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         if ($request->expectsJson()) {
             return response()->json(['status' => 'success']);
         }

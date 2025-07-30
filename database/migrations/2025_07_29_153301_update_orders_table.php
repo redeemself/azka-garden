@@ -9,6 +9,8 @@ class UpdateOrdersTable extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * @updated 2025-07-30 05:14:57 by mulyadafa
      */
     public function up()
     {
@@ -43,10 +45,38 @@ class UpdateOrdersTable extends Migration
 
         // Index tambahan (tidak wajib rollback)
         if (Schema::hasColumn('orders', 'enum_order_status_id')) {
-            Schema::table('orders', function (Blueprint $table) {
-                $table->index(['user_id', 'enum_order_status_id'], 'idx_orders_user_status');
-                $table->index(['order_date'], 'idx_orders_date');
-                $table->index(['enum_order_status_id'], 'idx_orders_status');
+            // Check if indexes already exist before creating them
+            $userStatusIndexExists = DB::select("
+                SELECT COUNT(1) as cnt FROM information_schema.STATISTICS
+                WHERE table_schema = DATABASE()
+                AND table_name = 'orders'
+                AND index_name = 'idx_orders_user_status'
+            ")[0]->cnt ?? 0;
+
+            $dateIndexExists = DB::select("
+                SELECT COUNT(1) as cnt FROM information_schema.STATISTICS
+                WHERE table_schema = DATABASE()
+                AND table_name = 'orders'
+                AND index_name = 'idx_orders_date'
+            ")[0]->cnt ?? 0;
+
+            $statusIndexExists = DB::select("
+                SELECT COUNT(1) as cnt FROM information_schema.STATISTICS
+                WHERE table_schema = DATABASE()
+                AND table_name = 'orders'
+                AND index_name = 'idx_orders_status'
+            ")[0]->cnt ?? 0;
+
+            Schema::table('orders', function (Blueprint $table) use ($userStatusIndexExists, $dateIndexExists, $statusIndexExists) {
+                if ($userStatusIndexExists == 0) {
+                    $table->index(['user_id', 'enum_order_status_id'], 'idx_orders_user_status');
+                }
+                if ($dateIndexExists == 0) {
+                    $table->index(['order_date'], 'idx_orders_date');
+                }
+                if ($statusIndexExists == 0) {
+                    $table->index(['enum_order_status_id'], 'idx_orders_status');
+                }
             });
         }
     }
@@ -56,6 +86,29 @@ class UpdateOrdersTable extends Migration
      */
     public function down()
     {
+        // First check if any foreign keys reference these indexes
+        $foreignKeys = DB::select("
+            SELECT CONSTRAINT_NAME
+            FROM information_schema.KEY_COLUMN_USAGE
+            WHERE REFERENCED_TABLE_SCHEMA = DATABASE()
+            AND REFERENCED_TABLE_NAME = 'orders'
+            AND REFERENCED_COLUMN_NAME IN ('user_id', 'enum_order_status_id')
+        ");
+
+        // Drop the foreign keys first if they exist
+        if (!empty($foreignKeys)) {
+            foreach ($foreignKeys as $fk) {
+                Schema::table('orders', function (Blueprint $table) use ($fk) {
+                    try {
+                        DB::statement('ALTER TABLE ' . DB::getTablePrefix() . 'orders DROP FOREIGN KEY ' . $fk->CONSTRAINT_NAME);
+                    } catch (\Exception $e) {
+                        // Log the error and continue
+                        \Log::warning('Could not drop foreign key: ' . $fk->CONSTRAINT_NAME . '. Error: ' . $e->getMessage());
+                    }
+                });
+            }
+        }
+
         // Drop unique constraint jika memang ada
         $uniqueExists = DB::select("
             SELECT COUNT(1) as cnt FROM information_schema.STATISTICS
@@ -70,13 +123,43 @@ class UpdateOrdersTable extends Migration
             });
         }
 
-        // Drop index tambahan jika ada
+        // Drop index tambahan jika ada - with improved error handling
         if (Schema::hasColumn('orders', 'enum_order_status_id')) {
-            Schema::table('orders', function (Blueprint $table) {
-                try { $table->dropIndex('idx_orders_user_status'); } catch (\Exception $e) {}
-                try { $table->dropIndex('idx_orders_date'); } catch (\Exception $e) {}
-                try { $table->dropIndex('idx_orders_status'); } catch (\Exception $e) {}
-            });
+            // Check which indexes actually exist
+            $indexes = [
+                'idx_orders_user_status' => DB::select("
+                    SELECT COUNT(1) as cnt FROM information_schema.STATISTICS
+                    WHERE table_schema = DATABASE()
+                    AND table_name = 'orders'
+                    AND index_name = 'idx_orders_user_status'
+                ")[0]->cnt ?? 0,
+
+                'idx_orders_date' => DB::select("
+                    SELECT COUNT(1) as cnt FROM information_schema.STATISTICS
+                    WHERE table_schema = DATABASE()
+                    AND table_name = 'orders'
+                    AND index_name = 'idx_orders_date'
+                ")[0]->cnt ?? 0,
+
+                'idx_orders_status' => DB::select("
+                    SELECT COUNT(1) as cnt FROM information_schema.STATISTICS
+                    WHERE table_schema = DATABASE()
+                    AND table_name = 'orders'
+                    AND index_name = 'idx_orders_status'
+                ")[0]->cnt ?? 0
+            ];
+
+            // Drop only indexes that exist
+            foreach ($indexes as $indexName => $exists) {
+                if ($exists > 0) {
+                    try {
+                        DB::statement('ALTER TABLE ' . DB::getTablePrefix() . 'orders DROP INDEX ' . $indexName);
+                    } catch (\Exception $e) {
+                        // Log the error and continue
+                        \Log::warning('Could not drop index: ' . $indexName . '. Error: ' . $e->getMessage());
+                    }
+                }
+            }
         }
 
         // Kolom tidak wajib dihapus (jika tidak ingin data hilang)

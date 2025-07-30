@@ -6,10 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-<<<<<<< HEAD
 use Illuminate\Support\Facades\DB;
-=======
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
 use App\Models\Product;
 use App\Models\Cart;
 use App\Models\Contact;
@@ -21,15 +18,21 @@ use Illuminate\Contracts\View\View;
 use Exception;
 use Illuminate\Database\QueryException;
 
+/**
+ * Cart Controller
+ *
+ * Handles all shopping cart related functionality including
+ * adding, updating, and removing items, applying promos,
+ * and checkout processing.
+ *
+ * @updated 2025-07-30 04:17:25 by mulyadafa
+ */
 class CartController extends Controller
 {
     /**
      * Tampilkan isi keranjang user.
-<<<<<<< HEAD
-=======
      *
      * @return View|RedirectResponse
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
      */
     public function index(): View|RedirectResponse
     {
@@ -49,23 +52,17 @@ class CartController extends Controller
             $activePromo = Promotion::where('promo_code', $promoCode)->first();
         }
 
-<<<<<<< HEAD
-        $primaryAddress = $user->addresses()->where('is_primary', true)->first();
-        $hasAddress = !empty($primaryAddress);
-
-=======
         // Tambahkan informasi alamat untuk pengiriman
         $primaryAddress = $user->addresses()->where('is_primary', true)->first();
         $hasAddress = !empty($primaryAddress);
 
-        // Tidak perlu hitung total di sini; perhitungan total dilakukan di Blade
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         return view('user.cart', compact('cartItems', 'activePromo', 'primaryAddress', 'hasAddress'));
     }
 
     /**
-<<<<<<< HEAD
      * Tampilkan halaman konfirmasi pesanan dengan shipping cost yang benar
+     *
+     * @return View|RedirectResponse
      */
     public function confirm(): View|RedirectResponse
     {
@@ -97,10 +94,10 @@ class CartController extends Controller
         // Get user addresses
         $addresses = $user->addresses()->get();
         $selectedAddress = null;
-        
+
         if ($addresses->count()) {
-            $selectedAddress = $shippingAddressId 
-                ? $addresses->where('id', $shippingAddressId)->first() 
+            $selectedAddress = $shippingAddressId
+                ? $addresses->where('id', $shippingAddressId)->first()
                 : ($addresses->where('is_primary', 1)->first() ?? $addresses->first());
         }
 
@@ -108,21 +105,21 @@ class CartController extends Controller
         $subtotal = 0;
         $totalDiscount = 0;
         $originalPriceTotal = 0;
-        
+
         $promoCode = session('promo_code');
-        
+
         foreach ($cartItems as $item) {
             $product = $item->product;
             if (!$product) continue;
-            
+
             $itemPromo = $item->promo_code ?? $promoCode;
             $promotion = $itemPromo ? Promotion::where('promo_code', $itemPromo)->first() : null;
             $discount = 0;
             $unitPrice = $product->price ?? 0;
             $qty = $item->quantity ?? 0;
-            
+
             $originalPriceTotal += $unitPrice * $qty;
-            
+
             if ($promotion) {
                 if ($promotion->discount_type === 'percent') {
                     $percent = $promotion->discount_value ?: 10;
@@ -131,10 +128,10 @@ class CartController extends Controller
                     $discount = min($promotion->discount_value ?: 0, $unitPrice);
                 }
             }
-            
+
             $discountedPrice = max(0, $unitPrice - $discount);
             $itemTotal = $discountedPrice * $qty;
-            
+
             $subtotal += $itemTotal;
             $totalDiscount += $discount * $qty;
         }
@@ -163,9 +160,9 @@ class CartController extends Controller
         ]);
 
         return view('user.orders.confirm', compact(
-            'cartItems', 
-            'shippingCost', 
-            'selectedAddress', 
+            'cartItems',
+            'shippingCost',
+            'selectedAddress',
             'addresses',
             'subtotal',
             'totalDiscount',
@@ -179,38 +176,44 @@ class CartController extends Controller
 
     /**
      * Calculate shipping cost based on method - sesuai database shippings.sql
+     *
+     * @param string $method
+     * @return float
      */
     private function calculateShippingCost($method): float
     {
         // Shipping costs sesuai dengan database shippings.sql
         $costs = [
             'JNT' => 14000.00,          // ID 15 - J&T EZ
-            'GOSEND' => 25000.00,       // ID 13 - GoSend Sameday  
+            'GOSEND' => 25000.00,       // ID 13 - GoSend Sameday
             'JNE' => 12000.00,          // ID 14 - JNE REG
             'SICEPAT' => 15000.00,      // ID 16 - SiCepat BEST
             'KURIR_TOKO' => 15000.00,   // ID 11 - Default middle tier (5-10km)
             'AMBIL_SENDIRI' => 0.00     // ID 17 - Free pickup
         ];
-        
+
         // Log untuk debugging
         Log::info('Calculating shipping cost', [
             'method' => $method,
             'cost' => $costs[$method] ?? 0,
             'timestamp' => now()->format('Y-m-d H:i:s')
         ]);
-        
+
         return $costs[$method] ?? 0;
     }
 
     /**
      * Get shipping cost via AJAX
+     *
+     * @param Request $request
+     * @return JsonResponse
      */
     public function getShippingCost(Request $request): JsonResponse
     {
         try {
             $method = $request->input('method');
             $cost = $this->calculateShippingCost($method);
-            
+
             return response()->json([
                 'success' => true,
                 'cost' => $cost,
@@ -227,12 +230,9 @@ class CartController extends Controller
 
     /**
      * Process checkout from cart
-=======
-     * Process checkout from cart
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param Request $request
      * @return View|RedirectResponse
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
      */
     public function checkout(Request $request): View|RedirectResponse
     {
@@ -250,17 +250,12 @@ class CartController extends Controller
                 ->with('error', 'Keranjang Anda kosong. Silahkan tambahkan produk terlebih dahulu.');
         }
 
-<<<<<<< HEAD
+        // Save shipping and payment method to session
         if ($request->has('shipping_method')) {
             session(['shipping_method' => $request->shipping_method]);
             // Recalculate shipping cost when method changes
             $shippingCost = $this->calculateShippingCost($request->shipping_method);
             session(['shipping_cost' => $shippingCost]);
-=======
-        // Save shipping and payment method to session
-        if ($request->has('shipping_method')) {
-            session(['shipping_method' => $request->shipping_method]);
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         }
 
         if ($request->has('payment_method')) {
@@ -271,22 +266,14 @@ class CartController extends Controller
             session(['shipping_address_id' => $request->shipping_address_id]);
         }
 
-<<<<<<< HEAD
+        // Check if shipping method and payment method are set
         if (!session('shipping_method')) {
             session(['shipping_method' => 'JNT']); // Default ke JNT
             session(['shipping_cost' => $this->calculateShippingCost('JNT')]);
         }
 
         if (!session('payment_method')) {
-=======
-        // Check if shipping method and payment method are set
-        if (!session('shipping_method')) {
-            session(['shipping_method' => 'KURIR_TOKO']);
-        }
-
-        if (!session('payment_method')) {
             // Set default payment method from database if available
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             $paymentMethod = \DB::table('local_payment_methods')
                 ->where('status', 1)
                 ->first();
@@ -298,14 +285,7 @@ class CartController extends Controller
             }
         }
 
-<<<<<<< HEAD
         return redirect()->route('user.cart.confirm');
-    }
-
-    /**
-     * Update jumlah produk di keranjang
-=======
-        return view('User.orders.confirm', compact('cartItems'));
     }
 
     /**
@@ -314,12 +294,10 @@ class CartController extends Controller
      * @param Request $request
      * @param int $id ID cart item yang akan diupdate
      * @return JsonResponse
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
      */
     public function update(Request $request, $id): JsonResponse
     {
         try {
-<<<<<<< HEAD
             Log::info('Update cart item request received', [
                 'id' => $id,
                 'method' => $request->method(),
@@ -332,18 +310,13 @@ class CartController extends Controller
                 ]
             ]);
 
-=======
             // Validate request
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             $request->validate([
                 'quantity' => 'required|integer|min:1',
             ]);
 
             $user = Auth::user();
-<<<<<<< HEAD
-=======
 
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             if (!$user) {
                 return response()->json([
                     'success' => false,
@@ -351,10 +324,7 @@ class CartController extends Controller
                 ], 401);
             }
 
-<<<<<<< HEAD
-=======
             // Find the cart item with explicit user check
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             $cartItem = Cart::where('id', $id)
                 ->where('user_id', $user->id)
                 ->first();
@@ -366,10 +336,7 @@ class CartController extends Controller
                 ], 404);
             }
 
-<<<<<<< HEAD
-=======
             // Validasi stok produk
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             $product = Product::find($cartItem->product_id);
             if (!$product) {
                 return response()->json([
@@ -378,10 +345,7 @@ class CartController extends Controller
                 ], 404);
             }
 
-<<<<<<< HEAD
-=======
             // Check product stock
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             if ($request->quantity > $product->stock) {
                 return response()->json([
                     'success' => false,
@@ -389,17 +353,11 @@ class CartController extends Controller
                 ], 400);
             }
 
-<<<<<<< HEAD
-            $cartItem->quantity = $request->quantity;
-            $cartItem->save();
-
-=======
             // Update quantity
             $cartItem->quantity = $request->quantity;
             $cartItem->save();
 
             // Hitung total dengan diskon
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             $promo = $cartItem->promo_code ?? session('promo_code');
             $promotion = $promo ? Promotion::where('promo_code', $promo)->first() : null;
 
@@ -429,37 +387,23 @@ class CartController extends Controller
                     'formatted_total' => 'Rp ' . number_format($item_total, 0, ',', '.'),
                 ]
             ]);
-<<<<<<< HEAD
-=======
-
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         } catch (QueryException $e) {
             Log::error('Database error when updating cart item', [
                 'cart_item_id' => $id,
                 'error' => $e->getMessage(),
             ]);
-<<<<<<< HEAD
-=======
 
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan database saat mengubah jumlah produk',
                 'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
-<<<<<<< HEAD
-=======
-
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         } catch (Exception $e) {
             Log::error('Error when updating cart item', [
                 'cart_item_id' => $id,
                 'error' => $e->getMessage(),
             ]);
-<<<<<<< HEAD
-=======
 
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengubah jumlah produk',
@@ -469,8 +413,11 @@ class CartController extends Controller
     }
 
     /**
-<<<<<<< HEAD
      * Process update via POST for browsers that don't support PUT
+     *
+     * @param Request $request
+     * @param int $id
+     * @return JsonResponse
      */
     public function updatePost(Request $request, $id): JsonResponse
     {
@@ -486,24 +433,18 @@ class CartController extends Controller
     }
 
     /**
-     * Delete item from cart (JSON)
-=======
      * Delete item from cart with improved error handling (JSON response)
      * Supports both DELETE and POST methods for better compatibility
      *
      * @param int $id Cart item ID
      * @return JsonResponse
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
      */
     public function delete($id): JsonResponse
     {
         try {
             $user = Auth::user();
 
-<<<<<<< HEAD
-=======
             // Log request for debugging
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             Log::info('Delete cart item request received', [
                 'id' => $id,
                 'user_id' => $user ? $user->id : 'not authenticated',
@@ -522,10 +463,7 @@ class CartController extends Controller
                 ], 401);
             }
 
-<<<<<<< HEAD
-=======
             // Find the cart item with explicit user check
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             $cartItem = Cart::where('id', $id)
                 ->where('user_id', $user->id)
                 ->first();
@@ -537,17 +475,11 @@ class CartController extends Controller
                 ], 404);
             }
 
-<<<<<<< HEAD
-            $productId = $cartItem->product_id;
-            $productName = $cartItem->product ? $cartItem->product->name : 'unknown';
-
-=======
             // Get product details before deletion for logging
             $productId = $cartItem->product_id;
             $productName = $cartItem->product ? $cartItem->product->name : 'unknown';
 
             // Log before deletion (optional but helpful for debugging)
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             Log::info('Deleting cart item', [
                 'user_id' => $user->id,
                 'cart_item_id' => $id,
@@ -555,17 +487,11 @@ class CartController extends Controller
                 'product_name' => $productName
             ]);
 
-<<<<<<< HEAD
-            $cartItem->delete();
-
-            $cartCount = Cart::where('user_id', $user->id)->sum('quantity');
-=======
             // Perform the deletion
             $cartItem->delete();
 
             // Get updated cart count for the user
-            $cartCount = Cart::where('user_id', $user->id)->count();
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
+            $cartCount = Cart::where('user_id', $user->id)->sum('quantity');
 
             return response()->json([
                 'success' => true,
@@ -575,39 +501,25 @@ class CartController extends Controller
                     'deleted_id' => $id
                 ]
             ]);
-<<<<<<< HEAD
-=======
-
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         } catch (QueryException $e) {
             Log::error('Database error when deleting cart item', [
                 'cart_item_id' => $id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-<<<<<<< HEAD
-=======
 
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan database saat menghapus produk',
                 'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
-<<<<<<< HEAD
-=======
-
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         } catch (Exception $e) {
             Log::error('Error when deleting cart item', [
                 'cart_item_id' => $id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-<<<<<<< HEAD
-=======
 
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal menghapus produk dari keranjang: ' . $e->getMessage(),
@@ -618,13 +530,10 @@ class CartController extends Controller
 
     /**
      * Hapus produk dari keranjang (redirect response)
-<<<<<<< HEAD
-=======
      * Supports form submission with POST method
      *
      * @param int $id
      * @return RedirectResponse
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
      */
     public function remove($id): RedirectResponse
     {
@@ -645,10 +554,7 @@ class CartController extends Controller
                     ->with('error', 'Produk tidak ditemukan di keranjang Anda.');
             }
 
-<<<<<<< HEAD
-=======
             // Log before deletion
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             Log::info('Removing cart item (redirect)', [
                 'user_id' => $user->id,
                 'cart_item_id' => $id,
@@ -657,7 +563,6 @@ class CartController extends Controller
 
             $cartItem->delete();
             return redirect()->back()->with('success', 'Produk berhasil dihapus dari keranjang.');
-
         } catch (Exception $e) {
             Log::error('Error when removing cart item', [
                 'cart_item_id' => $id,
@@ -670,44 +575,29 @@ class CartController extends Controller
     }
 
     /**
-<<<<<<< HEAD
-     * POST delete for browsers
-=======
      * Alternative delete endpoint that accepts POST method for compatibility
      * This helps with browsers or situations where DELETE method might not be supported
      *
      * @param Request $request
      * @param int $id
      * @return JsonResponse
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
      */
     public function deletePost(Request $request, $id): JsonResponse
     {
         Log::info('Delete POST method received', [
             'id' => $id,
-<<<<<<< HEAD
-            'method' => $request->method(),
-            'csrf' => $request->header('X-CSRF-TOKEN') ? 'present' : 'missing'
-        ]);
-
-=======
             'csrf' => $request->header('X-CSRF-TOKEN') ? 'present' : 'missing'
         ]);
 
         // Simply call the delete method
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         return $this->delete($id);
     }
 
     /**
-<<<<<<< HEAD
      * Simpan metode pengiriman ke session dan update shipping cost.
-=======
-     * Simpan metode pengiriman ke session.
      *
      * @param Request $request
      * @return JsonResponse
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
      */
     public function saveShipping(Request $request): JsonResponse
     {
@@ -716,7 +606,6 @@ class CartController extends Controller
                 'shipping_method' => 'required|string|max:50',
             ]);
 
-<<<<<<< HEAD
             $shippingMethod = $request->shipping_method;
             $shippingCost = $this->calculateShippingCost($shippingMethod);
 
@@ -733,13 +622,6 @@ class CartController extends Controller
                     'shipping_cost' => $shippingCost,
                     'formatted_cost' => 'Rp' . number_format($shippingCost, 0, ',', '.')
                 ]
-=======
-            session(['shipping_method' => $request->shipping_method]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Metode pengiriman berhasil disimpan'
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             ]);
         } catch (Exception $e) {
             Log::error('Error saving shipping method', [
@@ -756,12 +638,9 @@ class CartController extends Controller
 
     /**
      * Simpan metode pembayaran ke session.
-<<<<<<< HEAD
-=======
      *
      * @param Request $request
      * @return JsonResponse
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
      */
     public function savePayment(Request $request): JsonResponse
     {
@@ -790,36 +669,24 @@ class CartController extends Controller
     }
 
     /**
-<<<<<<< HEAD
-     * Tambah produk ke keranjang (versi minimal & stabil).
-=======
      * Tambah produk ke keranjang dengan validasi promo code dan diskon.
      *
      * @param Request $request
      * @return RedirectResponse|JsonResponse
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
      */
     public function add(Request $request)
     {
         try {
             $request->validate([
                 'product_id' => 'required|exists:products,id',
-<<<<<<< HEAD
-=======
                 'promo_code' => 'nullable|string|max:50',
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                 'quantity' => 'nullable|integer|min:1',
             ]);
 
             $user = Auth::user();
-<<<<<<< HEAD
-            if (!$user) {
-                if ($request->expectsJson() || $request->ajax()) {
-=======
 
             if (!$user) {
-                if ($request->expectsJson()) {
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
+                if ($request->expectsJson() || $request->ajax()) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Anda harus login untuk menambahkan produk ke keranjang'
@@ -830,13 +697,6 @@ class CartController extends Controller
             }
 
             $productId = $request->input('product_id');
-<<<<<<< HEAD
-            $quantity = $request->input('quantity', 1);
-
-            $product = Product::find($productId);
-            if (!$product) {
-                if ($request->expectsJson() || $request->ajax()) {
-=======
             $promoCode = trim($request->input('promo_code')) ?: session('promo_code');
             $quantity = $request->input('quantity', 1);
             $discount = 0;
@@ -846,8 +706,7 @@ class CartController extends Controller
             $product = Product::find($productId);
 
             if (!$product || !($product instanceof Product)) {
-                if ($request->expectsJson()) {
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
+                if ($request->expectsJson() || $request->ajax()) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Produk tidak ditemukan.'
@@ -856,14 +715,9 @@ class CartController extends Controller
                 return back()->with('error', 'Produk tidak ditemukan.');
             }
 
-<<<<<<< HEAD
-            if ($quantity > $product->stock) {
-                if ($request->expectsJson() || $request->ajax()) {
-=======
             // Check stock
             if ($quantity > $product->stock) {
-                if ($request->expectsJson()) {
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
+                if ($request->expectsJson() || $request->ajax()) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Jumlah melebihi stok yang tersedia.'
@@ -872,27 +726,6 @@ class CartController extends Controller
                 return back()->with('error', 'Jumlah melebihi stok yang tersedia.');
             }
 
-<<<<<<< HEAD
-            // Buat/Update cart
-            $cartItem = Cart::firstOrNew([
-                'user_id' => $user->id,
-                'product_id' => $product->id,
-            ]);
-            $cartItem->quantity += $quantity;
-            if ($cartItem->quantity > $product->stock) {
-                $cartItem->quantity = $product->stock;
-            }
-            $cartItem->save();
-
-            if ($request->expectsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Produk berhasil ditambahkan ke keranjang',
-                    'data' => [
-                        'cart_count' => Cart::where('user_id', $user->id)->sum('quantity'),
-                        'item_id' => $cartItem->id,
-                        'quantity' => $cartItem->quantity,
-=======
             // Validasi dan hitung diskon dari promo
             $promotion = null;
             if ($promoCode) {
@@ -988,34 +821,20 @@ class CartController extends Controller
             }
 
             // Return JSON response if requested
-            if ($request->expectsJson()) {
+            if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
                     'message' => $message,
                     'data' => [
-                        'cart_count' => Cart::where('user_id', $user->id)->count(),
+                        'cart_count' => Cart::where('user_id', $user->id)->sum('quantity'),
                         'item_id' => $cartItem->id,
                         'quantity' => $cartItem->quantity,
                         'discount' => $discount
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                     ]
                 ]);
             }
 
-<<<<<<< HEAD
-            return back()->with('success', 'Produk berhasil ditambah ke keranjang');
-        } catch (Exception $e) {
-            if ($request->expectsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Gagal menambah produk: ' . $e->getMessage(),
-                    'error' => config('app.debug') ? $e->getMessage() : null
-                ], 500);
-            }
-            return back()->with('error', 'Gagal menambah produk ke keranjang');
-=======
             return back()->with('success', $message);
-
         } catch (Exception $e) {
             Log::error('Error adding product to cart', [
                 'product_id' => $request->input('product_id'),
@@ -1023,7 +842,7 @@ class CartController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
 
-            if ($request->expectsJson()) {
+            if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Gagal menambahkan produk ke keranjang: ' . $e->getMessage(),
@@ -1032,18 +851,14 @@ class CartController extends Controller
             }
 
             return back()->with('error', 'Gagal menambahkan produk ke keranjang.');
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         }
     }
 
     /**
      * Apply promo code to cart
-<<<<<<< HEAD
-=======
      *
      * @param Request $request
      * @return RedirectResponse|JsonResponse
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
      */
     public function redeemPromo(Request $request)
     {
@@ -1052,14 +867,9 @@ class CartController extends Controller
                 'promo_code' => 'required|string|min:3|max:50',
             ]);
 
-<<<<<<< HEAD
-            $promotion = Promotion::where('promo_code', $request->promo_code)
-                ->where('status', 1) // Using 'status' column instead of 'active'
-=======
             // Check if promo code exists
             $promotion = Promotion::where('promo_code', $request->promo_code)
-                ->where('active', true)
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
+                ->where('status', 1) // Using 'status' column instead of 'active'
                 ->first();
 
             if (!$promotion) {
@@ -1072,10 +882,7 @@ class CartController extends Controller
                 return back()->with('error', 'Kode promo tidak valid atau sudah tidak aktif');
             }
 
-<<<<<<< HEAD
-=======
             // Store promo in session
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             session([
                 'promo_code' => $promotion->promo_code,
                 'promo_type' => $promotion->discount_type,
@@ -1112,8 +919,4 @@ class CartController extends Controller
             return back()->with('error', 'Gagal menerapkan kode promo');
         }
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)

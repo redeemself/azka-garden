@@ -9,16 +9,30 @@ use App\Models\Promotion;
 use App\Models\Contact;
 use App\Models\Review;
 use App\Models\Category;
-<<<<<<< HEAD
 use App\Models\Cart;
-=======
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Response;
+use Illuminate\View\View;
 
+/**
+ * User Product Controller
+ *
+ * Handles product listing, details, comments, and recommendations for users
+ *
+ * @updated 2025-07-30 04:24:14 by mulyadafa
+ */
 class ProductController extends Controller
 {
-    public function index(Request $request)
+    /**
+     * Display a listing of products with filters and pagination
+     *
+     * @param Request $request
+     * @return View
+     */
+    public function index(Request $request): View
     {
         // Ambil semua kategori untuk filter
         $categories = Category::where('status', 1)->orderBy('name')->get();
@@ -40,21 +54,16 @@ class ProductController extends Controller
         // Pagination agar list produk tidak terlalu panjang
         $products = $query->paginate(12);
 
-<<<<<<< HEAD
         // Perbaikan promo code: ambil dari session, bukan hanya dari input
-        $promoCode = $request->input('promo_code') ?: session('promo_code');
-=======
         $promoCode = $request->input('promo_code') ?? session('promo_code');
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         $promo = null;
         if ($promoCode) {
             $promo = Promotion::where('promo_code', $promoCode)
                 ->where('status', true)
-<<<<<<< HEAD
-                ->where(function($q){
+                ->where(function ($q) {
                     $q->whereNull('start_date')->orWhere('start_date', '<=', now());
                 })
-                ->where(function($q){
+                ->where(function ($q) {
                     $q->whereNull('end_date')->orWhere('end_date', '>=', now());
                 })
                 ->first();
@@ -66,30 +75,18 @@ class ProductController extends Controller
                 session()->forget('promo_code');
                 session()->forget('promo_type');
                 session()->forget('promo_discount');
-=======
-                ->where('start_date', '<=', now())
-                ->where('end_date', '>=', now())
-                ->first();
-            if ($promo) {
-                session(['promo_code' => $promoCode]);
-            } else {
-                session()->forget('promo_code');
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             }
         }
 
         $contacts = Contact::all();
         $banners = []; // Sesuaikan dengan query banner Anda jika ada
 
-<<<<<<< HEAD
         // Jumlah keranjang
         $cartItemCount = 0;
         if (Auth::check()) {
             $cartItemCount = Cart::where('user_id', Auth::id())->sum('quantity');
         }
 
-=======
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Kirim semua data ke view
         return view('user.products.index', [
             'products' => $products,
@@ -97,14 +94,18 @@ class ProductController extends Controller
             'promo' => $promo,
             'contacts' => $contacts,
             'banners' => $banners,
-<<<<<<< HEAD
             'cartItemCount' => $cartItemCount, // <-- PERBAIKAN: jumlah keranjang
-=======
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         ]);
     }
 
-    public function show($id, Request $request)
+    /**
+     * Display the specified product with details and reviews
+     *
+     * @param int $id
+     * @param Request $request
+     * @return View
+     */
+    public function show($id, Request $request): View
     {
         $product = Product::with(['category', 'images'])->findOrFail($id);
 
@@ -112,20 +113,15 @@ class ProductController extends Controller
             return !empty($img->image_url) && preg_match('/\.(jpg|jpeg|png)$/i', $img->image_url);
         });
 
-<<<<<<< HEAD
-        $promoCode = $request->input('promo_code') ?: session('promo_code');
-=======
         $promoCode = $request->input('promo_code') ?? session('promo_code');
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         $promo = null;
         if ($promoCode) {
             $promo = Promotion::where('promo_code', $promoCode)
                 ->where('status', true)
-<<<<<<< HEAD
-                ->where(function($q){
+                ->where(function ($q) {
                     $q->whereNull('start_date')->orWhere('start_date', '<=', now());
                 })
-                ->where(function($q){
+                ->where(function ($q) {
                     $q->whereNull('end_date')->orWhere('end_date', '>=', now());
                 })
                 ->first();
@@ -137,15 +133,6 @@ class ProductController extends Controller
                 session()->forget('promo_code');
                 session()->forget('promo_type');
                 session()->forget('promo_discount');
-=======
-                ->where('start_date', '<=', now())
-                ->where('end_date', '>=', now())
-                ->first();
-            if ($promo) {
-                session(['promo_code' => $promoCode]);
-            } else {
-                session()->forget('promo_code');
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             }
         }
 
@@ -153,33 +140,31 @@ class ProductController extends Controller
 
         $comments = Review::where('product_id', $product->getKey())->with('user')->get();
 
-<<<<<<< HEAD
         // Jumlah keranjang
         $cartItemCount = 0;
         if (Auth::check()) {
             $cartItemCount = Cart::where('user_id', Auth::id())->sum('quantity');
         }
 
-=======
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         return view('user.products.show', [
             'product' => $product,
             'productImages' => $productImages,
             'promo' => $promo,
             'contacts' => $contacts,
             'comments' => $comments,
-<<<<<<< HEAD
             'cartItemCount' => $cartItemCount, // <-- PERBAIKAN: jumlah keranjang
-=======
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         ]);
     }
 
     /**
      * POST /products/{id}/comment
      * Tambahkan komentar produk
+     *
+     * @param Request $request
+     * @param int $id
+     * @return RedirectResponse|JsonResponse
      */
-    public function comment(Request $request, $id)
+    public function comment(Request $request, $id): RedirectResponse|JsonResponse
     {
         $request->validate([
             'comment' => 'required|string|max:500',
@@ -216,8 +201,11 @@ class ProductController extends Controller
     /**
      * Dapatkan rekomendasi produk acak yang belum pernah dibeli user
      * GET /user/products/rekomendasi
+     *
+     * @param Request $request
+     * @return View
      */
-    public function rekomendasiUntukmu(Request $request)
+    public function rekomendasiUntukmu(Request $request): View
     {
         $userId = Auth::id();
         $rekomendasiPerluDibeli = Product::where('stock', '>', 0)
