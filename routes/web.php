@@ -15,6 +15,7 @@ use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\User\ProductController;
 use App\Http\Controllers\User\CartController;
 use App\Http\Controllers\User\OrderController;
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DevController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\MembershipController;
@@ -25,7 +26,7 @@ use App\Http\Controllers\User\AddressController;
  * ==================================
  * AZKA GARDEN E-COMMERCE APPLICATION
  * Routes Configuration
- * Last updated: 2025-07-29 15:07:08
+ * Last updated: 2025-07-29 15:31:30
  * Author: mulyadafa
  * ==================================
  */
@@ -133,6 +134,12 @@ Route::middleware(['auth'])->group(function () {
     // Address routes (outside of user prefix for compatibility)
     Route::post('/address', [AddressController::class, 'store'])->name('address.store');
     Route::post('/address/update-coords', [AddressController::class, 'updateCoords'])->name('address.updateCoords');
+
+    // -----------------------------
+    // CHECKOUT ROUTES
+    // -----------------------------
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+    Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
 });
 
 // -----------------------------
@@ -180,7 +187,7 @@ Route::middleware('auth')->prefix('user')->name('user.')->group(function () {
         Route::post('save-payment', 'savePayment')->name('save-payment');
     });
 
-    // Orders Routes - Improved with clear naming
+    // Orders Routes - IMPROVED: Removed confirm.blade.php routes
     Route::prefix('orders')->name('orders.')->controller(OrderController::class)->group(function () {
         // List views
         Route::get('/', 'index')->name('index');
@@ -189,11 +196,10 @@ Route::middleware('auth')->prefix('user')->name('user.')->group(function () {
         // Order CRUD operations in logical order
         Route::post('create', 'create')->name('create');
         Route::get('checkout/success/{order}', 'checkoutSuccess')->name('checkout.success');
-        Route::get('{order}/confirm', 'confirm')->name('confirm');
-        Route::post('{order}/pay', 'pay')->name('pay');
         
-        // Order show detail always after confirm
+        // Order detail view (removed confirm route)
         Route::get('{order}', 'show')->name('show');
+        Route::post('{order}/pay', 'pay')->name('pay');
         
         // Order state change operations
         Route::match(['post', 'patch'], '{order}/cancel', 'cancel')->name('cancel');

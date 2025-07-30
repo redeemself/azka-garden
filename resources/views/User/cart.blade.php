@@ -1650,57 +1650,57 @@
                     </div>
                     <div class="cart-panel-body">
                         @if($allMethods->count())
-                            <form id="form-checkout" action="{{ route('user.orders.create') }}" method="POST">
-                                @csrf
-                                <input type="hidden" name="shipping_method" id="shipping_method_input" value="{{ $selected_shipping }}">
-                                @if($primaryAddress)
-                                    <input type="hidden" name="shipping_address_id" value="{{ $primaryAddress->id }}">
-                                @endif
-
-                                <div class="payment-methods">
-                                    @foreach($allMethods as $method)
-                                        <label class="payment-method{{ $selected_payment === $method->code ? ' selected' : '' }}">
-                                            <input type="radio" name="payment_method" value="{{ $method->code }}" class="payment-method-radio" {{ $selected_payment === $method->code ? 'checked' : '' }} required>
-                                            <div class="payment-method-icon">
-                                                @switch($method->code)
-                                                    @case('CASH')
-                                                        <i data-feather="dollar-sign"></i>
-                                                        @break
-                                                    @case('COD_QRIS')
-                                                        <i data-feather="smartphone"></i>
-                                                        @break
-                                                    @case('QRIS')
-                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                            <path d="M3 3H9V9H3V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                            <path d="M15 3H21V9H15V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                            <path d="M3 15H9V21H3V15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                            <path d="M15 15H21V21H15V15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                        </svg>
-                                                        @break
-                                                    @case('EWALLET')
-                                                        <i data-feather="smartphone"></i>
-                                                        @break
-                                                    @default
-                                                        <i data-feather="credit-card"></i>
-                                                @endswitch
-                                            </div>
-                                            <div class="payment-method-details">
-                                                <div class="payment-method-name">{{ $method->name }}</div>
-                                                @if($method->config)
-                                                    <div class="payment-method-desc">
-                                                        {{ is_array($method->config) ? ($method->config['desc'] ?? '') : (json_decode($method->config)->desc ?? '') }}
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        </label>
-                                    @endforeach
-                                </div>
-
-                                <button type="submit" class="cart-checkout">
+                            <!-- Payment method selection (tetap ditampilkan untuk validasi sebelum checkout) -->
+                            <div class="payment-methods">
+                                @foreach($allMethods as $method)
+                                    <label class="payment-method{{ $selected_payment === $method->code ? ' selected' : '' }}">
+                                        <input type="radio" name="payment_method" value="{{ $method->code }}" class="payment-method-radio" {{ $selected_payment === $method->code ? 'checked' : '' }} required>
+                                        <div class="payment-method-icon">
+                                            @switch($method->code)
+                                                @case('CASH')
+                                                    <i data-feather="dollar-sign"></i>
+                                                    @break
+                                                @case('COD_QRIS')
+                                                    <i data-feather="smartphone"></i>
+                                                    @break
+                                                @case('QRIS')
+                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <path d="M3 3H9V9H3V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                        <path d="M15 3H21V9H15V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                        <path d="M3 15H9V21H3V15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                        <path d="M15 15H21V21H15V15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                    </svg>
+                                                    @break
+                                                @case('EWALLET')
+                                                    <i data-feather="smartphone"></i>
+                                                    @break
+                                                @default
+                                                    <i data-feather="credit-card"></i>
+                                            @endswitch
+                                        </div>
+                                        <div class="payment-method-details">
+                                            <div class="payment-method-name">{{ $method->name }}</div>
+                                            @if($method->config)
+                                                <div class="payment-method-desc">
+                                                    {{ is_array($method->config) ? ($method->config['desc'] ?? '') : (json_decode($method->config)->desc ?? '') }}
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </label>
+                                @endforeach
+                            </div>
+                            <!-- Hidden input for shipping and address to be sent to checkout page via session or query, not directly posted here -->
+                            <input type="hidden" name="shipping_method" id="shipping_method_input" value="{{ $selected_shipping }}">
+                            @if($primaryAddress)
+                                <input type="hidden" name="shipping_address_id" value="{{ $primaryAddress->id }}">
+                            @endif
+                            <!-- Tombol Checkout dipindahkan ke bawah setelah E-wallet -->
+                            <div class="cart-checkout-wrapper" style="margin-top: 1.5rem;">
+                                <a href="{{ route('checkout.index') }}" class="cart-checkout" id="checkout-link">
                                     <i data-feather="shopping-bag"></i>
-                                    Checkout Sekarang
-                                </button>
-                            </form>
+                                    Checkout
+                                </a>
+                            </div>
                         @else
                             <div class="p-4 text-center border border-red-300 rounded-lg text-error bg-error-bg">
                                 <i data-feather="alert-circle" class="mx-auto mb-2"></i>
@@ -3239,6 +3239,38 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         });
+
+        // Checkout link validation
+        const checkoutLink = document.getElementById('checkout-link');
+        if (checkoutLink) {
+            checkoutLink.addEventListener('click', function(e) {
+                // Validasi sebelum ke checkout
+                const shippingMethod = document.querySelector('input[name="shipping_method"]:checked');
+                const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
+                
+                if (!shippingMethod) {
+                    e.preventDefault();
+                    toastSystem.error('Perhatian', 'Silakan pilih metode pengiriman terlebih dahulu');
+                    return false;
+                }
+                
+                if (!paymentMethod) {
+                    e.preventDefault();
+                    toastSystem.error('Perhatian', 'Silakan pilih metode pembayaran terlebih dahulu');
+                    return false;
+                }
+                
+                // Validasi update keranjang masih dalam proses
+                if (Object.keys(cartState.pendingQuantityUpdates).length > 0 || cartState.updating) {
+                    e.preventDefault();
+                    toastSystem.error('Perhatian', 'Sedang mengupdate keranjang, mohon tunggu sebentar');
+                    return false;
+                }
+                
+                // Semua validasi passed, lanjut ke checkout
+                return true;
+            });
+        }
     } catch (error) {
         console.error('Error in cart initialization:', error);
     }
