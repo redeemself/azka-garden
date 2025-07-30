@@ -874,7 +874,7 @@
                     </div>
                     <div class="checkout-panel-body">
                         <!-- Back to Cart Button -->
-                        <a href="{{ route('user.cart.index') }}" class="back-button">
+                        <a href="{{ route('user.payment.index') }}" class="back-button">
                             <i data-feather="arrow-left"></i>
                             Kembali ke Keranjang
                         </a>

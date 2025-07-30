@@ -58,11 +58,6 @@
 @endphp
 
 <style>
-<<<<<<< HEAD
-    /* All the original styles remain unchanged */
-    /* Styles section remains the same, no changes needed */
-=======
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
 :root {
     --primary: #166534;
     --primary-light: #16a34a;
@@ -346,10 +341,12 @@
 .cart-promo {
     display: flex;
     gap: 0.75rem;
+    flex-wrap: wrap;
 }
 
 .cart-promo input {
     flex: 1;
+    min-width: 200px;
     padding: 0.75rem 1rem;
     border: 1px solid var(--gray-300);
     border-radius: 0.5rem;
@@ -372,6 +369,7 @@
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
+    min-width: 120px;
 }
 
 .cart-promo button:hover {
@@ -382,6 +380,12 @@
 
 .cart-promo button:active {
     transform: translateY(0);
+}
+
+.cart-promo button:disabled {
+    background: var(--gray-400);
+    cursor: not-allowed;
+    transform: none;
 }
 
 .promo-badge {
@@ -903,6 +907,7 @@
 
 .toast-content {
     flex: 1;
+    padding-right: 20px; /* Space for close button */
 }
 
 .toast-title {
@@ -914,6 +919,7 @@
 .toast-message {
     font-size: 0.875rem;
     color: var(--gray-600);
+    word-break: break-word;
 }
 
 .toast-close {
@@ -1185,6 +1191,87 @@
     animation: spin 1s linear infinite;
 }
 
+/* Active promo code styling */
+.active-promo-container {
+    background: var(--success-bg);
+    border: 1px solid #86efac;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    animation: fadeIn 0.5s;
+}
+
+.active-promo-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.active-promo-info {
+    flex: 1;
+    min-width: 180px;
+}
+
+.active-promo-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.active-promo-title svg {
+    color: var(--primary);
+}
+
+.active-promo-title span {
+    font-weight: 600;
+    color: var(--primary-dark);
+}
+
+.active-promo-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    background-color: var(--white);
+    color: var(--primary);
+    border: 1px solid var(--primary-light);
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+}
+
+.active-promo-action {
+    flex-shrink: 0;
+}
+
+.promo-remove-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: var(--error-bg);
+    color: var(--error);
+    border: 1px solid var(--error);
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.promo-remove-btn:hover {
+    background-color: var(--error);
+    color: var(--white);
+}
+
+.promo-remove-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
 /* Animations */
 @keyframes fadeIn {
     0% { opacity: 0; }
@@ -1230,6 +1317,7 @@
     pointer-events: none;
 }
 
+/* Improved mobile responsiveness */
 @media (max-width: 1024px) {
     .cart-grid {
         grid-template-columns: 1fr;
@@ -1237,6 +1325,19 @@
 
     .cart-items {
         margin-bottom: 1rem;
+    }
+    
+    .cart-promo {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    
+    .cart-promo input {
+        flex: 1 1 200px;
+    }
+    
+    .cart-promo button {
+        flex: 0 0 auto;
     }
 }
 
@@ -1273,34 +1374,107 @@
     .cart-panel-body {
         padding: 1rem;
     }
+    
+    /* Improved promo code section for mobile */
+    .cart-promo {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .cart-promo input {
+        width: 100%;
+    }
+    
+    .cart-promo button {
+        width: 100%;
+    }
+    
+    .active-promo-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .active-promo-action {
+        width: 100%;
+    }
+    
+    .promo-remove-btn {
+        width: 100%;
+        justify-content: center;
+    }
 
     .modal-dialog {
         max-width: 100%;
         margin: 0 16px;
     }
 
+    /* Improved toast positioning for mobile */
     .toast-container {
+        top: auto;
+        bottom: 20px;
         left: 20px;
         right: 20px;
         max-width: none;
         width: auto;
     }
-<<<<<<< HEAD
-
-    .cart-empty {
-        min-height: 300px;
+    
+    .toast {
+        transform: translateY(100%);
+        width: 100%;
+        max-width: none;
     }
-
-=======
+    
+    .toast.show {
+        transform: translateY(0);
+    }
+    
+    .toast-content {
+        min-width: 0; /* Helps with text wrapping */
+    }
     
     .cart-empty {
         min-height: 300px;
     }
     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     .cart-empty-icon svg {
         width: 80px;
         height: 80px;
+    }
+}
+
+@media (max-width: 480px) {
+    .cart-panel-body {
+        padding: 0.75rem;
+    }
+    
+    .cart-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .shipping-method, 
+    .payment-method {
+        padding: 0.75rem;
+    }
+    
+    .shipping-method-icon,
+    .payment-method-icon {
+        width: 2rem;
+        height: 2rem;
+        margin-right: 0.5rem;
+    }
+    
+    .toast {
+        padding: 12px;
+        border-radius: 8px;
+    }
+    
+    .toast-icon {
+        display: none; /* Save space on very small screens */
+    }
+    
+    .toast-retry-btn {
+        width: 100%;
+        justify-content: center;
     }
 }
 
@@ -1391,11 +1565,7 @@
                             $grand_total = 0;
                             $total_discount = 0;
                         @endphp
-<<<<<<< HEAD
                         @foreach($cartItems as $index => $item)
-=======
-                        @foreach($cartItems as $item)
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                             @php
                                 $promo = $item->promo_code ?? $promo_code;
                                 $promotion = $promo ? \App\Models\Promotion::where('promo_code', $promo)->first() : null;
@@ -1418,10 +1588,6 @@
                                 $total_discount += $discount * $qty;
                             @endphp
                             <tr data-item-row="{{ $item->id }}" data-unit-price="{{ $unit_price }}" data-discounted-price="{{ $discounted_price }}">
-<<<<<<< HEAD
-                                <td>{{ $index + 1 }}</td> <!-- Penomoran item -->
-=======
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                                 <td>
                                     <div class="flex items-center">
                                         <img src="{{ asset($item->product->image_url ?? 'images/no-image.png') }}" alt="{{ $item->product->name }}" class="cart-item-image">
@@ -1571,37 +1737,41 @@
                     </div>
                     <div class="cart-panel-body">
                         @if(session('promo_code'))
-                            <div class="p-3 mb-3 border border-green-300 rounded-lg bg-success-bg">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <strong class="text-primary">Kode promo aktif:</strong>
-                                        <span class="font-semibold text-primary-dark">{{ session('promo_code') }}</span>
+                            <!-- Redesigned active promo section -->
+                            <div class="active-promo-container">
+                                <div class="active-promo-content">
+                                    <div class="active-promo-info">
+                                        <div class="active-promo-title">
+                                            <i data-feather="check-circle"></i>
+                                            <span>Kode promo aktif:</span>
+                                        </div>
+                                        <strong class="text-primary-dark">{{ session('promo_code') }}</strong>
                                         @if(isset($activePromo))
-                                            <div class="mt-1">
-                                                <span class="promo-badge">
-                                                    @if($activePromo->discount_type == 'percent')
-                                                        Diskon {{ $activePromo->discount_value }}%
-                                                    @elseif($activePromo->discount_type == 'fixed')
-                                                        Diskon Rp {{ number_format($activePromo->discount_value, 0, ',', '.') }}
-                                                    @endif
-                                                </span>
+                                            <div class="active-promo-badge">
+                                                @if($activePromo->discount_type == 'percent')
+                                                    Diskon {{ $activePromo->discount_value }}%
+                                                @elseif($activePromo->discount_type == 'fixed')
+                                                    Diskon Rp {{ number_format($activePromo->discount_value, 0, ',', '.') }}
+                                                @endif
                                             </div>
                                         @endif
                                     </div>
-                                    <form action="{{ route('promo.deactivate') }}" method="POST" id="promo-remove-form">
-                                        @csrf
-                                        <button type="submit" class="px-2 py-1 text-sm font-medium transition duration-150 border border-red-300 rounded-md text-error bg-error-bg hover:bg-error hover:text-white">
-                                            <i class="icon" data-feather="x"></i>
-                                            Hapus
+                                    <div class="active-promo-action">
+                                        <button type="button" id="remove-promo-btn" class="promo-remove-btn">
+                                            <i data-feather="x"></i>
+                                            Hapus Promo
                                         </button>
-                                    </form>
+                                    </div>
                                 </div>
                             </div>
+                            <form action="{{ route('promo.deactivate') }}" method="POST" id="promo-remove-form" style="display:none;">
+                                @csrf
+                            </form>
                         @else
                             <form action="{{ route('promo.activate') }}" method="POST" class="cart-promo" id="promo-apply-form">
                                 @csrf
                                 <input type="text" name="promo_code" placeholder="Masukkan kode promo" required>
-                                <button type="submit">Terapkan</button>
+                                <button type="submit" id="apply-promo-btn">Terapkan</button>
                             </form>
                             <p class="mt-2 text-sm text-gray-500">Masukkan kode promo untuk mendapatkan diskon</p>
                         @endif
@@ -1668,7 +1838,6 @@
                     </div>
                     <div class="cart-panel-body">
                         @if($allMethods->count())
-<<<<<<< HEAD
                             <!-- Payment method selection (tetap ditampilkan untuk validasi sebelum checkout) -->
                             <div class="payment-methods">
                                 @foreach($allMethods as $method)
@@ -1720,59 +1889,6 @@
                                     Checkout
                                 </a>
                             </div>
-=======
-                            <form id="form-checkout" action="{{ route('user.orders.create') }}" method="POST">
-                                @csrf
-                                <input type="hidden" name="shipping_method" id="shipping_method_input" value="{{ $selected_shipping }}">
-                                @if($primaryAddress)
-                                    <input type="hidden" name="shipping_address_id" value="{{ $primaryAddress->id }}">
-                                @endif
-
-                                <div class="payment-methods">
-                                    @foreach($allMethods as $method)
-                                        <label class="payment-method{{ $selected_payment === $method->code ? ' selected' : '' }}">
-                                            <input type="radio" name="payment_method" value="{{ $method->code }}" class="payment-method-radio" {{ $selected_payment === $method->code ? 'checked' : '' }} required>
-                                            <div class="payment-method-icon">
-                                                @switch($method->code)
-                                                    @case('CASH')
-                                                        <i data-feather="dollar-sign"></i>
-                                                        @break
-                                                    @case('COD_QRIS')
-                                                        <i data-feather="smartphone"></i>
-                                                        @break
-                                                    @case('QRIS')
-                                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                            <path d="M3 3H9V9H3V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                            <path d="M15 3H21V9H15V3Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                            <path d="M3 15H9V21H3V15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                            <path d="M15 15H21V21H15V15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                                        </svg>
-                                                        @break
-                                                    @case('EWALLET')
-                                                        <i data-feather="smartphone"></i>
-                                                        @break
-                                                    @default
-                                                        <i data-feather="credit-card"></i>
-                                                @endswitch
-                                            </div>
-                                            <div class="payment-method-details">
-                                                <div class="payment-method-name">{{ $method->name }}</div>
-                                                @if($method->config)
-                                                    <div class="payment-method-desc">
-                                                        {{ is_array($method->config) ? ($method->config['desc'] ?? '') : (json_decode($method->config)->desc ?? '') }}
-                                                    </div>
-                                                @endif
-                                            </div>
-                                        </label>
-                                    @endforeach
-                                </div>
-
-                                <button type="submit" class="cart-checkout">
-                                    <i data-feather="shopping-bag"></i>
-                                    Checkout Sekarang
-                                </button>
-                            </form>
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                         @else
                             <div class="p-4 text-center border border-red-300 rounded-lg text-error bg-error-bg">
                                 <i data-feather="alert-circle" class="mx-auto mb-2"></i>
@@ -1885,7 +2001,7 @@ const toastSystem = {
         }
     },
 
-    show(type, title, message, duration = 3000) {
+    show(type, title, message, duration = 5000) { // Increased duration for better readability
         // Create toast element
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
@@ -2152,65 +2268,42 @@ const loadingOverlay = {
 function ensureCsrfToken() {
     // Check for meta tag
     let token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-<<<<<<< HEAD
-
-=======
     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // If not found, check for input
     if (!token) {
         token = document.querySelector('input[name="_token"]')?.value;
     }
-<<<<<<< HEAD
-
-=======
     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
-    // If still not found, create one
+    // If still not found, create one from the hidden input
     if (!token) {
-        const tokenInput = document.createElement('input');
-        tokenInput.type = 'hidden';
-        tokenInput.name = '_token';
-        tokenInput.value = '{{ csrf_token() }}';
-        document.body.appendChild(tokenInput);
-<<<<<<< HEAD
-
-=======
-        
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
-        // Add meta tag too
-        const metaToken = document.createElement('meta');
-        metaToken.name = 'csrf-token';
-        metaToken.content = '{{ csrf_token() }}';
-        document.head.appendChild(metaToken);
-<<<<<<< HEAD
-
-        token = '{{ csrf_token() }}';
-    }
-
-=======
-        
-        token = '{{ csrf_token() }}';
+        token = document.querySelector('.token-container')?.value;
     }
     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
-    // Add to default fetch headers
-    window.fetchDefaults = window.fetchDefaults || {};
-    window.fetchDefaults.headers = {
-        'X-CSRF-TOKEN': token,
-        'Accept': 'application/json'
-    };
-<<<<<<< HEAD
-
-=======
+    // Make sure token is set in headers
+    if (token) {
+        // Set as default header for fetch requests
+        window.fetchDefaults = window.fetchDefaults || {};
+        window.fetchDefaults.headers = {
+            'X-CSRF-TOKEN': token,
+            'Accept': 'application/json'
+        };
+        
+        // Also set for XMLHttpRequest
+        document.addEventListener('DOMContentLoaded', function() {
+            const oldSend = XMLHttpRequest.prototype.send;
+            XMLHttpRequest.prototype.send = function() {
+                this.setRequestHeader('X-CSRF-TOKEN', token);
+                this.setRequestHeader('Accept', 'application/json');
+                return oldSend.apply(this, arguments);
+            };
+        });
+    }
     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     return token;
 }
 
 // Call this early in your script
 const csrfToken = ensureCsrfToken();
-console.log('CSRF Token initialized:', csrfToken ? 'Found' : 'Not found');
 
 /**
  * Format number as currency
@@ -2236,125 +2329,12 @@ async function deleteCartItem(itemId) {
 
         // Get item information for notification
         const itemName = itemElements[0].querySelector('.cart-item-name, .mobile-cart-item-name')?.textContent || 'Produk';
-<<<<<<< HEAD
-
-        // Get CSRF token - PERBAIKAN: mencoba dari beberapa sumber
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
-                          document.querySelector('input[name="_token"]')?.value;
-
-        if (!csrfToken) {
-            throw new Error('CSRF token tidak ditemukan. Silakan refresh halaman.');
-        }
-
-        // Show loading overlay
-        loadingOverlay.show();
-
-        // Add deleting animation class
-        itemElements.forEach(el => el.classList.add('deleting'));
-
-        // PERBAIKAN: Create a standard form submission instead of fetch with custom headers
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.style.display = 'none';
-        form.action = `/user/cart/delete/${itemId}`;
-
-        // Add CSRF token
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = '_token';
-        csrfInput.value = csrfToken;
-        form.appendChild(csrfInput);
-
-        // Add method spoofing for DELETE
-        const methodInput = document.createElement('input');
-        methodInput.type = 'hidden';
-        methodInput.name = '_method';
-        methodInput.value = 'DELETE';
-        form.appendChild(methodInput);
-
-        // Add to document, submit form, and then remove it
-        document.body.appendChild(form);
-
-        // Use XMLHttpRequest for better compatibility
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', form.action, true);
-        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-        xhr.setRequestHeader('Accept', 'application/json');
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
-                    try {
-                        const data = JSON.parse(xhr.responseText);
-                        if (data.success) {
-                            // Remove from cart state
-                            cartState.removeItem(itemId);
-
-                            // Smoothly remove from UI with animation
-                            itemElements.forEach(el => {
-                                el.classList.add('deleted');
-
-                                // Remove from DOM after animation completes
-                                el.addEventListener('transitionend', () => {
-                                    el.remove();
-
-                                    // Check if cart is empty after removal
-                                    if (document.querySelectorAll('[data-item-row]').length === 0) {
-                                        showEmptyCart();
-                                    } else {
-                                        calculateTotals();
-                                    }
-                                }, { once: true });
-                            });
-
-                            // Show success notification
-                            toastSystem.success('Berhasil', 'Produk berhasil dihapus dari keranjang');
-                        } else {
-                            throw new Error(data.message || 'Gagal menghapus produk dari keranjang');
-                        }
-                    } catch (e) {
-                        throw new Error('Terjadi kesalahan saat memproses respons server');
-                    }
-                } else {
-                    // Handle HTTP errors
-                    if (xhr.status === 401) {
-                        throw new Error('Sesi login Anda telah berakhir. Silakan login kembali.');
-                    } else if (xhr.status === 404) {
-                        throw new Error('Produk tidak ditemukan di keranjang Anda.');
-                    } else {
-                        throw new Error(`Terjadi kesalahan server (${xhr.status}). Silakan coba lagi.`);
-                    }
-                }
-                loadingOverlay.hide();
-            }
-        };
-        
-        // Handle network errors
-        xhr.onerror = function() {
-            loadingOverlay.hide();
-            itemElements.forEach(el => el.classList.remove('deleting'));
-            toastSystem.error('Gagal Menghapus', 'Terjadi kesalahan jaringan. Silakan coba lagi.');
-        };
-
-        // Send the form data
-        const formData = new FormData(form);
-        xhr.send(formData);
-
-        document.body.removeChild(form);
-        
-        // Return a promise that resolves when the operation is complete
-        return new Promise((resolve, reject) => {
-            xhr.onload = () => resolve({ success: true });
-            xhr.onerror = () => reject(new Error('Network error'));
-        });
-    } catch (error) {
-        console.error('Error deleting cart item:', error);
-
-=======
         
         // Get CSRF token - PERBAIKAN: mencoba dari beberapa sumber
         const metaToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
         const inputToken = document.querySelector('input[name="_token"]')?.value;
-        const csrfToken = metaToken || inputToken;
+        const hiddenToken = document.querySelector('.token-container')?.value;
+        const csrfToken = metaToken || inputToken || hiddenToken;
         
         if (!csrfToken) {
             throw new Error('CSRF token tidak ditemukan. Silakan refresh halaman.');
@@ -2366,81 +2346,90 @@ async function deleteCartItem(itemId) {
         // Add deleting animation class
         itemElements.forEach(el => el.classList.add('deleting'));
         
-        // PERBAIKAN: Gunakan FormData dengan _method=DELETE untuk kompatibilitas
+        // Create form data object
         const formData = new FormData();
         formData.append('_method', 'DELETE');
         formData.append('_token', csrfToken);
         
-        // Send DELETE request - PERBAIKAN: Gunakan endpoint yang benar
-        const response = await fetch(`/user/cart/delete/${itemId}`, {
-            method: 'POST',  // Gunakan POST dengan _method=DELETE untuk kompatibilitas
-            headers: {
-                'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json'
-            },
-            body: formData
-        });
+        // Use XMLHttpRequest for better compatibility
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `/user/cart/delete/${itemId}`, true);
+        xhr.timeout = 15000; // Set timeout to 15 seconds
         
-        if (!response.ok) {
-            // Handle HTTP errors
-            if (response.status === 401) {
-                throw new Error('Sesi login Anda telah berakhir. Silakan login kembali.');
-            } else if (response.status === 404) {
-                throw new Error('Produk tidak ditemukan di keranjang Anda.');
-            } else {
-                throw new Error(`Terjadi kesalahan server (${response.status}). Silakan coba lagi.`);
-            }
-        }
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            // Remove from cart state
-            cartState.removeItem(itemId);
-            
-            // Smoothly remove from UI with animation
-            itemElements.forEach(el => {
-                el.classList.add('deleted');
-                
-                // Remove from DOM after animation completes
-                el.addEventListener('transitionend', () => {
-                    el.remove();
+        return new Promise((resolve, reject) => {
+            xhr.onload = function() {
+                try {
+                    const response = JSON.parse(xhr.responseText);
                     
-                    // Check if cart is empty after removal
-                    if (cartState.items.length === 0) {
-                        showEmptyCart();
+                    if (xhr.status === 200 && response.success) {
+                        // Remove from cart state
+                        cartState.removeItem(itemId);
+                        
+                        // Smoothly remove from UI with animation
+                        itemElements.forEach(el => {
+                            el.classList.add('deleted');
+                            
+                            // Remove from DOM after animation completes
+                            el.addEventListener('transitionend', () => {
+                                if (el.parentNode) {
+                                    el.parentNode.removeChild(el);
+                                }
+                                
+                                // Check if cart is empty after removal
+                                if (document.querySelectorAll('[data-item-row]').length === 0) {
+                                    showEmptyCart();
+                                } else {
+                                    calculateTotals();
+                                }
+                            }, { once: true });
+                        });
+                        
+                        // Show success notification
+                        toastSystem.success('Berhasil', 'Produk berhasil dihapus dari keranjang');
+                        resolve(response);
                     } else {
-                        calculateTotals();
+                        // Handle API error
+                        const errorMsg = response.message || `Terjadi kesalahan (${xhr.status})`;
+                        throw new Error(errorMsg);
                     }
-                }, { once: true });
-            });
+                } catch (error) {
+                    console.error('Error parsing delete response:', error);
+                    reject(new Error('Gagal menghapus produk. Silakan coba lagi.'));
+                } finally {
+                    loadingOverlay.hide();
+                }
+            };
             
-            // Show success notification
-            toastSystem.success('Berhasil', 'Produk berhasil dihapus dari keranjang');
+            xhr.onerror = function() {
+                console.error('Network error during delete operation');
+                itemElements.forEach(el => el.classList.remove('deleting'));
+                loadingOverlay.hide();
+                reject(new Error('Gagal terhubung ke server. Cek koneksi internet Anda.'));
+            };
             
-            return data;
-        } else {
-            throw new Error(data.message || 'Gagal menghapus produk dari keranjang');
-        }
+            xhr.ontimeout = function() {
+                console.error('Delete operation timed out');
+                itemElements.forEach(el => el.classList.remove('deleting'));
+                loadingOverlay.hide();
+                reject(new Error('Permintaan timeout. Server terlalu lama merespon.'));
+            };
+            
+            // Send the request
+            xhr.send(formData);
+        });
     } catch (error) {
-        console.error('Error deleting cart item:', error);
+        console.error('Error in deleteCartItem:', error);
         
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Remove deleting animation from items
         document.querySelectorAll(`[data-item-row="${itemId}"]`).forEach(el => {
             el.classList.remove('deleting');
         });
-<<<<<<< HEAD
-
-        // Show error notification with retry button
-        const errorToast = toastSystem.error('Gagal Menghapus', error.message || 'Gagal menghapus produk dari keranjang.', 0);
-
-=======
+        
+        loadingOverlay.hide();
         
         // Show error notification with retry button
         const errorToast = toastSystem.error('Gagal Menghapus', error.message || 'Gagal menghapus produk dari keranjang.', 0);
         
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Add retry button to error toast
         const toastContent = errorToast.querySelector('.toast-content');
         const retryBtn = document.createElement('button');
@@ -2452,25 +2441,13 @@ async function deleteCartItem(itemId) {
             setTimeout(() => handleDeleteItem(itemId), 300);
         });
         toastContent.appendChild(retryBtn);
-<<<<<<< HEAD
-
-=======
         
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Initialize feather icons in retry button
         if (window.feather) {
             feather.replace();
         }
-<<<<<<< HEAD
-
-        loadingOverlay.hide();
-        throw error;
-=======
         
         throw error;
-    } finally {
-        loadingOverlay.hide();
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     }
 }
 
@@ -2483,21 +2460,13 @@ async function handleDeleteItem(itemId) {
         // Find the item elements
         const itemElements = document.querySelectorAll(`[data-item-row="${itemId}"]`);
         if (itemElements.length === 0) return;
-<<<<<<< HEAD
-
-=======
         
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Get product information for confirmation dialog
         const firstElement = itemElements[0];
         const itemName = firstElement.querySelector('.cart-item-name, .mobile-cart-item-name')?.textContent || 'Produk';
         const itemImage = firstElement.querySelector('.cart-item-image, .mobile-cart-item-image')?.src || '';
         const itemPrice = firstElement.querySelector('.cart-price, .mobile-cart-item-price')?.textContent || '';
-<<<<<<< HEAD
-
-=======
         
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Show confirmation dialog
         const confirmed = await confirmDialog.show({
             title: 'Konfirmasi Hapus',
@@ -2512,14 +2481,15 @@ async function handleDeleteItem(itemId) {
                 price: itemPrice
             }
         });
-<<<<<<< HEAD
-
-=======
         
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // If confirmed, proceed with deletion
         if (confirmed) {
-            await deleteCartItem(itemId);
+            try {
+                await deleteCartItem(itemId);
+            } catch (error) {
+                console.error('Error deleting item:', error);
+                // Error is already handled in deleteCartItem
+            }
         }
     } catch (error) {
         console.error('Error in delete handler:', error);
@@ -2532,17 +2502,10 @@ async function handleDeleteItem(itemId) {
 function showEmptyCart() {
     const cartContent = document.getElementById('cart-content');
     if (!cartContent) return;
-<<<<<<< HEAD
-
-    // Animate fade out
-    cartContent.classList.add('fade-out');
-
-=======
     
     // Animate fade out
     cartContent.classList.add('fade-out');
     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     setTimeout(() => {
         cartContent.innerHTML = `
             <div class="cart-empty">
@@ -2565,19 +2528,18 @@ function showEmptyCart() {
                 </a>
             </div>
         `;
-<<<<<<< HEAD
-
-        cartContent.classList.remove('fade-out');
-
-=======
         
         cartContent.classList.remove('fade-out');
         
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Initialize feather icons
         if (window.feather) {
             feather.replace();
         }
+        
+        // Update cart state
+        cartState.items = [];
+        cartState.updateCartCounter();
+        cartState.saveToLocalStorage();
     }, 300);
 }
 
@@ -2587,33 +2549,15 @@ function showEmptyCart() {
 function calculateTotals() {
     let subtotal = 0;
     let discount = 0;
-<<<<<<< HEAD
-
-    cartState.items.forEach(item => {
-        const itemElements = document.querySelectorAll(`[data-item-row="${item.id}"]`);
-        if (itemElements.length === 0) return;
-
-=======
     
-    cartState.items.forEach(item => {
-        const itemElements = document.querySelectorAll(`[data-item-row="${item.id}"]`);
-        if (itemElements.length === 0) return;
-        
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
-        const unitPrice = parseFloat(itemElements[0].getAttribute('data-unit-price')) || 0;
-        const discountedPrice = parseFloat(itemElements[0].getAttribute('data-discounted-price')) || unitPrice;
-        const quantityInput = itemElements[0].querySelector('.cart-quantity-input');
+    // Get all cart items from the DOM
+    const cartItems = document.querySelectorAll('[data-item-row]');
+    
+    cartItems.forEach(item => {
+        const unitPrice = parseFloat(item.getAttribute('data-unit-price')) || 0;
+        const discountedPrice = parseFloat(item.getAttribute('data-discounted-price')) || unitPrice;
+        const quantityInput = item.querySelector('.cart-quantity-input');
         const quantity = parseInt(quantityInput?.value || 1);
-<<<<<<< HEAD
-
-        subtotal += unitPrice * quantity;
-        discount += (unitPrice - discountedPrice) * quantity;
-    });
-
-    const shipping = cartState.shippingCost || 0;
-    const total = subtotal - discount + shipping;
-
-=======
         
         subtotal += unitPrice * quantity;
         discount += (unitPrice - discountedPrice) * quantity;
@@ -2622,24 +2566,15 @@ function calculateTotals() {
     const shipping = cartState.shippingCost || 0;
     const total = subtotal - discount + shipping;
     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Update UI
     const subtotalEl = document.getElementById('cart-subtotal');
     const discountEl = document.getElementById('cart-discount');
     const totalEl = document.getElementById('cart-total');
-<<<<<<< HEAD
-
-    if (subtotalEl) subtotalEl.textContent = `Rp ${formatCurrency(subtotal)}`;
-    if (discountEl) discountEl.textContent = `-Rp ${formatCurrency(discount)}`;
-    if (totalEl) totalEl.textContent = `Rp ${formatCurrency(total)}`;
-
-=======
     
     if (subtotalEl) subtotalEl.textContent = `Rp ${formatCurrency(subtotal)}`;
     if (discountEl) discountEl.textContent = `-Rp ${formatCurrency(discount)}`;
     if (totalEl) totalEl.textContent = `Rp ${formatCurrency(total)}`;
     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Show/hide discount row
     const discountRow = document.getElementById('cart-discount-row');
     if (discountRow) {
@@ -2654,26 +2589,24 @@ function calculateTotals() {
  * @returns {number} - Previous quantity
  */
 function updateItemDisplay(itemId, newQuantity) {
-    // Find the item in cart state
-    const itemIndex = cartState.items.findIndex(item => item.id === itemId);
-    if (itemIndex === -1) return 1;
-
-    const item = cartState.items[itemIndex];
-    const oldQuantity = item.quantity;
-    item.quantity = newQuantity;
-
     // Find all DOM elements for this item (desktop and mobile views)
     const itemElements = document.querySelectorAll(`[data-item-row="${itemId}"]`);
-    if (itemElements.length === 0) return oldQuantity;
+    if (itemElements.length === 0) return 1;
+
+    // Find this item in cart state
+    let oldQuantity = 1;
+    for (let i = 0; i < cartState.items.length; i++) {
+        if (cartState.items[i].id === itemId) {
+            oldQuantity = cartState.items[i].quantity;
+            cartState.items[i].quantity = newQuantity;
+            break;
+        }
+    }
 
     // Get unit price and discounted price
     const unitPrice = parseFloat(itemElements[0].getAttribute('data-unit-price')) || 0;
     const discountedPrice = parseFloat(itemElements[0].getAttribute('data-discounted-price')) || unitPrice;
-<<<<<<< HEAD
-
-=======
     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Calculate new total
     const itemTotal = discountedPrice * newQuantity;
 
@@ -2681,11 +2614,7 @@ function updateItemDisplay(itemId, newQuantity) {
     itemElements.forEach(element => {
         const quantityInput = element.querySelector('.cart-quantity-input');
         if (quantityInput) quantityInput.value = newQuantity;
-<<<<<<< HEAD
-
-=======
         
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Update total display
         const totalElement = element.querySelector('.item-total, .mobile-item-total');
         if (totalElement) {
@@ -2694,11 +2623,7 @@ function updateItemDisplay(itemId, newQuantity) {
             setTimeout(() => totalElement.classList.remove('flash-update'), 500);
         }
     });
-<<<<<<< HEAD
-
-=======
     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Recalculate cart totals
     calculateTotals();
 
@@ -2706,36 +2631,24 @@ function updateItemDisplay(itemId, newQuantity) {
 }
 
 /**
- * Function to update item quantity via AJAX
+ * Function to update item quantity via AJAX with improved error handling
  * @param {number} itemId - ID of the cart item
  */
 function updateItemQuantity(itemId) {
     // Get all elements with this item ID
     const itemElements = document.querySelectorAll(`[data-item-row="${itemId}"]`);
     if (itemElements.length === 0) return;
-<<<<<<< HEAD
-
-    // Get input element and new quantity
-    const quantityInput = itemElements[0].querySelector('.cart-quantity-input');
-    if (!quantityInput) return;
-
-=======
     
     // Get input element and new quantity
     const quantityInput = itemElements[0].querySelector('.cart-quantity-input');
     if (!quantityInput) return;
     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     const newQuantity = parseInt(quantityInput.value);
     if (isNaN(newQuantity) || newQuantity < 1) {
         quantityInput.value = 1;
         return;
     }
-<<<<<<< HEAD
-
-=======
     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Convert itemId to integer
     itemId = parseInt(itemId);
 
@@ -2753,11 +2666,7 @@ function updateItemQuantity(itemId) {
         quantityInput.value = 1;
         return;
     }
-<<<<<<< HEAD
-
-=======
     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Maximum quantity check
     const maxStock = parseInt(quantityInput.getAttribute('max')) || 100;
     if (newQuantity > maxStock) {
@@ -2789,272 +2698,191 @@ function updateItemQuantity(itemId) {
     // Save the old quantity in case we need to revert
     const oldQuantity = updateItemDisplay(itemId, newQuantity);
 
-    // Get CSRF token from meta tag or hidden input
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || document.querySelector('input[name="_token"]')?.value;
-
-<<<<<<< HEAD
-    // PERBAIKAN: Create a standard form for submission
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.style.display = 'none';
-    form.action = `/user/cart/update/${itemId}`;
-
-    // Add CSRF token
-    const csrfInput = document.createElement('input');
-    csrfInput.type = 'hidden';
-    csrfInput.name = '_token';
-    csrfInput.value = csrfToken;
-    form.appendChild(csrfInput);
-
-    // Add method spoofing for PUT
-    const methodInput = document.createElement('input');
-    methodInput.type = 'hidden';
-    methodInput.name = '_method';
-    methodInput.value = 'PUT';
-    form.appendChild(methodInput);
-
-    // Add quantity parameter
-    const quantityField = document.createElement('input');
-    quantityField.type = 'hidden';
-    quantityField.name = 'quantity';
-    quantityField.value = newQuantity;
-    form.appendChild(quantityField);
-
-    // Add to document
-    document.body.appendChild(form);
-
-    // Use XMLHttpRequest for better compatibility
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', form.action, true);
-    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-    xhr.setRequestHeader('Accept', 'application/json');
+    // Get CSRF token from multiple sources
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                     document.querySelector('input[name="_token"]')?.value || 
+                     document.querySelector('.token-container')?.value;
     
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-            try {
-                if (xhr.status === 200) {
-                    const data = JSON.parse(xhr.responseText);
-                    if (data.success) {
-                        // Update item price from response if available
-                        if (data.data) {
-                            cartState.items[itemIndex].quantity = data.data.quantity;
-
-                            // Flash the total price to show it's been updated
-                            const cartTotal = document.getElementById('cart-total');
-                            if (cartTotal) {
-                                cartTotal.classList.add('flash-update');
-                                setTimeout(() => {
-                                    cartTotal.classList.remove('flash-update');
-                                }, 500);
-                            }
-
-                            // Recalculate totals with the updated data
-                            calculateTotals();
-                        }
-
-                        // Show success toast
-                        toastSystem.success('Berhasil', 'Jumlah produk berhasil diubah');
-                    } else {
-                        throw new Error(data.message || 'Gagal mengubah jumlah produk');
-                    }
-                } else {
-                    throw new Error(`HTTP error! Status: ${xhr.status}`);
-                }
-            } catch (error) {
-                console.error('Error updating quantity:', error);
-
-                // Revert to old quantity in state and display
-                updateItemDisplay(itemId, oldQuantity);
-
-                // Show error toast
-                toastSystem.error('Gagal', 'Gagal mengubah jumlah produk. Silakan coba lagi.');
-            } finally {
-                // Remove updating state
-                quantityContainers.forEach(container => {
-                    container.classList.remove('updating');
-                });
-
-                // Remove this update from pending list
-                const nextQuantity = cartState.pendingQuantityUpdates[itemId]?.nextQuantity;
-                delete cartState.pendingQuantityUpdates[itemId];
-
-                // Check if there's another pending update for this item
-                if (nextQuantity !== null) {
-                    // Process the next update
-                    setTimeout(() => {
-                        // Update input value first
-                        const inputs = document.querySelectorAll(`.cart-quantity-input[data-item-id="${itemId}"]`);
-                        inputs.forEach(input => {
-                            input.value = nextQuantity;
-                        });
-
-                        updateItemQuantity(itemId);
-                    }, 100);
-                }
-
-                // Check if there are no more pending updates
-                if (Object.keys(cartState.pendingQuantityUpdates).length === 0) {
-                    cartState.updating = false;
-                }
-                
-                // Remove the temporary form
-                document.body.removeChild(form);
-            }
-        }
-    };
-    
-    // Handle network errors
-    xhr.onerror = function() {
-        // Revert to old quantity in state and display
+    if (!csrfToken) {
+        console.error('CSRF token not found');
+        toastSystem.error('Error', 'Autentikasi gagal. Silakan muat ulang halaman.');
+        
+        // Revert to old quantity
         updateItemDisplay(itemId, oldQuantity);
         
-=======
-    // Send AJAX request - Using PUT method directly
-    fetch(`/user/cart/update/${itemId}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': csrfToken,
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-            quantity: newQuantity
-        })
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            // Update item price from response if available
-            if (data.data) {
-                cartState.items[itemIndex].quantity = data.data.quantity;
-                
-                // Flash the total price to show it's been updated
-                const cartTotal = document.getElementById('cart-total');
-                if (cartTotal) {
-                    cartTotal.classList.add('flash-update');
-                    setTimeout(() => {
-                        cartTotal.classList.remove('flash-update');
-                    }, 500);
-                }
-                
-                // Recalculate totals with the updated data
-                calculateTotals();
-            }
-            
-            // Show success toast
-            toastSystem.success('Berhasil', 'Jumlah produk berhasil diubah');
-        } else {
-            throw new Error(data.message || 'Gagal mengubah jumlah produk');
-        }
-    })
-    .catch(error => {
-        console.error('Error updating quantity:', error);
-        
-        // Revert to old quantity in state and display
-        updateItemDisplay(itemId, oldQuantity);
-        
-        // Show error toast
-        toastSystem.error('Gagal', 'Gagal mengubah jumlah produk. Silakan coba lagi.');
-    })
-    .finally(() => {
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Remove updating state
         quantityContainers.forEach(container => {
             container.classList.remove('updating');
         });
         
-        // Remove this update from pending list
-<<<<<<< HEAD
         delete cartState.pendingQuantityUpdates[itemId];
-        
-        // Show error toast
-        toastSystem.error('Gagal', 'Gagal terhubung ke server. Silakan coba lagi.');
-        
-        // Remove the temporary form
-        document.body.removeChild(form);
-        
         if (Object.keys(cartState.pendingQuantityUpdates).length === 0) {
             cartState.updating = false;
         }
-    };
-
-    // Send the form data
-    const formData = new FormData(form);
-    xhr.send(formData);
-}
-=======
-        const nextQuantity = cartState.pendingQuantityUpdates[itemId]?.nextQuantity;
-        delete cartState.pendingQuantityUpdates[itemId];
         
-        // Check if there's another pending update for this item
-        if (nextQuantity !== null) {
-            // Process the next update
-            setTimeout(() => {
-                // Update input value first
-                const inputs = document.querySelectorAll(`.cart-quantity-input[data-item-id="${itemId}"]`);
-                inputs.forEach(input => {
-                    input.value = nextQuantity;
+        return;
+    }
+
+    // Use XMLHttpRequest for better compatibility
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `/user/cart/update/${itemId}`, true);
+    xhr.timeout = 10000; // 10 second timeout
+    
+    // Set headers
+    xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.setRequestHeader('Accept', 'application/json');
+    
+    xhr.onload = function() {
+        try {
+            const response = JSON.parse(xhr.responseText);
+            
+            if (xhr.status === 200 && response.success) {
+                // Update cart item data
+                cartState.items[itemIndex].quantity = newQuantity;
+                
+                // Flash the total price to show it's been updated
+                const cartTotal = document.getElementById('cart-total');
+                if (cartTotal) {
+                    cartTotal.classList.add('flash-update');
+                    setTimeout(() => cartTotal.classList.remove('flash-update'), 500);
+                }
+                
+                // Recalculate totals
+                calculateTotals();
+            } else {
+                console.error('Error updating quantity:', response);
+                
+                // Revert to old quantity
+                updateItemDisplay(itemId, oldQuantity);
+                
+                // Show error toast
+                toastSystem.error('Gagal', response.message || 'Gagal mengubah jumlah produk. Silakan coba lagi.');
+            }
+        } catch (error) {
+            console.error('Error parsing response:', error);
+            
+            // Revert to old quantity
+            updateItemDisplay(itemId, oldQuantity);
+            
+            // Show error toast
+            toastSystem.error('Gagal', 'Gagal mengubah jumlah produk. Silakan coba lagi.');
+        } finally {
+            // Remove updating state
+            quantityContainers.forEach(container => {
+                container.classList.remove('updating');
+            });
+            
+            // Check for next pending update
+            const nextQuantity = cartState.pendingQuantityUpdates[itemId]?.nextQuantity;
+            delete cartState.pendingQuantityUpdates[itemId];
+            
+            if (nextQuantity !== null) {
+                // Update UI first
+                itemElements.forEach(item => {
+                    const input = item.querySelector('.cart-quantity-input');
+                    if (input) input.value = nextQuantity;
                 });
                 
-                updateItemQuantity(itemId);
-            }, 100);
+                // Process the next update after a small delay
+                setTimeout(() => updateItemQuantity(itemId), 200);
+            } else if (Object.keys(cartState.pendingQuantityUpdates).length === 0) {
+                cartState.updating = false;
+            }
         }
+    };
+    
+    xhr.ontimeout = xhr.onerror = function() {
+        console.error('Network error or timeout when updating quantity');
         
-        // Check if there are no more pending updates
+        // Revert to old quantity
+        updateItemDisplay(itemId, oldQuantity);
+        
+        // Remove updating state
+        quantityContainers.forEach(container => {
+            container.classList.remove('updating');
+        });
+        
+        delete cartState.pendingQuantityUpdates[itemId];
         if (Object.keys(cartState.pendingQuantityUpdates).length === 0) {
             cartState.updating = false;
         }
-    });
+        
+        // Show error toast with retry button
+        const errorToast = toastSystem.error('Gagal', 'Gagal terhubung ke server. Cek koneksi internet Anda.', 0);
+        
+        // Add retry button
+        const toastContent = errorToast.querySelector('.toast-content');
+        const retryBtn = document.createElement('button');
+        retryBtn.className = 'toast-retry-btn';
+        retryBtn.innerHTML = '<i data-feather="refresh-cw"></i> Coba Lagi';
+        retryBtn.addEventListener('click', () => {
+            toastSystem.dismiss(errorToast);
+            
+            // Update UI first
+            itemElements.forEach(item => {
+                const input = item.querySelector('.cart-quantity-input');
+                if (input) input.value = newQuantity;
+            });
+            
+            // Try again after a short delay
+            setTimeout(() => updateItemQuantity(itemId), 300);
+        });
+        toastContent.appendChild(retryBtn);
+        
+        // Initialize icons
+        if (window.feather) {
+            feather.replace();
+        }
+    };
+    
+    // Prepare data for submission
+    const formData = `_method=PUT&quantity=${newQuantity}&_token=${encodeURIComponent(csrfToken)}`;
+    xhr.send(formData);
 }
 
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
 /**
  * Function to save selected shipping method to session via AJAX
  * @param {string} methodCode - Shipping method code
  */
 function saveShippingMethod(methodCode) {
-    // Get CSRF token
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || document.querySelector('input[name="_token"]')?.value;
-<<<<<<< HEAD
+    // Get CSRF token from multiple sources
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                     document.querySelector('input[name="_token"]')?.value ||
+                     document.querySelector('.token-container')?.value;
+                     
+    if (!csrfToken) {
+        console.error('CSRF token not found for saving shipping method');
+        return;
+    }
 
-    // Use FormData for better compatibility
-    const formData = new FormData();
-    formData.append('_token', csrfToken);
-    formData.append('shipping_method', methodCode);
-
-    fetch('/user/cart/save-shipping', {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': csrfToken,
-            'Accept': 'application/json'
-        },
-        body: formData
-=======
+    // Use XMLHttpRequest for better compatibility
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/user/cart/save-shipping', true);
+    xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.setRequestHeader('Accept', 'application/json');
     
-    fetch('/user/cart/save-shipping', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': csrfToken,
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-            shipping_method: methodCode
-        })
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            console.log('Shipping method saved:', methodCode);
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try {
+                const response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    console.log('Shipping method saved:', methodCode);
+                }
+            } catch (error) {
+                console.error('Error parsing shipping method response:', error);
+            }
         }
-    })
-    .catch(error => console.error('Error saving shipping method:', error));
+    };
+    
+    xhr.onerror = function() {
+        console.error('Error saving shipping method');
+    };
+    
+    xhr.send(`shipping_method=${encodeURIComponent(methodCode)}&_token=${encodeURIComponent(csrfToken)}`);
 }
 
 /**
@@ -3062,222 +2890,239 @@ function saveShippingMethod(methodCode) {
  * @param {string} methodCode - Payment method code
  */
 function savePaymentMethod(methodCode) {
-    // Get CSRF token
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || document.querySelector('input[name="_token"]')?.value;
-<<<<<<< HEAD
+    // Get CSRF token from multiple sources
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                     document.querySelector('input[name="_token"]')?.value ||
+                     document.querySelector('.token-container')?.value;
+                     
+    if (!csrfToken) {
+        console.error('CSRF token not found for saving payment method');
+        return;
+    }
 
-    // Use FormData for better compatibility
-    const formData = new FormData();
-    formData.append('_token', csrfToken);
-    formData.append('payment_method', methodCode);
-
-    fetch('/user/cart/save-payment', {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': csrfToken,
-            'Accept': 'application/json'
-        },
-        body: formData
-=======
+    // Use XMLHttpRequest for better compatibility
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/user/cart/save-payment', true);
+    xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.setRequestHeader('Accept', 'application/json');
     
-    fetch('/user/cart/save-payment', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': csrfToken,
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-            payment_method: methodCode
-        })
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            console.log('Payment method saved:', methodCode);
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try {
+                const response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    console.log('Payment method saved:', methodCode);
+                }
+            } catch (error) {
+                console.error('Error parsing payment method response:', error);
+            }
         }
-    })
-    .catch(error => console.error('Error saving payment method:', error));
+    };
+    
+    xhr.onerror = function() {
+        console.error('Error saving payment method');
+    };
+    
+    xhr.send(`payment_method=${encodeURIComponent(methodCode)}&_token=${encodeURIComponent(csrfToken)}`);
 }
 
 /**
- * Setup form submission handlers
+ * Setup form submission handlers with improved error handling
  */
 function setupFormSubmissions() {
     // Handle promo code application
     const promoForm = document.getElementById('promo-apply-form');
-    if (promoForm) {
+    const applyPromoButton = document.getElementById('apply-promo-btn');
+    
+    if (promoForm && applyPromoButton) {
         promoForm.addEventListener('submit', function(e) {
             e.preventDefault();
-<<<<<<< HEAD
+
+            // Disable button to prevent multiple submissions
+            applyPromoButton.disabled = true;
+            applyPromoButton.textContent = 'Memproses...';
 
             const formData = new FormData(this);
             const promoCode = formData.get('promo_code');
 
-=======
-            
-            const formData = new FormData(this);
-            const promoCode = formData.get('promo_code');
-            
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             if (!promoCode) {
                 toastSystem.error('Error', 'Masukkan kode promo terlebih dahulu');
+                applyPromoButton.disabled = false;
+                applyPromoButton.textContent = 'Terapkan';
                 return;
             }
-<<<<<<< HEAD
 
             loadingOverlay.show();
-
-=======
             
-            loadingOverlay.show();
+            // Use XMLHttpRequest for better compatibility
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', this.action, true);
+            xhr.timeout = 10000; // 10 seconds timeout
             
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
-            fetch(this.action, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    // Show success toast
-                    toastSystem.success('Berhasil', 'Kode promo berhasil diterapkan');
-<<<<<<< HEAD
-
-=======
-                    
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
-                    // Reload page to reflect promo after a slight delay
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                } else {
-                    throw new Error(data.message || 'Gagal menerapkan kode promo');
-                }
-            })
-            .catch(error => {
-                console.error('Error applying promo code:', error);
+            // Get CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                             document.querySelector('input[name="_token"]')?.value ||
+                             document.querySelector('.token-container')?.value;
+            
+            if (csrfToken) {
+                xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
+            }
+            
+            xhr.onload = function() {
                 loadingOverlay.hide();
-                toastSystem.error('Gagal', 'Kode promo tidak valid atau tidak dapat diterapkan');
-            });
+                applyPromoButton.disabled = false;
+                applyPromoButton.textContent = 'Terapkan';
+                
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    
+                    if (xhr.status === 200 && response.success) {
+                        // Show success toast
+                        toastSystem.success('Berhasil', 'Kode promo berhasil diterapkan');
+                        
+                        // Reload page to reflect promo after a slight delay
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        throw new Error(response.message || 'Gagal menerapkan kode promo');
+                    }
+                } catch (error) {
+                    console.error('Error applying promo code:', error);
+                    toastSystem.error('Gagal', error.message || 'Kode promo tidak valid atau tidak dapat diterapkan');
+                }
+            };
+            
+            xhr.ontimeout = function() {
+                loadingOverlay.hide();
+                applyPromoButton.disabled = false;
+                applyPromoButton.textContent = 'Terapkan';
+                toastSystem.error('Timeout', 'Permintaan melebihi batas waktu. Silakan coba lagi.');
+            };
+            
+            xhr.onerror = function() {
+                loadingOverlay.hide();
+                applyPromoButton.disabled = false;
+                applyPromoButton.textContent = 'Terapkan';
+                toastSystem.error('Error Koneksi', 'Gagal terhubung ke server. Periksa koneksi internet Anda.');
+            };
+            
+            xhr.send(formData);
         });
     }
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Handle promo code removal
+    const promoRemoveBtn = document.getElementById('remove-promo-btn');
     const promoRemoveForm = document.getElementById('promo-remove-form');
-    if (promoRemoveForm) {
-        promoRemoveForm.addEventListener('submit', function(e) {
+    
+    if (promoRemoveBtn && promoRemoveForm) {
+        promoRemoveBtn.addEventListener('click', function(e) {
             e.preventDefault();
-<<<<<<< HEAD
-
-            loadingOverlay.show();
-
-=======
+            
+            // Disable button
+            promoRemoveBtn.disabled = true;
             
             loadingOverlay.show();
             
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
-            fetch(this.action, {
-                method: 'POST',
-                body: new FormData(this)
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    // Show success toast
-                    toastSystem.success('Berhasil', 'Kode promo berhasil dihapus');
-<<<<<<< HEAD
-
-=======
+            // Use XMLHttpRequest for better compatibility
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', promoRemoveForm.action, true);
+            xhr.timeout = 10000; // 10 seconds timeout
+            
+            // Get CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                             document.querySelector('input[name="_token"]')?.value ||
+                             document.querySelector('.token-container')?.value;
+            
+            if (csrfToken) {
+                xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken);
+                
+                // Create form data
+                const formData = new FormData(promoRemoveForm);
+                
+                xhr.onload = function() {
+                    loadingOverlay.hide();
+                    promoRemoveBtn.disabled = false;
                     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
-                    // Reload page to reflect promo removal after a slight delay
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1000);
-                } else {
-                    throw new Error(data.message || 'Gagal menghapus kode promo');
-                }
-            })
-            .catch(error => {
-                console.error('Error removing promo code:', error);
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        
+                        if (xhr.status === 200 && response.success) {
+                            // Show success toast
+                            toastSystem.success('Berhasil', 'Kode promo berhasil dihapus');
+                            
+                            // Reload page to reflect changes after a slight delay
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            throw new Error(response.message || 'Gagal menghapus kode promo');
+                        }
+                    } catch (error) {
+                        console.error('Error removing promo code:', error);
+                        toastSystem.error('Gagal', error.message || 'Gagal menghapus kode promo. Silakan coba lagi.');
+                    }
+                };
+                
+                xhr.ontimeout = function() {
+                    loadingOverlay.hide();
+                    promoRemoveBtn.disabled = false;
+                    toastSystem.error('Timeout', 'Permintaan melebihi batas waktu. Silakan coba lagi.');
+                };
+                
+                xhr.onerror = function() {
+                    loadingOverlay.hide();
+                    promoRemoveBtn.disabled = false;
+                    toastSystem.error('Error Koneksi', 'Gagal terhubung ke server. Periksa koneksi internet Anda.');
+                };
+                
+                xhr.send(formData);
+            } else {
                 loadingOverlay.hide();
-                toastSystem.error('Gagal', 'Gagal menghapus kode promo. Silakan coba lagi.');
-            });
+                promoRemoveBtn.disabled = false;
+                toastSystem.error('Error', 'Token keamanan tidak ditemukan. Silakan muat ulang halaman.');
+            }
         });
     }
-<<<<<<< HEAD
 
-=======
-    
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
-    // Handle checkout form
-    const checkoutForm = document.getElementById('form-checkout');
-    if (checkoutForm) {
-        checkoutForm.addEventListener('submit', function(e) {
-<<<<<<< HEAD
+    // Checkout link validation
+    const checkoutLink = document.getElementById('checkout-link');
+    if (checkoutLink) {
+        checkoutLink.addEventListener('click', function(e) {
             // Validasi metode pengiriman tidak dipilih
-=======
-            // Make sure shipping method is set
-            const shippingMethodInput = document.getElementById('shipping_method_input');
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
-            if (shippingMethodInput && !shippingMethodInput.value) {
+            const shippingMethod = document.querySelector('input[name="shipping_method"]:checked');
+            if (!shippingMethod) {
                 e.preventDefault();
                 toastSystem.error('Perhatian', 'Silakan pilih metode pengiriman terlebih dahulu');
-                return;
+                return false;
             }
-<<<<<<< HEAD
-
-            // Validasi metode pembayaran tidak dipilih
-=======
             
-            // Make sure a payment method is selected
-            const selectedPayment = document.querySelector('input[name="payment_method"]:checked');
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
-            if (!selectedPayment) {
+            // Validasi metode pembayaran tidak dipilih
+            const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
+            if (!paymentMethod) {
                 e.preventDefault();
                 toastSystem.error('Perhatian', 'Silakan pilih metode pembayaran terlebih dahulu');
-                return;
+                return false;
             }
-<<<<<<< HEAD
-
-            // Validasi update keranjang masih dalam proses
-=======
             
-            // Check if there are any pending updates
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
+            // Validasi update keranjang masih dalam proses
             if (Object.keys(cartState.pendingQuantityUpdates).length > 0 || cartState.updating) {
                 e.preventDefault();
                 toastSystem.error('Perhatian', 'Sedang mengupdate keranjang, mohon tunggu sebentar');
-                return;
+                return false;
             }
-<<<<<<< HEAD
-=======
             
-            // All checks passed, show loading overlay
+            // Semua validasi passed, lanjut ke checkout
             loadingOverlay.show();
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
+            return true;
         });
     }
 }
 
 /**
- * Initialize quantity handlers
+ * Initialize quantity handlers with debouncing for better performance
  */
 function setupQuantityHandlers() {
     // Debounce function to limit how often a function can fire
@@ -3292,31 +3137,11 @@ function setupQuantityHandlers() {
             timeout = setTimeout(later, wait);
         };
     }
-<<<<<<< HEAD
-
-=======
     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Decrease quantity buttons
     document.querySelectorAll('.quantity-decrease').forEach(btn => {
         btn.addEventListener('click', function() {
             if (cartState.updating) return;
-<<<<<<< HEAD
-
-            const container = this.closest('.cart-quantity, .mobile-cart-item-quantity');
-            if (!container) return;
-
-            const itemId = parseInt(container.getAttribute('data-item-id'));
-            const input = container.querySelector('.cart-quantity-input');
-            if (!input) return;
-
-            const currentValue = parseInt(input.value);
-
-            if (currentValue > 1) {
-                const newQuantity = currentValue - 1;
-                input.value = newQuantity; // Update input immediately for better UX
-
-=======
             
             const container = this.closest('.cart-quantity, .mobile-cart-item-quantity');
             if (!container) return;
@@ -3331,38 +3156,16 @@ function setupQuantityHandlers() {
                 const newQuantity = currentValue - 1;
                 input.value = newQuantity; // Update input immediately for better UX
                 
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                 // Debounce the actual update to reduce rapid-fire API calls
                 debounce(() => updateItemQuantity(itemId), 300)();
             }
         });
     });
-<<<<<<< HEAD
-
-=======
     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Increase quantity buttons
     document.querySelectorAll('.quantity-increase').forEach(btn => {
         btn.addEventListener('click', function() {
             if (cartState.updating) return;
-<<<<<<< HEAD
-
-            const container = this.closest('.cart-quantity, .mobile-cart-item-quantity');
-            if (!container) return;
-
-            const itemId = parseInt(container.getAttribute('data-item-id'));
-            const input = container.querySelector('.cart-quantity-input');
-            if (!input) return;
-
-            const currentValue = parseInt(input.value);
-            const maxValue = parseInt(input.getAttribute('max') || '100');
-
-            if (currentValue < maxValue) {
-                const newQuantity = currentValue + 1;
-                input.value = newQuantity; // Update input immediately for better UX
-
-=======
             
             const container = this.closest('.cart-quantity, .mobile-cart-item-quantity');
             if (!container) return;
@@ -3378,39 +3181,39 @@ function setupQuantityHandlers() {
                 const newQuantity = currentValue + 1;
                 input.value = newQuantity; // Update input immediately for better UX
                 
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                 // Debounce the actual update to reduce rapid-fire API calls
                 debounce(() => updateItemQuantity(itemId), 300)();
             }
         });
     });
-<<<<<<< HEAD
-
-=======
     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Manual quantity input
     document.querySelectorAll('.cart-quantity-input').forEach(input => {
-        input.addEventListener('change', debounce(function() {
+        // Use input event instead of change for more responsive UX
+        const debouncedUpdate = debounce(function() {
             if (cartState.updating) return;
-<<<<<<< HEAD
-
-=======
             
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             const itemId = parseInt(this.getAttribute('data-item-id'));
             if (itemId) {
                 updateItemQuantity(itemId);
             }
-        }, 500));
-<<<<<<< HEAD
-
-=======
+        }, 500);
         
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
-        // Prevent manual editing with keyboard (optional, for better control)
+        input.addEventListener('input', debouncedUpdate);
+        input.addEventListener('change', debouncedUpdate);
+        
+        // Prevent non-numeric input
         input.addEventListener('keydown', function(e) {
-            if (e.key !== 'Tab' && e.key !== 'Enter') {
+            // Allow: backspace, delete, tab, escape, enter
+            if ([46, 8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
+                // Allow: Ctrl+A
+                (e.keyCode === 65 && e.ctrlKey === true) ||
+                // Allow: home, end, left, right
+                (e.keyCode >= 35 && e.keyCode <= 39)) {
+                return;
+            }
+            // Ensure that it's a number and stop the keypress if not
+            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
                 e.preventDefault();
             }
         });
@@ -3430,21 +3233,13 @@ window.initAzkaCartShippingCalc = function() {
     function doEstimate() {
         try {
             let selectedShipping = document.querySelector('.shipping-method-radio:checked')?.value || 'KURIR_TOKO';
-<<<<<<< HEAD
-
-=======
             
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             // Update hidden input and global state - PERBAIKAN: Check if element exists
             if (shippingMethodInput) {
                 shippingMethodInput.value = selectedShipping;
             }
             cartState.shippingMethod = selectedShipping;
-<<<<<<< HEAD
-
-=======
             
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             // Update visual selection
             document.querySelectorAll('.shipping-method').forEach(method => {
                 method.classList.remove('selected');
@@ -3453,21 +3248,13 @@ window.initAzkaCartShippingCalc = function() {
             if (selectedMethod) {
                 selectedMethod.closest('.shipping-method').classList.add('selected');
             }
-<<<<<<< HEAD
-
-=======
             
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             // Save to session
             saveShippingMethod(selectedShipping);
 
             // PERBAIKAN: Make sure shippingEstimateText exists
             if (!shippingEstimateText) return;
-<<<<<<< HEAD
-
-=======
             
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
             if(selectedShipping === 'KURIR_TOKO') {
                 shippingEstimateText.innerHTML = 'Menghitung ongkir...';
                 if(window.google && window.google.maps) {
@@ -3485,34 +3272,20 @@ window.initAzkaCartShippingCalc = function() {
                             let ongkir = 10000;
                             if(distanceKm > 10) ongkir = 20000;
                             else if(distanceKm > 5) ongkir = 15000;
-<<<<<<< HEAD
-
-                            // Store shipping cost in global state
-                            cartState.shippingCost = ongkir;
-
-=======
                             
                             // Store shipping cost in global state
                             cartState.shippingCost = ongkir;
                             
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                             // Update shipping cost in totals
                             const shippingEl = document.getElementById('cart-shipping');
                             if (shippingEl) {
                                 shippingEl.textContent = `Rp ${formatCurrency(ongkir)}`;
                                 shippingEl.setAttribute('data-value', ongkir);
                             }
-<<<<<<< HEAD
-
-                            // Recalculate total with shipping
-                            calculateTotals();
-
-=======
                             
                             // Recalculate total with shipping
                             calculateTotals();
                             
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                             let label = '';
                             if(distanceKm > 10) label = '&gt;10km';
                             else if(distanceKm > 5) label = '5-10km';
@@ -3596,32 +3369,20 @@ window.initAzkaCartShippingCalc = function() {
             }
         }
     }
-<<<<<<< HEAD
-
-=======
     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Add event listeners to shipping method radios
     radios.forEach(function(radio) {
         if (radio) {
             radio.addEventListener('change', doEstimate);
         }
     });
-<<<<<<< HEAD
-
-=======
     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Add event listeners to payment method radios
     document.querySelectorAll('.payment-method-radio').forEach(function(radio) {
         if (radio) {
             radio.addEventListener('change', function() {
-                cartState.paymentMethod = this.value;
-<<<<<<< HEAD
-
-=======
+                                cartState.paymentMethod = this.value;
                 
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                 // Update visual selection
                 document.querySelectorAll('.payment-method').forEach(method => {
                     method.classList.remove('selected');
@@ -3630,26 +3391,21 @@ window.initAzkaCartShippingCalc = function() {
                 if (parent) {
                     parent.classList.add('selected');
                 }
-<<<<<<< HEAD
-
-=======
                 
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                 savePaymentMethod(this.value);
             });
         }
     });
-<<<<<<< HEAD
-
-=======
     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // Run once on page load to initialize shipping estimate
     // PERBAIKAN: Wrap in try/catch to prevent errors
     try {
         doEstimate();
     } catch (error) {
         console.error('Error initializing shipping estimate:', error);
+        if (shippingEstimateText) {
+            shippingEstimateText.innerHTML = 'Terjadi kesalahan saat menghitung ongkir. Silakan refresh halaman.';
+        }
     }
 };
 
@@ -3662,11 +3418,7 @@ document.addEventListener('DOMContentLoaded', function() {
         toastSystem.init();
         confirmDialog.init();
         loadingOverlay.init();
-<<<<<<< HEAD
-
-=======
         
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Store cart items data for client-side calculations
         const items = [
             @foreach($cartItems as $item)
@@ -3699,17 +3451,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
             @endforeach
         ];
-<<<<<<< HEAD
-
-        // Initialize cart state
-        cartState.init(items);
-
-=======
         
         // Initialize cart state
         cartState.init(items);
         
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Initialize Feather Icons
         if (typeof feather !== 'undefined') {
             feather.replace();
@@ -3722,38 +3467,18 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             document.head.appendChild(script);
         }
-<<<<<<< HEAD
-
-=======
         
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Add event listeners to delete buttons
         document.querySelectorAll('.cart-remove').forEach(button => {
             button.addEventListener('click', function(e) {
                 e.preventDefault();
-<<<<<<< HEAD
-                const itemId = this.getAttribute('data-item-id') ||
-=======
                 const itemId = this.getAttribute('data-item-id') || 
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                                this.closest('[data-item-row]')?.getAttribute('data-item-row');
                 if (itemId) {
                     handleDeleteItem(parseInt(itemId));
                 }
             });
         });
-<<<<<<< HEAD
-
-        // Setup quantity update handlers
-        setupQuantityHandlers();
-
-        // Setup form submissions
-        setupFormSubmissions();
-
-        // Calculate initial totals
-        calculateTotals();
-
-=======
         
         // Setup quantity update handlers
         setupQuantityHandlers();
@@ -3764,7 +3489,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Calculate initial totals
         calculateTotals();
         
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Load Google Maps for shipping calculations if address is available
         if ({{ $hasAddress && $primaryAddress ? 'true' : 'false' }}) {
             if (!window.google) {
@@ -3775,17 +3499,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         googleMapsScript.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyCTUfem9YaXy7FPguX6wa26V4lRuYOgF4w&libraries=places";
                         googleMapsScript.async = true;
                         googleMapsScript.defer = true;
-<<<<<<< HEAD
-
-                        // After script loads, initialize shipping calc
-                        googleMapsScript.onload = window.initAzkaCartShippingCalc;
-
-=======
                         
                         // After script loads, initialize shipping calc
                         googleMapsScript.onload = window.initAzkaCartShippingCalc;
                         
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                         googleMapsScript.onerror = function() {
                             console.error('Failed to load Google Maps API');
                             // Run shipping calculation anyway without maps
@@ -3793,11 +3510,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         };
                         document.head.appendChild(googleMapsScript);
                     };
-<<<<<<< HEAD
-
-=======
                     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                     // Slight delay before loading to ensure DOM is ready
                     setTimeout(loadGoogleMaps, 100);
                 } catch (error) {
@@ -3810,11 +3523,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.initAzkaCartShippingCalc();
             }
         }
-<<<<<<< HEAD
-
-=======
         
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
         // Add hover effects to payment and shipping methods
         document.querySelectorAll('.payment-method, .shipping-method').forEach(method => {
             // Make entire label clickable
@@ -3823,54 +3532,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 const radio = this.querySelector('input[type="radio"]');
                 if (radio && !radio.checked) {
                     radio.checked = true;
-<<<<<<< HEAD
-
-=======
                     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
                     // Trigger the change event manually
                     const event = new Event('change', { bubbles: true });
                     radio.dispatchEvent(event);
                 }
             });
         });
-<<<<<<< HEAD
-
-        // Checkout link validation
-        const checkoutLink = document.getElementById('checkout-link');
-        if (checkoutLink) {
-            checkoutLink.addEventListener('click', function(e) {
-                // Validasi sebelum ke checkout
-                const shippingMethod = document.querySelector('input[name="shipping_method"]:checked');
-                const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
-                
-                if (!shippingMethod) {
-                    e.preventDefault();
-                    toastSystem.error('Perhatian', 'Silakan pilih metode pengiriman terlebih dahulu');
-                    return false;
-                }
-                
-                if (!paymentMethod) {
-                    e.preventDefault();
-                    toastSystem.error('Perhatian', 'Silakan pilih metode pembayaran terlebih dahulu');
-                    return false;
-                }
-                
-                // Validasi update keranjang masih dalam proses
-                if (Object.keys(cartState.pendingQuantityUpdates).length > 0 || cartState.updating) {
-                    e.preventDefault();
-                    toastSystem.error('Perhatian', 'Sedang mengupdate keranjang, mohon tunggu sebentar');
-                    return false;
-                }
-                
-                // Semua validasi passed, lanjut ke checkout
-                return true;
-            });
-        }
-=======
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     } catch (error) {
         console.error('Error in cart initialization:', error);
+        toastSystem.error('Error', 'Terjadi kesalahan saat menginisialisasi keranjang. Silakan refresh halaman.');
     }
 });
 
@@ -3878,20 +3549,12 @@ document.addEventListener('DOMContentLoaded', function() {
 window.addEventListener('error', function(e) {
     console.error('Global error caught:', e.error || e.message);
     loadingOverlay.hideAll();
-<<<<<<< HEAD
-
-=======
     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     // If there's an active spinner for quantity updates, remove it
     document.querySelectorAll('.updating').forEach(el => {
         el.classList.remove('updating');
     });
-<<<<<<< HEAD
-
-=======
     
->>>>>>> 8f1c5a7 (Initial commit: add azka-garden project)
     cartState.updating = false;
     cartState.pendingQuantityUpdates = {}; // Clear pending updates on global error
 });
@@ -3907,3 +3570,4 @@ window.addEventListener('beforeunload', function(e) {
 });
 </script>
 @endsection
+                

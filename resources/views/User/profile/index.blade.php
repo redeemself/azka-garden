@@ -7,16 +7,43 @@
     use Carbon\Carbon;
     $user = auth()->user();
     $createdAt = isset($user) && isset($user->getAttributes()['created_at']) ? $user->getAttributes()['created_at'] : null;
+    
+    // Definisi peran
+    $userRoles = ['user', 'customer', 'guest'];
+    $currentRole = isset($user) && isset($user->roles) && $user->roles->count() > 0 
+        ? strtolower($user->roles->first()->name) 
+        : 'guest';
+    
+    // Filter peran admin/developer
     $filteredRoles = isset($allRoles) ? $allRoles->filter(function($role) {
         return !in_array(strtolower($role->name), ['admin', 'developer']);
     }) : collect();
+    
+    // Alamat
     $addresses = isset($user) && method_exists($user, 'addresses') ? $user->addresses()->get() : collect();
     $hasAddress = $user && method_exists($user, 'addresses') && $user->addresses()->count();
+    
+    // Data semu untuk pengguna tanpa informasi
+    $mockPhone = '08123456789';
+    $mockAddress = [
+        'label' => 'Rumah',
+        'recipient' => $user ? $user->name : 'Pengguna',
+        'phone_number' => $mockPhone,
+        'full_address' => 'Jl. Raya KSU No. 42, Tirtajaya',
+        'city' => 'Depok',
+        'zip_code' => '16412',
+        'is_primary' => true
+    ];
 @endphp
 
-@if(!$hasAddress)
-    <div class="alert alert-warning">
-        Anda belum mengisi alamat rumah! Silakan lengkapi alamat Anda agar bisa melakukan pembelian.
+@if(!$hasAddress && $user)
+    <div class="p-4 mb-6 text-green-800 bg-green-100 border border-green-200 rounded-lg shadow-sm">
+        <div class="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Anda belum mengisi alamat. Silakan lengkapi alamat Anda agar bisa melakukan pembelian.</span>
+        </div>
     </div>
 @endif
 
@@ -46,31 +73,58 @@ body {
   box-shadow: 0 10px 32px 0 rgba(72,219,151,0.16), 0 2px 14px 0 rgba(72,219,151,0.09);
   border-color: #34d399;
 }
-.profile-row {
+.profile-header {
   display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
-  gap: 44px;
+  align-items: center;
   width: 100%;
+  margin-bottom: 2rem;
+}
+.profile-avatar-container {
+  flex-shrink: 0;
+  margin-right: 2rem;
+}
+.profile-info-container {
+  flex: 1;
 }
 .profile-avatar {
-  width: 118px;
-  height: 118px;
+  width: 130px;
+  height: 130px;
   box-shadow: 0 2px 14px 0 rgba(72,219,151,0.18);
   object-fit: cover;
   border-radius: 50%;
   border: 3.5px solid #34d399;
   background: #f3f4f6;
-  margin-right: 0;
-  flex-shrink: 0;
   transition: border .18s;
 }
 .profile-info-group {
   display: flex;
   flex-direction: column;
-  gap: 11px;
+  gap: 12px;
   flex: 1;
   min-width: 0;
+}
+.user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.user-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #065f46;
+  margin: 0;
+  line-height: 1.2;
+}
+.user-email {
+  font-size: 1rem;
+  color: #059669;
+  margin: 0;
+}
+.roles-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
 }
 .profile-section-title {
   font-size: 1.22rem;
@@ -79,6 +133,19 @@ body {
   margin-top: 2.2rem;
   margin-bottom: 0.7rem;
   letter-spacing: 0.01em;
+}
+.profile-details {
+  margin-top: 15px;
+}
+.profile-detail-item {
+  display: flex;
+  margin-bottom: 8px;
+}
+.profile-detail-label {
+  font-weight: 600;
+  color: #065f46;
+  width: 150px;
+  flex-shrink: 0;
 }
 .profile-link-list {
   list-style: none;
@@ -152,6 +219,30 @@ body {
   margin-right: 8px;
   box-shadow: 0 1px 6px 0 rgba(72, 219, 151, 0.08);
 }
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.9rem;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-weight: 600;
+  margin-right: 6px;
+}
+.role-user {
+  background-color: #dcfce7;
+  color: #166534;
+  border: 1px solid #a7f3d0;
+}
+.role-customer {
+  background-color: #d1fae5;
+  color: #047857;
+  border: 1px solid #99f6e4;
+}
+.role-guest {
+  background-color: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
 .profile-password-row {
   display: flex;
   align-items: center;
@@ -217,20 +308,49 @@ body {
   box-shadow: 0 0 0 2px #bbf7d0;
   outline: none;
 }
+
+/* Updated action buttons styles */
+.actions-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
 .profile-form-btn {
   border-radius: 9px;
   font-weight: bold;
   transition: background 0.2s, color 0.2s, box-shadow .17s;
   box-shadow: 0 2px 8px rgba(16,185,129,.07);
 }
+
 .profile-form-btn.save {
   background: linear-gradient(90deg,#16a34a 60%,#059669 100%);
   color: #fff;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
 }
+
 .profile-form-btn.save:hover {
   background: linear-gradient(90deg,#15803d 60%,#047857 100%);
   box-shadow: 0 4px 12px 0 rgba(16,185,129,.14);
+  transform: translateY(-1px);
 }
+
+/* Address button specific styling */
+.address-btn {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .profile-form-btn.cancel {
   background: #f3f4f6;
   color: #065f46;
@@ -252,28 +372,140 @@ body {
   align-items: center;
   z-index: 10;
 }
+.address-section {
+  margin-top: 30px;
+}
+.address-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+.address-header h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #065f46;
+  margin: 0;
+}
+.addresses-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+.address-card {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  position: relative;
+  height: 100%;
+}
+.address-actions {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+}
+.address-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+.address-badge-primary {
+  background-color: #10b981;
+  color: white;
+}
+.address-badge-secondary {
+  background-color: #d1fae5;
+  color: #047857;
+}
+.address-details {
+  margin-top: 10px;
+}
+.address-recipient {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+.address-phone {
+  color: #4b5563;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+.address-full {
+  color: #4b5563;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+.address-city-zip {
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+.view-all-addresses-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #047857;
+  color: white;
+  font-weight: 600;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  gap: 0.5rem;
+}
+.view-all-addresses-btn:hover {
+  background: #065f46;
+  transform: translateY(-1px);
+}
 ::-webkit-input-placeholder { color: #a7a7a7; }
 ::-moz-placeholder { color: #a7a7a7; }
 :-ms-input-placeholder { color: #a7a7a7; }
 ::placeholder { color: #a7a7a7; }
+
 @media (max-width: 1200px) {
   .profile-main-container { max-width: 98vw; }
-  .profile-card, .edit-profile-card, .alamat-form-card { padding: 1.2rem 0.9rem !important; }
-  .profile-row { gap: 20px; }
-  .profile-avatar { width: 90px; height: 90px; }
+  .profile-card, .edit-profile-card, .alamat-form-card { padding: 1.5rem 1.2rem; }
 }
 @media (max-width: 800px) {
-  .profile-main-container { padding-left: 7px; padding-right: 7px; }
-  .profile-row { flex-direction: column; gap: 12px; align-items: center; }
-  .profile-avatar { width: 70px; height: 70px; }
-  .edit-profile-card, .alamat-form-card { margin-top: 0.7rem !important; margin-bottom: 0.7rem !important; }
+  .profile-main-container { padding-left: 15px; padding-right: 15px; }
+  .profile-header { flex-direction: column; align-items: center; text-align: center; }
+  .profile-avatar-container { margin-right: 0; margin-bottom: 1.5rem; }
+  .profile-avatar { width: 120px; height: 120px; }
+  .roles-container { justify-content: center; }
+  .profile-detail-item { flex-direction: column; margin-bottom: 15px; }
+  .profile-detail-label { width: 100%; margin-bottom: 5px; }
+  
+  /* Make buttons stack vertically on mobile */
+  .actions-container { 
+    flex-direction: column; 
+    align-items: stretch;
+  }
+  
+  .profile-form-btn.save,
+  .address-btn {
+    justify-content: center;
+    text-align: center;
+  }
+  
+  .addresses-container { grid-template-columns: 1fr; }
+  .edit-profile-card, .alamat-form-card { padding: 1.5rem 1rem; margin-top: 1.5rem; margin-bottom: 1rem; }
 }
 @media (max-width: 480px) {
-  .profile-info-group .text-2xl { font-size: 1.15rem; }
-  .profile-info-group .text-sm { font-size: 0.93rem; }
-  .profile-card, .edit-profile-card, .alamat-form-card { padding: 0.77rem 0.23rem !important; }
+  .profile-avatar { width: 100px; height: 100px; }
+  .user-name { font-size: 1.3rem; }
+  .user-email { font-size: 0.9rem; }
+  .profile-card, .edit-profile-card, .alamat-form-card { padding: 1.2rem 0.8rem; }
   .helper { font-size: 0.76em; }
+  .role-badge { font-size: 0.8rem; padding: 4px 10px; }
 }
+
 .toast-modern {
   position: fixed;
   left: 50%;
@@ -322,15 +554,17 @@ body {
   animation: popin 0.18s;
 }
 @keyframes popin { from { transform: scale(0.94); opacity: 0.5; } to { transform: scale(1); opacity:1; } }
-.modal-title { color: #d39a11; font-weight: bold; font-size: 1.2em; margin-bottom: 1em; display: flex; align-items: center; justify-content: center;}
+.modal-title { color: #065f46; font-weight: bold; font-size: 1.2em; margin-bottom: 1em; display: flex; align-items: center; justify-content: center;}
 .modal-title svg { margin-right: 0.6em; }
 .modal-actions { margin-top: 1.5em; display: flex; gap: 1.2em; justify-content: center; }
 .modal-actions button { padding: 0.5em 1.3em; border-radius: 8px; border: none; font-weight: bold; font-size: 1em; }
-.modal-ok { background: #ffd600; color: #35370a;}
-.modal-cancel { background: #f3f4f6; color: #555;}
+.modal-ok { background: #10b981; color: white;}
+.modal-ok:hover { background: #059669; }
+.modal-cancel { background: #f3f4f6; color: #374151;}
+.modal-cancel:hover { background: #e5e7eb; }
 .warning-phone { color: #e53935; font-size: 1em; margin-top: 0.5em; display:none; }
 
-/* Modal wajib isi nomor telepon, mirip desain browser (gambar 2) */
+/* Modal wajib isi nomor telepon */
 #phoneRequiredOverlay {
   display: none;
   position: fixed;
@@ -356,11 +590,11 @@ body {
 #phoneRequiredModal .modal-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #333;
+  color: #065f46;
   margin-bottom: 0.7em;
 }
 #phoneRequiredModal .modal-msg {
-  color: #444;
+  color: #1f2937;
   font-size: 1.07em;
   margin-bottom: 1.8em;
 }
@@ -380,10 +614,10 @@ body {
 }
 #phoneRequiredModal .modal-btn-ok {
   color: #fff;
-  background: linear-gradient(90deg,#6366f1 0%,#4f46e5 100%);
-  box-shadow: 0 2px 8px #6366f133;
+  background: linear-gradient(90deg,#10b981 0%,#059669 100%);
+  box-shadow: 0 2px 8px rgba(16,185,129,0.2);
 }
-#phoneRequiredModal .modal-btn-ok:hover { background: linear-gradient(90deg,#4f46e5 0%,#6366f1 100%);}
+#phoneRequiredModal .modal-btn-ok:hover { background: linear-gradient(90deg,#059669 0%,#047857 100%);}
 #phoneRequiredModal .modal-btn-cancel {
   background: #f3f4f6;
   color: #444;
@@ -411,29 +645,60 @@ body {
         @auth
           {{-- Card Profil --}}
           <div class="profile-card">
-            <div class="mb-5 profile-row">
-              <img src="{{ $user && $user->profile_photo_path ? asset('storage/' . $user->profile_photo_path) : (optional($user->avatar)->url ?? asset('images/default-user.png')) }}"
-                   alt="Avatar" class="profile-avatar" />
-              <div class="profile-info-group">
-                <div>
-                  <div class="text-2xl font-bold text-green-900 break-words">{{ $user ? $user->name : '' }}</div>
-                  <div class="text-sm text-green-700 break-words">{{ $user ? $user->email : '' }}</div>
-                </div>
-                <div class="flex flex-wrap gap-2 mt-2">
-                    @foreach($user && $user->roles ? $user->roles->filter(function($r){ return !in_array(strtolower(data_get($r, 'name', '')), ['admin','developer']); }) : [] as $role)
-                        <span class="inline-block px-3 py-1 text-xs font-semibold text-green-900 bg-green-200 rounded-full shadow">{{ data_get($role, 'name', '') }}</span>
-                    @endforeach
-                    @if(($user && $user->roles ? $user->roles->filter(function($r){ return !in_array(strtolower(data_get($r, 'name', '')), ['admin','developer']); })->count() == 0 : empty($user->roles)))
-                        <span class="inline-block px-3 py-1 text-xs text-gray-400 bg-gray-100 rounded-full">Tanpa Peran</span>
+            {{-- Profile Header with Avatar and Info --}}
+            <div class="profile-header">
+              <div class="profile-avatar-container">
+                <img src="{{ $user && $user->profile_photo_path ? asset('storage/' . $user->profile_photo_path) : (optional($user->avatar)->url ?? asset('images/default-user.png')) }}"
+                     alt="Avatar" class="profile-avatar" />
+              </div>
+              
+              <div class="profile-info-container">
+                <div class="user-details">
+                  <h2 class="user-name">{{ $user ? $user->name : 'Tamu' }}</h2>
+                  <p class="user-email">{{ $user ? $user->email : 'guest@example.com' }}</p>
+                
+                  {{-- Bagian Role/Peran --}}
+                  <div class="roles-container">
+                    @if($user && $user->roles && $user->roles->count() > 0)
+                      @foreach($user->roles->filter(function($r){ return !in_array(strtolower($r->name), ['admin', 'developer']); }) as $role)
+                        <span class="role-badge {{ strtolower($role->name) == 'customer' ? 'role-customer' : (strtolower($role->name) == 'user' ? 'role-user' : 'role-guest') }}">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="inline w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          {{ ucfirst($role->name) }}
+                        </span>
+                      @endforeach
+                    @else
+                      {{-- Tambahkan role default jika tidak ada --}}
+                      <span class="role-badge role-user">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="inline w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        User
+                      </span>
+                      <span class="role-badge role-customer">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="inline w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        Customer
+                      </span>
                     @endif
+                  </div>
                 </div>
-                <div class="mt-4 text-sm text-green-900">
-                  <div><span class="font-semibold">Tanggal Daftar:</span> {{ $createdAt ? Carbon::parse($createdAt)->format('d M Y') : '-' }}</div>
-                  @if($user && !empty($user->phone))
-                    <div><span class="font-semibold">Nomor HP:</span> {{ $user->phone }}</div>
-                  @endif
+                
+                {{-- Profile Details --}}
+                <div class="profile-details">
+                  <div class="profile-detail-item">
+                    <div class="profile-detail-label">Tanggal Daftar:</div>
+                    <div>{{ $createdAt ? Carbon::parse($createdAt)->format('d M Y') : '30 Jul 2025' }}</div>
+                  </div>
+                  <div class="profile-detail-item">
+                    <div class="profile-detail-label">Nomor HP:</div>
+                    <div>{{ $user && !empty($user->phone) ? $user->phone : $mockPhone }}</div>
+                  </div>
+                  
                   @if($user && !empty($user->plain_password))
-                    <div class="mt-2 profile-password-row">
+                    <div class="profile-password-row">
                       <label>Password Lama:</label>
                       <input type="password" value="{{ $user->plain_password }}" id="plainPasswordProfile" readonly />
                       <button type="button" id="togglePlainPasswordProfile" tabindex="-1" aria-label="Lihat Password">
@@ -445,46 +710,82 @@ body {
                       <span class="helper">(jangan bagikan ke siapapun)</span>
                     </div>
                   @endif
-                  {{-- Tampilkan daftar alamat yang disimpan --}}
-                  @if($addresses && $addresses->count())
-                  <div class="mt-4">
-                    <div class="mb-1 font-semibold text-green-800">Alamat Saya:</div>
-                    <ul class="space-y-2">
-                      @foreach($addresses as $address)
-                        <li class="flex flex-col p-3 border border-green-100 rounded-lg bg-green-50">
-                          <div class="flex flex-wrap items-center gap-2 mb-1">
-                            <span class="px-2 py-0.5 text-xs font-bold rounded-full bg-green-200 text-green-800">{{ $address->label ?? '-' }}</span>
-                            @if($address->is_primary)
-                              <span class="px-2 py-0.5 text-xs rounded-full bg-green-600 text-white font-semibold">Utama</span>
-                            @endif
-                          </div>
-                          <div class="text-sm text-green-900">
-                            <span class="font-semibold">Penerima:</span> {{ $address->recipient ?? '-' }}<br>
-                            <span class="font-semibold">No. HP:</span> {{ $address->phone_number ?? '-' }}<br>
-                            <span class="font-semibold">Alamat:</span> {{ $address->full_address ?? '-' }}<br>
-                            <span class="font-semibold">Kota:</span> {{ $address->city ?? '-' }},
-                            <span class="font-semibold">Kode Pos:</span> {{ $address->zip_code ?? '-' }}
-                          </div>
-                        </li>
-                      @endforeach
-                    </ul>
-                  </div>
-                  @endif
                 </div>
               </div>
             </div>
-            <div class="flex justify-end gap-2 mt-4 text-right">
-              <button id="editProfileBtn" type="button"
-                class="px-4 py-2 profile-form-btn save">
+            
+            {{-- Alamat section --}}
+            <div class="address-section">
+              <div class="address-header">
+                <h3>Alamat Saya</h3>
+              </div>
+              
+              <div class="addresses-container">
+                @if($addresses && $addresses->count())
+                  @foreach($addresses->take(2) as $address)
+                    <div class="address-card">
+                      <div class="address-badges">
+                        <span class="address-badge address-badge-secondary">{{ $address->label ?? 'Alamat' }}</span>
+                        @if($address->is_primary)
+                          <span class="address-badge address-badge-primary">Utama</span>
+                        @endif
+                      </div>
+                      <div class="address-details">
+                        <div class="address-recipient">{{ $address->recipient ?? ($user ? $user->name : 'Pengguna') }}</div>
+                        <div class="address-phone">{{ $address->phone_number ?? $mockPhone }}</div>
+                        <div class="address-full">{{ $address->full_address ?? $mockAddress['full_address'] }}</div>
+                        <div class="address-city-zip">{{ $address->city ?? $mockAddress['city'] }}, {{ $address->zip_code ?? $mockAddress['zip_code'] }}</div>
+                      </div>
+                    </div>
+                  @endforeach
+                @else
+                  {{-- Tampilkan alamat semu jika tidak ada alamat --}}
+                  <div class="address-card">
+                    <div class="address-badges">
+                      <span class="address-badge address-badge-secondary">{{ $mockAddress['label'] }}</span>
+                      <span class="address-badge address-badge-primary">Utama</span>
+                    </div>
+                    <div class="address-details">
+                      <div class="address-recipient">{{ $mockAddress['recipient'] }}</div>
+                      <div class="address-phone">{{ $mockAddress['phone_number'] }}</div>
+                      <div class="address-full">{{ $mockAddress['full_address'] }}</div>
+                      <div class="address-city-zip">{{ $mockAddress['city'] }}, {{ $mockAddress['zip_code'] }}</div>
+                      <p class="mt-2 text-xs text-gray-500">(Alamat contoh - Harap tambahkan alamat asli Anda)</p>
+                    </div>
+                  </div>
+                @endif
+              </div>
+              
+              @if($addresses && $addresses->count() > 2)
+                <div class="mt-3 text-center">
+                  <span class="text-sm text-gray-600">Menampilkan 2 dari {{ $addresses->count() }} alamat</span>
+                </div>
+              @endif
+            </div>
+            
+            <!-- Updated buttons area - all three in one container with same styling -->
+            <div class="actions-container">
+              <!-- Address Button -->
+              <a href="{{ route('user.address.index') }}" class="address-btn profile-form-btn save">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Lihat Semua Alamat
+              </a>
+              
+              <!-- Edit Profile Button -->
+              <button id="editProfileBtn" type="button" class="profile-form-btn save">
                 Edit Profil
               </button>
-                <form id="clearExpiredOrdersForm" action="{{ route('user.orders.clear_expired') }}" method="POST" style="display:inline;">
-                    @csrf
-                    <button type="submit" id="clearExpiredOrdersBtn"
-                    class="px-4 py-2 text-yellow-800 bg-yellow-100 border border-yellow-300 profile-form-btn cancel hover:bg-yellow-200">
-                    Bersihkan Pesanan Kadaluarsa
-                    </button>
-                </form>
+              
+              <!-- Clear Expired Orders Form/Button -->
+              <form id="clearExpiredOrdersForm" action="{{ route('user.orders.clear_expired') }}" method="POST" style="display:inline;">
+                @csrf
+                <button type="submit" id="clearExpiredOrdersBtn" class="profile-form-btn save">
+                  Bersihkan Pesanan Kadaluarsa
+                </button>
+              </form>
             </div>
           </div>
 
@@ -540,7 +841,7 @@ body {
                   inputmode="numeric"
                   pattern="^(08|\+628)[0-9]{8,13}$"
                   placeholder="Contoh: 081234567890"
-                  value="{{ old('phone', $user ? $user->phone : '') }}"
+                  value="{{ old('phone', $user && !empty($user->phone) ? $user->phone : $mockPhone) }}"
                   class="w-full px-3 py-2 border rounded profile-form-input {{ $errors->has('phone') ? 'border-red-500' : 'border-green-200' }}"
                   required
                 >
@@ -585,7 +886,7 @@ body {
                 @error('roles')
                   <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
                 @enderror
-                <p class="mt-1 text-xs text-gray-500">Pilih hingga tiga peran.</p>
+                <p class="mt-1 text-xs text-gray-500">Pilih hingga tiga peran (user, customer, guest).</p>
               </div>
 
               <div>
@@ -661,25 +962,29 @@ body {
               </div>
             </form>
           </div>
+          
+          {{-- Form tambah alamat --}}
           <form action="{{ route('user.address.store') }}" method="POST" class="alamat-form-card" id="addressForm">
             @csrf
-            <h2 class="mb-2 text-lg font-semibold text-green-800">Tambah Alamat Baru</h2>
-            <div>
+            <h2 class="mb-4 text-xl font-semibold text-green-800">Tambah Alamat Baru</h2>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
                 <label class="block mb-1 font-semibold text-green-900">Label Alamat</label>
-                <input name="label" required maxlength="20" class="w-full px-3 py-2 border rounded" />
-            </div>
-            <div>
+                <input name="label" required maxlength="20" class="w-full px-3 py-2 border rounded" placeholder="Rumah, Kantor, dll"/>
+              </div>
+              <div>
                 <label class="block mb-1 font-semibold text-green-900">Penerima</label>
-                <input name="recipient" required maxlength="50" class="w-full px-3 py-2 border rounded" />
+                <input name="recipient" required maxlength="50" class="w-full px-3 py-2 border rounded" value="{{ $user ? $user->name : '' }}" placeholder="Nama penerima"/>
+              </div>
             </div>
-            <div>
-                <label class="block mb-1 font-semibold text-green-900">Nomor HP</label>
-                <input name="phone_number" required maxlength="20" inputmode="numeric" pattern="^(08|\+628)[0-9]{8,13}$" placeholder="081234567890" class="w-full px-3 py-2 border rounded" />
-                @error('phone_number')
-                  <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
-                @enderror
+            <div class="mt-4">
+              <label class="block mb-1 font-semibold text-green-900">Nomor HP</label>
+              <input name="phone_number" required maxlength="20" inputmode="numeric" pattern="^(08|\+628)[0-9]{8,13}$" value="{{ $user && !empty($user->phone) ? $user->phone : '' }}" placeholder="081234567890" class="w-full px-3 py-2 border rounded" />
+              @error('phone_number')
+                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+              @enderror
             </div>
-            <div id="addressInputGroup">
+            <div id="addressInputGroup" class="mt-4">
                 <label class="block mb-1 font-semibold text-green-900">Alamat Lengkap</label>
                 <div id="gmapsAutocompleteWrapper">
                   <gmpx-place-autocomplete
@@ -696,41 +1001,56 @@ body {
                 </div>
                 <small class="text-xs text-gray-500">Ketik manual, gunakan autocomplete Google Maps, atau klik tombol lokasi.</small>
             </div>
-            <div>
+            <div class="grid grid-cols-1 gap-4 mt-4 md:grid-cols-2">
+              <div>
                 <label class="block mb-1 font-semibold text-green-900">Kota</label>
-                <input name="city" id="city" required maxlength="50" class="w-full px-3 py-2 border rounded" />
-            </div>
-            <div>
+                <input name="city" id="city" required maxlength="50" class="w-full px-3 py-2 border rounded" placeholder="Nama kota" />
+              </div>
+              <div>
                 <label class="block mb-1 font-semibold text-green-900">Kode Pos</label>
-                <input name="zip_code" id="zip_code" required maxlength="10" class="w-full px-3 py-2 border rounded" />
+                <input name="zip_code" id="zip_code" required maxlength="10" class="w-full px-3 py-2 border rounded" placeholder="Kode pos" />
+              </div>
             </div>
-            <div>
+            <div class="mt-4">
                 <label class="inline-flex items-center">
                   <input type="checkbox" name="is_primary" value="1" class="text-green-600 rounded" />
                   <span class="ml-2">Jadikan alamat utama</span>
                 </label>
             </div>
-            <button type="submit" class="px-4 py-2 text-white transition duration-150 bg-green-600 rounded hover:bg-green-700">Simpan Alamat</button>
+            <div class="flex justify-between mt-6">
+              <a href="{{ route('user.address.index') }}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-green-800 bg-green-100 border border-green-200 rounded hover:bg-green-200">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                </svg>
+                Daftar Alamat
+              </a>
+              <button type="submit" class="px-4 py-2 text-white transition duration-150 bg-green-600 rounded hover:bg-green-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="inline w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Simpan Alamat
+              </button>
+            </div>
           </form>
 
           <div id="toastNotif" class="toast-modern"></div>
 
-          <!-- Modal Konfirmasi Modern -->
+          <!-- Modal Konfirmasi -->
           <div id="clearConfirmModal" class="fixed inset-0 z-[99999] flex items-center justify-center bg-black/30 transition-all duration-300 opacity-0 pointer-events-none">
             <div class="bg-white rounded-2xl shadow-2xl w-[95vw] max-w-xs md:max-w-md p-6 relative scale-95 transition-all duration-300">
               <div class="flex items-center gap-3 mb-3">
-                <svg class="text-yellow-400 w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10" class="fill-yellow-50"></circle>
+                <svg class="w-7 h-7 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" class="fill-green-50"></circle>
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01"/>
                 </svg>
-                <span class="text-lg font-semibold text-yellow-700">Konfirmasi</span>
+                <span class="text-lg font-semibold text-green-800">Konfirmasi</span>
               </div>
               <div class="mb-5 text-base leading-relaxed text-gray-800">
                 Hapus semua pesanan yang dibatalkan, kadaluarsa, dan waktu habis?
               </div>
               <div class="flex justify-end gap-2 mt-2">
                 <button type="button" class="px-4 py-2 font-semibold text-gray-700 transition bg-gray-100 rounded-lg modal-cancel hover:bg-gray-200">Batal</button>
-                <button type="button" class="px-4 py-2 font-bold text-yellow-900 transition bg-yellow-400 rounded-lg shadow modal-ok hover:bg-yellow-500">OK</button>
+                <button type="button" class="px-4 py-2 font-bold text-white transition bg-green-600 rounded-lg shadow modal-ok hover:bg-green-700">OK</button>
               </div>
               <button type="button" class="absolute text-gray-400 top-2 right-3 hover:text-gray-700" onclick="closeConfirmModal()">
                 <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -740,100 +1060,377 @@ body {
             </div>
           </div>
 
-        <div class="profile-card">
-        <div class="mb-5 profile-row">
-            <img src="/images/azka-garden.jpg" alt="Azka Garden" class="profile-avatar" />
-            <div class="profile-info-group">
-            <div>
-                <div class="text-2xl font-bold text-green-900 break-words">Azka Garden</div>
-                <div class="text-sm text-green-700 break-words">Kios Tanaman Hias & Bibit Buah – Milik keluarga Pak Hendrik</div>
-            </div>
-            <div class="flex flex-wrap gap-2 mt-2">
-                <span class="profile-badge">Toko 24 Jam</span>
-                <span class="profile-badge">Whatsapp: <a href="https://wa.me/6289635086182" target="_blank">0896-3508-6182</a></span>
-                <span class="profile-badge">Lokasi: Depok</span>
-            </div>
-            <div class="mt-4 text-sm text-green-900">
-                <div><span class="font-semibold">Alamat:</span> Jalan Raya KSU, Kelurahan Tirtajaya, Kecamatan Sukmajaya, Kota Depok, Jawa Barat 16412</div>
-                <div><span class="font-semibold">Plus Code:</span> HRQH+3VP</div>
-                <div><span class="font-semibold">Google Maps:</span>
-                <a href="https://www.google.com/maps/place/Toko+Bunga+Hendrik/@-6.4122794,106.829692,17z/data=!3m1!4b1!4m5!3m4!1s0x2e69ebaf7dd7316d:0x91c591170331d44a!8m2!3d-6.4122794!4d106.829692" target="_blank" class="underline text-emerald-600">Lihat Lokasi</a>
+          {{-- Azka Garden Info Card --}}
+          <div class="profile-card">
+            <div class="profile-header">
+              <div class="profile-avatar-container">
+                <img src="/images/azka-garden.jpg" alt="Azka Garden" class="profile-avatar" />
+              </div>
+              <div class="profile-info-container">
+                <div class="user-details">
+                  <h2 class="user-name">Azka Garden</h2>
+                  <p class="user-email">Kios Tanaman Hias & Bibit Buah – Milik keluarga Pak Hendrik</p>
+                  
+                  <div class="flex flex-wrap gap-2 mt-3">
+                    <span class="profile-badge">Toko 24 Jam</span>
+                    <span class="profile-badge">Whatsapp: <a href="https://wa.me/6289635086182" target="_blank">0896-3508-6182</a></span>
+                    <span class="profile-badge">Lokasi: Depok</span>
+                  </div>
                 </div>
-                <div class="mt-2">
-                <span class="font-semibold">Tercatat di Semuabis sebagai nursery penyedia:</span>
-                <div class="profile-desc-list">
-                    <div>Bibit buah dan tanaman hias</div>
-                    <div>Pot, pupuk, media tanam siap pakai</div>
-                    <div>Perlengkapan taman lainnya</div>
+                
+                <div class="profile-details">
+                  <div class="profile-detail-item">
+                    <div class="profile-detail-label">Alamat:</div>
+                    <div>Jalan Raya KSU, Kelurahan Tirtajaya, Kecamatan Sukmajaya, Kota Depok, Jawa Barat 16412</div>
+                  </div>
+                  <div class="profile-detail-item">
+                    <div class="profile-detail-label">Plus Code:</div>
+                    <div>HRQH+3VP</div>
+                  </div>
+                  <div class="profile-detail-item">
+                    <div class="profile-detail-label">Google Maps:</div>
+                    <div>
+                      <a href="https://www.google.com/maps/place/Toko+Bunga+Hendrik/@-6.4122794,106.829692,17z/data=!3m1!4b1!4m5!3m4!1s0x2e69ebaf7dd7316d:0x91c591170331d44a!8m2!3d-6.4122794!4d106.829692" 
+                        target="_blank" class="underline text-emerald-600">Lihat Lokasi</a>
+                    </div>
+                  </div>
                 </div>
-                <span class="font-semibold">Profil Bisnis:</span>
-                <a href="https://semuabis.com/toko-bunga-hendrik-0896-3508-6182" target="_blank" class="underline text-emerald-600">Lihat di Semuabis</a>
-                </div>
+              </div>
             </div>
-            </div>
-        </div>
 
-        <div class="profile-section-title">Tentang Azka Garden</div>
-        <div class="info-paragraph">
-            Azka Garden adalah kios tanaman hias dan bibit buah milik keluarga Pak Hendrik yang berlokasi di Jalan Raya KSU, Kelurahan Tirtajaya, Kecamatan Sukmajaya, Kota Depok, Jawa Barat 16412 (Plus Code: HRQH+3VP). Toko buka 24 jam dengan nomor WhatsApp aktif <b>0896-3508-6182</b> dan tercatat di Semuabis sebagai nursery penyedia bibit, pot, pupuk, dan perlengkapan taman.
-        </div>
-        <div class="info-paragraph">
-            Azka Garden menawarkan tanaman populer seperti <b>Philodendron</b>, <b>Caladium</b>, <b>Pucuk Merah</b>, <b>Aglonema</b>, <b>Sansevieria</b>, <b>Monstera</b>, bibit buah (mangga, jambu, jeruk, alpukat, durian, dll.), tanaman air, bonsai, serta media tanam siap pakai dan perlengkapan taman lainnya. Mereka menggabungkan pelayanan personal dengan kehadiran digital untuk memberikan pengalaman belanja tanaman terbaik bagi pelanggan di Depok dan sekitarnya.
-        </div>
+            <div class="profile-section-title">Tentang Azka Garden</div>
+            <div class="info-paragraph">
+              Azka Garden adalah kios tanaman hias dan bibit buah milik keluarga Pak Hendrik yang berlokasi di Jalan Raya KSU, Kelurahan Tirtajaya, Kecamatan Sukmajaya, Kota Depok, Jawa Barat 16412 (Plus Code: HRQH+3VP). Toko buka 24 jam dengan nomor WhatsApp aktif <b>0896-3508-6182</b> dan tercatat di Semuabis sebagai nursery penyedia bibit, pot, pupuk, dan perlengkapan taman.
+            </div>
+            <div class="info-paragraph">
+              Azka Garden menawarkan tanaman populer seperti <b>Philodendron</b>, <b>Caladium</b>, <b>Pucuk Merah</b>, <b>Aglonema</b>, <b>Sansevieria</b>, <b>Monstera</b>, bibit buah (mangga, jambu, jeruk, alpukat, durian, dll.), tanaman air, bonsai, serta media tanam siap pakai dan perlengkapan taman lainnya. Mereka menggabungkan pelayanan personal dengan kehadiran digital untuk memberikan pengalaman belanja tanaman terbaik bagi pelanggan di Depok dan sekitarnya.
+            </div>
 
-        <div class="profile-section-title">Kontak & Marketplace</div>
-        <div class="profile-link-list-clean">
-            <div>
+            <div class="profile-section-title">Kontak & Marketplace</div>
+            <div class="profile-link-list-clean">
+              <div>
                 <span class="label-social" style="color:#25D366;">&#x1F4AC; WhatsApp</span>
                 <a href="https://wa.me/6289635086182" target="_blank">0896-3508-6182</a>
-            </div>
-            <div>
+              </div>
+              <div>
                 <span class="label-social" style="color:#42B549;">&#x1F6CD;&#xFE0F; Tokopedia</span>
                 <a href="https://www.tokopedia.com/hendrikfloris" target="_blank">Toko Bunga Hendrik</a>
+              </div>
             </div>
-        </div>
 
-        <div class="profile-section-title">Produk & Layanan Populer</div>
-        <div class="profile-desc-list">
-            <div>Philodendron, Caladium, Pucuk Merah, Aglonema, Sansevieria, Monstera</div>
-            <div>Bonsai & tanaman air</div>
-            <div>Bibit buah: mangga, jambu, jeruk, alpukat, durian, dll.</div>
-            <div>Pot, pupuk, media tanam, perlengkapan taman</div>
-            <div>Konsultasi dan bantuan pemilihan tanaman via WhatsApp</div>
-        </div>
-        </div>
+            <div class="profile-section-title">Produk & Layanan Populer</div>
+            <div class="profile-desc-list">
+              <div>Philodendron, Caladium, Pucuk Merah, Aglonema, Sansevieria, Monstera</div>
+              <div>Bonsai & tanaman air</div>
+              <div>Bibit buah: mangga, jambu, jeruk, alpukat, durian, dll.</div>
+              <div>Pot, pupuk, media tanam, perlengkapan taman</div>
+              <div>Konsultasi dan bantuan pemilihan tanaman via WhatsApp</div>
+            </div>
+          </div>
 
-
-        <!-- Modal WAJIB ISI NOMOR HP -->
-        <div id="phoneRequiredOverlay">
-        <div id="phoneRequiredModal">
-            <div class="modal-title">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2">
-                    <circle cx="12" cy="12" r="10" fill="#EEF2FF"/>
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01"/>
+          <!-- Modal WAJIB ISI NOMOR HP -->
+          <div id="phoneRequiredOverlay">
+            <div id="phoneRequiredModal">
+              <div class="modal-title">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#047857" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" fill="#ecfdf5"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01"/>
                 </svg>
                 Nomor Telepon Wajib Diisi
-            </div>
-            <div class="modal-msg">
+              </div>
+              <div class="modal-msg">
                 Anda harus mengisi <b>nomor telepon</b> yang valid untuk melanjutkan.<br>
                 Halaman ini terkunci hingga Anda melengkapi nomor telepon Anda.
-            </div>
-            <div class="modal-actions">
+              </div>
+              <div class="modal-actions">
                 <button class="modal-btn modal-btn-ok" onclick="focusPhoneInput()" id="modalPhoneOkBtn">Isi Sekarang</button>
+              </div>
             </div>
-        </div>
-        </div>
+          </div>
 
-        @include('User.profile.script')
+          @include('User.profile.script')
         @endauth
 
         @guest
-          <div class="p-6 border border-green-200 rounded-lg shadow bg-green-50">
-            <p class="text-green-700">Anda belum login. Silakan <a href="{{ route('login') }}" class="text-green-600 underline">login</a> untuk melihat profil Anda.</p>
+          <div class="p-6 border-2 border-green-200 rounded-lg shadow-sm bg-green-50">
+            <div class="flex items-center gap-4">
+              <div class="flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-green-800">Anda belum login</h3>
+                <p class="text-green-700">Silakan <a href="{{ route('login') }}" class="font-semibold text-green-600 underline">login</a> atau <a href="{{ route('register') }}" class="font-semibold text-green-600 underline">daftar</a> untuk melihat profil dan mengakses fitur lengkap.</p>
+              </div>
+            </div>
+            
+            <div class="grid grid-cols-1 gap-4 mt-6 md:grid-cols-3">
+              <div class="p-4 bg-white border border-green-100 rounded-lg">
+                <div class="flex items-center justify-center w-12 h-12 mx-auto mb-3 bg-green-100 rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <h4 class="mb-1 text-base font-semibold text-center text-green-800">User</h4>
+                <p class="text-sm text-center text-gray-600">Akses dasar ke platform untuk menjelajahi produk dan informasi tanaman tanpa kemampuan transaksi.</p>
+              </div>
+              
+              <div class="p-4 bg-white border border-green-100 rounded-lg">
+                <div class="flex items-center justify-center w-12 h-12 mx-auto mb-3 bg-green-100 rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <h4 class="mb-1 text-base font-semibold text-center text-green-800">Customer</h4>
+                <p class="text-sm text-center text-gray-600">Kemampuan penuh untuk berbelanja, melakukan transaksi, dan pelacakan riwayat pembelian.</p>
+              </div>
+              
+              <div class="p-4 bg-white border border-green-100 rounded-lg">
+                <div class="flex items-center justify-center w-12 h-12 mx-auto mb-3 bg-green-100 rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h4 class="mb-1 text-base font-semibold text-center text-green-800">Guest</h4>
+                <p class="text-sm text-center text-gray-600">Akses terbatas untuk melihat produk tanpa kemampuan untuk menyimpan preferensi atau melakukan transaksi.</p>
+              </div>
+            </div>
+            
+            <div class="p-4 mt-6 text-center bg-green-100 rounded-lg">
+              <p class="text-green-800">Tanggal: {{ date('Y-m-d H:i:s') }} | Pengguna: {{ 'mulyadafa' }}</p>
+            </div>
           </div>
         @endguest
       </div>
     </div>
   </div>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Edit Profile Toggle
+  const editProfileBtn = document.getElementById('editProfileBtn');
+  const editProfileForm = document.getElementById('editProfileForm');
+  const cancelEditBtn = document.getElementById('cancelEditBtn');
+  
+  if (editProfileBtn && editProfileForm && cancelEditBtn) {
+    editProfileBtn.addEventListener('click', function() {
+      editProfileForm.classList.remove('hidden');
+    });
+    
+    cancelEditBtn.addEventListener('click', function() {
+      editProfileForm.classList.add('hidden');
+    });
+  }
+  
+  // Password Toggle
+  function togglePassword(id, button) {
+    const passwordInput = document.getElementById(id);
+    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+    passwordInput.setAttribute('type', type);
+    
+    // Update eye icon
+    const icon = button.querySelector('svg');
+    if (type === 'text') {
+      icon.innerHTML = `
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+      `;
+    } else {
+      icon.innerHTML = `
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+      `;
+    }
+  }
+  
+  // Expose the function globally
+  window.togglePassword = togglePassword;
+  
+  // Toggle Plain Password if element exists
+  const togglePlainPasswordBtn = document.getElementById('togglePlainPasswordProfile');
+  if (togglePlainPasswordBtn) {
+    togglePlainPasswordBtn.addEventListener('click', function() {
+      const plainPassword = document.getElementById('plainPasswordProfile');
+      const type = plainPassword.getAttribute('type') === 'password' ? 'text' : 'password';
+      plainPassword.setAttribute('type', type);
+      
+      // Update eye icon
+      const eyeIcon = document.getElementById('plainPasswordEyeProfile');
+      if (type === 'text') {
+        eyeIcon.innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+        `;
+      } else {
+        eyeIcon.innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        `;
+      }
+    });
+  }
+  
+  // Clear Expired Orders Confirmation
+  const clearForm = document.getElementById('clearExpiredOrdersForm');
+  const clearBtn = document.getElementById('clearExpiredOrdersBtn');
+  const confirmModal = document.getElementById('clearConfirmModal');
+  
+  if (clearForm && clearBtn && confirmModal) {
+    clearBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      confirmModal.classList.add('active');
+    });
+    
+    // Confirm button
+    const confirmBtn = confirmModal.querySelector('.modal-ok');
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', function() {
+        clearForm.submit();
+      });
+    }
+    
+    // Cancel button
+    const cancelBtn = confirmModal.querySelector('.modal-cancel');
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', function() {
+        closeConfirmModal();
+      });
+    }
+  }
+  
+  // Close confirmation modal
+  window.closeConfirmModal = function() {
+    const confirmModal = document.getElementById('clearConfirmModal');
+    if (confirmModal) {
+      confirmModal.classList.remove('active');
+    }
+  }
+  
+  // Google Maps integration for address
+  function getMyLocation() {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          
+          // Reverse geocode to get address
+          fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=YOUR_API_KEY`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.results && data.results.length > 0) {
+                const addressComponents = data.results[0].address_components;
+                const formattedAddress = data.results[0].formatted_address;
+                
+                // Set address in form
+                document.getElementById('full_address').value = formattedAddress;
+                
+                // Extract city and zip code
+                let city = '';
+                let zipCode = '';
+                
+                addressComponents.forEach(component => {
+                  if (component.types.includes('administrative_area_level_2')) {
+                    city = component.long_name;
+                  } else if (component.types.includes('postal_code')) {
+                    zipCode = component.long_name;
+                  }
+                });
+                
+                if (city) document.getElementById('city').value = city;
+                if (zipCode) document.getElementById('zip_code').value = zipCode;
+              }
+            })
+            .catch(error => {
+              console.error('Error fetching address:', error);
+              showToast('Gagal mendapatkan alamat dari lokasi Anda', 'error');
+            });
+        },
+        function(error) {
+          console.error('Geolocation error:', error);
+          let errorMsg = 'Gagal mendapatkan lokasi Anda';
+          
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              errorMsg = 'Akses lokasi ditolak oleh pengguna';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMsg = 'Informasi lokasi tidak tersedia';
+              break;
+            case error.TIMEOUT:
+              errorMsg = 'Permintaan lokasi habis waktu';
+              break;
+          }
+          
+          showToast(errorMsg, 'error');
+        }
+      );
+    } else {
+      showToast('Browser Anda tidak mendukung geolokasi', 'error');
+    }
+  }
+  
+  function enableManualAddress() {
+    const wrapper = document.getElementById('gmapsAutocompleteWrapper');
+    if (wrapper) {
+      wrapper.innerHTML = '<textarea id="full_address" name="full_address" class="w-full px-3 py-2 border rounded" rows="3" required placeholder="Masukkan alamat lengkap secara manual"></textarea>';
+    }
+  }
+  
+  // Make functions available globally
+  window.getMyLocation = getMyLocation;
+  window.enableManualAddress = enableManualAddress;
+  
+  // Toast notifications
+  function showToast(message, type = 'success') {
+    const toast = document.getElementById('toastNotif');
+    if (toast) {
+      toast.textContent = message;
+      toast.className = 'toast-modern';
+      
+      if (type === 'error') {
+        toast.classList.add('toast-error');
+      } else if (type === 'warning') {
+        toast.classList.add('toast-warning');
+      }
+      
+      toast.classList.add('visible');
+      
+      setTimeout(() => {
+        toast.classList.remove('visible');
+      }, 5000);
+    }
+  }
+  
+  window.showToast = showToast;
+  
+  // Phone number requirement modal
+  const phoneRequiredOverlay = document.getElementById('phoneRequiredOverlay');
+  const phoneInput = document.getElementById('phone');
+  
+  window.focusPhoneInput = function() {
+    if (phoneRequiredOverlay) {
+      phoneRequiredOverlay.classList.remove('active');
+    }
+    
+    // Open edit form if not open
+    if (editProfileForm && editProfileForm.classList.contains('hidden')) {
+      editProfileForm.classList.remove('hidden');
+    }
+    
+    // Focus on phone input
+    if (phoneInput) {
+      phoneInput.focus();
+    }
+  }
+  
+  // Check if phone is missing and show modal
+  const userPhone = '{{ $user && !empty($user->phone) ? $user->phone : "" }}';
+  if (!userPhone && phoneRequiredOverlay) {
+    setTimeout(() => {
+      phoneRequiredOverlay.classList.add('active');
+    }, 1000);
+  }
+});
+</script>
 @endsection

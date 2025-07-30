@@ -63,8 +63,41 @@
 
 .address-actions {
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     margin-bottom: 1.5rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.address-action-left {
+    display: flex;
+    align-items: center;
+}
+
+.address-action-right {
+    display: flex;
+    align-items: center;
+}
+
+.back-to-profile-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--primary-bg);
+    color: var(--primary-dark);
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border: 1px solid var(--primary-light);
+}
+
+.back-to-profile-btn:hover {
+    background: var(--primary);
+    color: var(--white);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .add-address-btn {
@@ -408,6 +441,23 @@
         width: 80px;
         height: 80px;
     }
+    
+    .address-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .address-action-left, 
+    .address-action-right {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .back-to-profile-btn,
+    .add-address-btn {
+        width: 100%;
+        justify-content: center;
+    }
 }
 </style>
 
@@ -420,9 +470,16 @@
     </div>
 
     <div class="address-actions">
-        <a href="{{ route('user.address.create') }}" class="add-address-btn">
-            <i data-feather="plus"></i> Tambah Alamat Baru
-        </a>
+        <div class="address-action-left">
+            <a href="{{ route('user.profile.index') }}" class="back-to-profile-btn">
+                <i data-feather="arrow-left"></i> Kembali ke Profil
+            </a>
+        </div>
+        <div class="address-action-right">
+            <a href="{{ route('user.address.create') }}" class="add-address-btn">
+                <i data-feather="plus"></i> Tambah Alamat Baru
+            </a>
+        </div>
     </div>
 
     @if(session('success'))
@@ -518,9 +575,14 @@
         </div>
         <h2 class="address-empty-title">Belum Ada Alamat</h2>
         <p class="address-empty-text">Anda belum memiliki alamat tersimpan. Silakan tambahkan alamat baru.</p>
-        <a href="{{ route('user.address.create') }}" class="add-address-btn">
-            <i data-feather="plus"></i> Tambah Alamat Baru
-        </a>
+        <div class="address-actions" style="justify-content: center;">
+            <a href="{{ route('user.profile.index') }}" class="back-to-profile-btn" style="margin-right: 10px;">
+                <i data-feather="arrow-left"></i> Kembali ke Profil
+            </a>
+            <a href="{{ route('user.address.create') }}" class="add-address-btn">
+                <i data-feather="plus"></i> Tambah Alamat Baru
+            </a>
+        </div>
     </div>
     @endif
 </div>
