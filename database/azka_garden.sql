@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Jul 30, 2025 at 03:10 PM
+-- Generation Time: Jul 31, 2025 at 06:00 AM
 -- Server version: 8.0.36
 -- PHP Version: 8.3.16
 
@@ -52,8 +52,10 @@ CREATE TABLE `addresses` (
 --
 
 INSERT INTO `addresses` (`id`, `user_id`, `label`, `recipient`, `phone_number`, `full_address`, `city`, `zip_code`, `is_primary`, `interface_id`, `created_at`, `updated_at`, `state`, `postal_code`, `address`, `latitude`, `longitude`) VALUES
-(1, 5, 'Alamat Saya', 'Roberto', '081281349115', 'Jl. Swadarma Raya Blok F No.8Sukamaju, Kec. Cilodong, Kota Depok, Jawa Barat 16415', 'Depok', '16415', 1, 1, '2025-07-30 01:03:49', '2025-07-30 01:55:26', NULL, NULL, NULL, NULL, NULL),
-(2, 6, 'Alamat Saya', 'Roberto Ocaviantyo Tahta Laksmana', '081281349115', 'jl dwdadaw', 'Depok', '16415', 1, 1, '2025-07-30 01:45:33', '2025-07-30 01:45:33', NULL, NULL, NULL, NULL, NULL);
+(2, 6, 'Alamat Saya', 'Roberto Ocaviantyo Tahta Laksmana', '081281349115', 'jl dwdadaw', 'Depok', '16415', 1, 1, '2025-07-30 01:45:33', '2025-07-30 01:45:33', NULL, NULL, NULL, NULL, NULL),
+(5, 5, 'Alamat Saya', 'Roberto', '081281349115', 'Margonda, Jakarta Outer Ring Road 2, Kemirimuka, Beji, Depok, West Java, Java, 16235, Indonesia', 'Depok', '16235', 1, 1, '2025-07-30 08:39:34', '2025-07-30 08:39:34', NULL, NULL, NULL, -6.37693560, 106.83430970),
+(6, 7, 'Alamat Saya', 'Roberto', '081281349115', 'Taman Manggis Indah, Tole Iskandar, Sukamaju, Depok, West Java, Java, 16415, Indonesia', 'Depok', '16415', 1, 1, '2025-07-30 17:42:37', '2025-07-30 17:42:37', NULL, NULL, NULL, -6.40795200, 106.85772890),
+(7, 8, 'Alamat Saya', 'Roberto', '081281349115', 'Taman Manggis Indah, Tole Iskandar, Sukamaju, Depok, West Java, Java, 16415, Indonesia', 'Depok', '16415', 1, 1, '2025-07-30 18:09:19', '2025-07-30 18:09:19', NULL, NULL, NULL, -6.40795200, 106.85772890);
 
 -- --------------------------------------------------------
 
@@ -321,7 +323,12 @@ CREATE TABLE `carts` (
 
 INSERT INTO `carts` (`id`, `user_id`, `product_id`, `quantity`, `promo_code`, `discount`, `price`, `note`, `interface_id`, `created_at`, `updated_at`) VALUES
 (3, 5, 55, 2, 'PROMO-INY4MR', 12500, 0, NULL, 1, '2025-07-30 04:38:49', '2025-07-30 05:09:57'),
-(4, 5, 56, 2, 'PROMO-INY4MR', 2500, 0, NULL, 1, '2025-07-30 04:39:19', '2025-07-30 05:09:57');
+(4, 5, 56, 2, 'PROMO-INY4MR', 2500, 0, NULL, 1, '2025-07-30 04:39:19', '2025-07-30 05:09:57'),
+(5, 7, 55, 1, NULL, 0, 0, NULL, 1, '2025-07-30 17:43:13', '2025-07-30 17:43:13'),
+(6, 7, 56, 1, NULL, 0, 0, NULL, 1, '2025-07-30 17:53:25', '2025-07-30 17:53:25'),
+(7, 7, 58, 1, NULL, 0, 0, NULL, 1, '2025-07-30 17:56:45', '2025-07-30 17:56:45'),
+(8, 8, 55, 4, 'PROMO-KSAC0U', 12500, 0, NULL, 1, '2025-07-30 18:12:35', '2025-07-30 22:47:05'),
+(9, 8, 56, 3, 'PROMO-KSAC0U', 2500, 0, NULL, 1, '2025-07-30 18:12:39', '2025-07-30 22:47:47');
 
 -- --------------------------------------------------------
 
@@ -386,7 +393,8 @@ CREATE TABLE `contacts` (
 --
 
 INSERT INTO `contacts` (`id`, `name`, `email`, `phone`, `message`, `promo_code`, `created_at`, `updated_at`) VALUES
-(1, 'Newsletter Subscriber', 'redeemself0@gmail.com', NULL, 'newsletter', 'PROMO-INY4MR', '2025-07-30 04:39:55', '2025-07-30 04:39:55');
+(1, 'Newsletter Subscriber', 'redeemself0@gmail.com', NULL, 'newsletter', 'PROMO-INY4MR', '2025-07-30 04:39:55', '2025-07-30 04:39:55'),
+(2, 'Newsletter Subscriber', 'guy01@gmail.com', NULL, 'newsletter', 'PROMO-KSAC0U', '2025-07-30 21:50:23', '2025-07-30 21:50:24');
 
 -- --------------------------------------------------------
 
@@ -1511,7 +1519,8 @@ CREATE TABLE `promotions` (
 INSERT INTO `promotions` (`id`, `promo_code`, `title`, `description`, `discount_type`, `discount_value`, `start_date`, `end_date`, `status`, `created_at`, `updated_at`, `interface_id`) VALUES
 (2, 'PROMOJULI10', 'Diskon 10% untuk Tanaman Hias', 'Dapatkan diskon 10% untuk pembelian minimal Rp200.000 tanaman hias.', 'percent', 10.00, '2025-07-01 00:00:00', '2025-07-31 00:00:00', 1, '2025-07-24 00:53:22', NULL, 1),
 (3, 'PROMO-SV294G', 'Promo Newsletter untuk wdawdaaw02@gmail.com', 'Promo khusus subscriber newsletter.', 'percent', 10.00, '2025-07-24 11:43:32', '2025-08-23 11:43:32', 1, '2025-07-24 04:43:32', NULL, 1),
-(4, 'PROMO-INY4MR', 'Promo Newsletter untuk redeemself0@gmail.com', 'Promo khusus subscriber newsletter.', 'percent', 10.00, '2025-07-30 11:39:55', '2025-08-29 11:39:55', 1, '2025-07-30 11:39:55', NULL, 1);
+(4, 'PROMO-INY4MR', 'Promo Newsletter untuk redeemself0@gmail.com', 'Promo khusus subscriber newsletter.', 'percent', 10.00, '2025-07-30 11:39:55', '2025-08-29 11:39:55', 1, '2025-07-30 11:39:55', NULL, 1),
+(5, 'PROMO-KSAC0U', 'Promo Newsletter untuk guy01@gmail.com', 'Promo khusus subscriber newsletter.', 'percent', 10.00, '2025-07-31 04:50:24', '2025-08-30 04:50:24', 1, '2025-07-31 04:50:24', NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -1684,7 +1693,13 @@ INSERT INTO `role_user` (`user_id`, `role_id`, `created_at`, `updated_at`) VALUE
 (5, 4, '2025-07-30 01:03:22', '2025-07-30 01:03:22'),
 (6, 2, '2025-07-30 01:45:14', '2025-07-30 01:45:14'),
 (6, 3, '2025-07-30 01:45:14', '2025-07-30 01:45:14'),
-(6, 4, '2025-07-30 01:45:14', '2025-07-30 01:45:14');
+(6, 4, '2025-07-30 01:45:14', '2025-07-30 01:45:14'),
+(7, 2, '2025-07-30 17:42:50', '2025-07-30 17:42:50'),
+(7, 3, '2025-07-30 17:42:50', '2025-07-30 17:42:50'),
+(7, 4, '2025-07-30 17:42:50', '2025-07-30 17:42:50'),
+(8, 2, '2025-07-30 18:09:42', '2025-07-30 18:09:42'),
+(8, 3, '2025-07-30 18:09:42', '2025-07-30 18:09:42'),
+(8, 4, '2025-07-30 18:09:42', '2025-07-30 18:09:42');
 
 -- --------------------------------------------------------
 
@@ -2014,7 +2029,9 @@ INSERT INTO `users` (`id`, `name`, `email`, `email_verified_at`, `password`, `pl
 (3, 'Prof. Irwin Stroman', 'elang@example.com', '2025-07-30 00:51:33', '$2y$12$d1bZQutXb6InQ2ChoyZ/Tuk.heMxoZ7/KG9VwJPpxYFOrWk.0FHC.', NULL, '1-219-604-6203', NULL, 1, 'D9D7qcAj8l', '2025-07-30 00:51:33', '2025-07-30 00:51:33'),
 (4, 'Jazmyn Schulist', 'vincenzo.kunze@example.net', '2025-07-30 00:51:34', '$2y$12$50WRd0QpxFo7LV3couTXbezDSl3p0LYlQh/SvrzTN6S6/AGU4AHTS', NULL, '(680) 330-9635', NULL, 1, '28CH70nl6S', '2025-07-30 00:51:34', '2025-07-30 00:51:34'),
 (5, 'Robee', 'redeemself0@gmail.com', NULL, '$2y$12$w7yEa/fo/ltquzKvvYeIJ.aUfwviGgj47f.Ye24Q56SJv7Dozb2k.', 'Robee2025', '081281349115', '2025-07-30 07:57:51', 1, NULL, '2025-07-30 00:57:51', '2025-07-30 01:03:22'),
-(6, 'Roberto Ocaviantyo Tahta Laksmana', 'Robee@gmail.com', NULL, '$2y$12$4u6oZgOJdUrP8jaQBHfY3OjWobZhWXUFteOnJQRKw/CcGRl2Eg31S', 'Roberto2025', '088212121221', '2025-07-30 08:44:44', 1, NULL, '2025-07-30 01:44:44', '2025-07-30 01:45:14');
+(6, 'Roberto Ocaviantyo Tahta Laksmana', 'Robee@gmail.com', NULL, '$2y$12$4u6oZgOJdUrP8jaQBHfY3OjWobZhWXUFteOnJQRKw/CcGRl2Eg31S', 'Roberto2025', '088212121221', '2025-07-30 08:44:44', 1, NULL, '2025-07-30 01:44:44', '2025-07-30 01:45:14'),
+(7, 'Roberto', 'Raduuu02@gmail.com', NULL, '$2y$12$wTWpFwUx38G4eo4QqFi3hOKBsX2fOwu0v8crbWvXpHNoger8HuJdG', 'Robee2024', '08123456789', '2025-07-31 00:40:05', 1, NULL, '2025-07-30 17:40:05', '2025-07-30 17:42:50'),
+(8, 'Robee', 'guy01@gmail.com', NULL, '$2y$12$cuQdjpXP8xWHRn15vWajxuoIsrJkqsPjWs9z1kf3F7YeNTAOuE3ru', 'rondo0123', '08123456789', '2025-07-31 00:58:47', 1, NULL, '2025-07-30 17:58:47', '2025-07-30 18:09:42');
 
 -- --------------------------------------------------------
 
@@ -2722,7 +2739,7 @@ ALTER TABLE `vulnerabilities`
 -- AUTO_INCREMENT for table `addresses`
 --
 ALTER TABLE `addresses`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `admins`
@@ -2800,7 +2817,7 @@ ALTER TABLE `bug_reports`
 -- AUTO_INCREMENT for table `carts`
 --
 ALTER TABLE `carts`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `categories`
@@ -2818,7 +2835,7 @@ ALTER TABLE `charts`
 -- AUTO_INCREMENT for table `contacts`
 --
 ALTER TABLE `contacts`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `customer_support`
@@ -3064,7 +3081,7 @@ ALTER TABLE `product_likes`
 -- AUTO_INCREMENT for table `promotions`
 --
 ALTER TABLE `promotions`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `purchase_orders`
@@ -3214,7 +3231,7 @@ ALTER TABLE `test_reports`
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `vulnerabilities`

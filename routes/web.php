@@ -22,20 +22,52 @@ use App\Http\Controllers\FaqController;
 use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\User\PromoController;
 use App\Http\Controllers\User\AddressController;
+use App\Http\Controllers\ServicesController;
 
 /**
  * ==================================
  * AZKA GARDEN E-COMMERCE APPLICATION
  * Routes Configuration
- * Last updated: 2025-07-30 14:39:40
- * Author: marseltriwanto
+ * Last updated: 2025-07-31 06:36:01
+ * Author: mulyadafa, marseltriwanto
  * ==================================
  */
 
 // -----------------------------
-// GLOBAL HOME ROUTE (WAJIB ADA)
+// GLOBAL HOME ROUTE
 // -----------------------------
 Route::get('/', [PublicController::class, 'home'])->name('home');
+
+// -----------------------------
+// SERVICES ROUTE
+// -----------------------------
+Route::get('/services', [PublicController::class, 'services'])->name('services.index');
+
+// -----------------------------
+// CART ROUTES - WITH MULTIPLE NAMING PATTERNS FOR COMPATIBILITY
+// -----------------------------
+Route::middleware(['auth'])->group(function () {
+    // Main cart page with BOTH route names for compatibility
+    Route::get('/cart', [CartController::class, 'index'])->name('cart');
+    Route::get('/user/cart', [CartController::class, 'index'])->name('user.cart.index');
+
+    // Cart operations - With BOTH naming patterns for backward compatibility
+    Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
+    Route::post('/cart/update/{id}', [CartController::class, 'updatePost'])->name('cart.update');
+    Route::post('/cart/remove/{id}', [CartController::class, 'remove'])->name('cart.remove');
+    Route::post('/cart/apply-promo', [CartController::class, 'redeemPromo'])->name('cart.apply-promo');
+    Route::post('/cart/update-shipping', [CartController::class, 'saveShipping'])->name('cart.update-shipping');
+
+    // Add user.cart routes for backward compatibility
+    Route::post('/user/cart/add', [CartController::class, 'add'])->name('user.cart.add');
+    Route::post('/user/cart/update/{id}', [CartController::class, 'updatePost'])->name('user.cart.update');
+    Route::post('/user/cart/remove/{id}', [CartController::class, 'remove'])->name('user.cart.remove');
+
+    // Checkout routes
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
+    Route::get('/checkout/confirm', [CartController::class, 'confirm'])->name('checkout.confirm');
+    Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
+});
 
 // -----------------------------
 // PUBLIC ROUTES
@@ -44,15 +76,18 @@ Route::controller(PublicController::class)->group(function () {
     Route::get('/about', 'about')->name('about');
     Route::get('/contact', 'contact')->name('contact');
     Route::post('/contact', 'sendContact')->name('contact.submit');
-    Route::get('/products', 'products')->name('products.index');
-    Route::get('/products/category/{category}', 'productsByCategory')->name('products.category');
-    Route::get('/services', 'services')->name('services.index');
+
+    // Products routes
+    Route::get('/products', 'products')->name('products');
 });
+
+// Add this as a separate route to avoid conflicts
+Route::get('/products', [PublicController::class, 'products'])->name('products.index');
 
 // FAQ Route
 Route::get('/faq', [FaqController::class, 'index'])->name('faq');
 
-// Produk detail setelah kategori agar tidak bentrok
+// Produk detail
 Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
 
 // -----------------------------
@@ -110,6 +145,22 @@ Route::middleware(['web'])->group(function () {
 });
 
 // -----------------------------
+// CART & CHECKOUT ROUTES (WEB middleware)
+// -----------------------------
+Route::middleware(['web'])->group(function () {
+    Route::get('/cart',           [CartController::class, 'index'])->name('cart.index');
+    Route::patch('/cart/{id}',    [CartController::class, 'update'])->name('cart.update');
+    Route::delete('/cart/{id}',   [CartController::class, 'remove'])->name('cart.remove');
+
+    Route::post('/cart/promo',    [CartController::class, 'applyPromo'])->name('cart.applyPromo');
+    Route::delete('/cart/promo',  [CartController::class, 'removePromo'])->name('cart.removePromo');
+
+    Route::post('/cart/shipping', [CartController::class, 'selectShipping'])->name('cart.selectShipping');
+
+    Route::get('/checkout',       [CheckoutController::class, 'index'])->name('checkout.index');
+});
+
+// -----------------------------
 // USER AUTH ROUTES (guest middleware)
 // -----------------------------
 Route::middleware('guest')->group(function () {
@@ -125,29 +176,6 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->post('logout', [UserAuthController::class, 'logout'])->name('logout');
 
 // -----------------------------
-// DIRECT CART ROUTES - FIXED FOR JAVASCRIPT ACCESS
-// These routes match the paths used in JavaScript without /user prefix
-// -----------------------------
-Route::middleware(['auth'])->controller(CartController::class)->group(function () {
-    // Fix for the 405 Method Not Allowed error by adding the route used in JavaScript
-    Route::post('/cart/update-shipping', 'saveShipping')->name('cart.update-shipping');
-    Route::post('/cart/update-payment', 'savePayment')->name('cart.update-payment');
-
-    // The existing AJAX routes
-    Route::post('/cart/update-quantity', 'updateQuantity')->name('cart.update-quantity');
-    Route::post('/cart/remove-item', 'removeItem')->name('cart.remove-item');
-    Route::post('/cart/add', 'add')->name('cart.add'); // Added missing route
-
-    // Keep the "save-" routes for compatibility with newer code
-    Route::post('/cart/save-shipping', 'saveShipping')->name('cart.save-shipping');
-    Route::post('/cart/save-payment', 'savePayment')->name('cart.save-payment');
-
-    // Optional backward compatibility routes
-    Route::post('/cart/{id}/update', 'update')->name('cart.item.update');
-    Route::post('/cart/{id}/delete', 'destroy')->name('cart.item.delete');
-});
-
-// -----------------------------
 // AUTHENTICATED USER ROUTES
 // -----------------------------
 Route::middleware(['auth'])->group(function () {
@@ -155,30 +183,23 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/products/{id}/like', [ProductController::class, 'like'])->name('products.like');
     Route::post('/products/{id}/comment', [ProductController::class, 'comment'])->name('products.comment');
 
-    // Address routes - FIXED: Added the missing user.address.store route
-    Route::prefix('user/address')->name('user.address.')->group(function () {
-        Route::post('/store', [AddressController::class, 'store'])->name('store');
-        Route::get('/', [AddressController::class, 'index'])->name('index');
-        Route::get('/create', [AddressController::class, 'create'])->name('create');
-        Route::get('/{address}/edit', [AddressController::class, 'edit'])->name('edit');
-        Route::put('/{address}', [AddressController::class, 'update'])->name('update');
-        Route::delete('/{address}', [AddressController::class, 'destroy'])->name('destroy');
+    // Address routes
+    Route::prefix('user/address')->name('user.address.')->controller(AddressController::class)->group(function () {
+        Route::post('/store', 'store')->name('store');
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::get('/{address}/edit', 'edit')->name('edit');
+        Route::put('/{address}', 'update')->name('update');
+        Route::delete('/{address}', 'destroy')->name('destroy');
+        Route::patch('{address}/primary', 'setPrimary')->name('setPrimary');
     });
 
-    // Keep existing route for updating coordinates
     Route::post('/address/update-coords', [AddressController::class, 'updateCoords'])->name('address.updateCoords');
 
-    // PATCH Routes for order actions (global access, not within user prefix)
-    // FIXED: Renamed these routes to avoid name conflicts
+    // PATCH Routes for order actions (global access)
     Route::patch('user/orders/{order}/expire', [OrderController::class, 'expire'])->name('user.orders.expire.global');
     Route::patch('user/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('user.orders.cancel.global');
     Route::patch('user/orders/{order}/complete', [OrderController::class, 'complete'])->name('user.orders.complete.global');
-
-    // -----------------------------
-    // CHECKOUT ROUTES
-    // -----------------------------
-    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-    Route::post('/checkout/process', [CheckoutController::class, 'process'])->name('checkout.process');
 });
 
 // -----------------------------
@@ -195,7 +216,7 @@ Route::middleware('auth')->prefix('user')->name('user.')->group(function () {
         Route::post('confirm-roles', 'confirmRoles')->name('confirmRoles');
     });
 
-    // Address Management - Keep for backward compatibility
+    // Address Management
     Route::prefix('addresses')->name('addresses.')->controller(AddressController::class)->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('create', 'create')->name('create');
@@ -214,27 +235,10 @@ Route::middleware('auth')->prefix('user')->name('user.')->group(function () {
         Route::get('{id}', 'show')->name('show');
     });
 
-    // Cart Routes - Improved with both POST and method spoofing support
-    Route::prefix('cart')->name('cart.')->controller(CartController::class)->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::post('add', 'add')->name('add');
-
-        // Supports both direct POST and method spoofing
-        Route::match(['post', 'put'], 'update', 'update')->name('update');
-        Route::delete('{id}', 'destroy')->name('destroy');
-
-        Route::post('redeem', 'redeemPromo')->name('redeem');
-        Route::post('apply-promo', 'applyPromo')->name('apply-promo');
-        Route::post('save-shipping', 'saveShipping')->name('save-shipping');
-        Route::post('save-payment', 'savePayment')->name('save-payment');
-    });
-
-    // -----------------------------
-    // PAYMENT ROUTES - FIXED TO HANDLE POST
-    // -----------------------------
+    // Payment Routes
     Route::prefix('payment')->name('payment.')->controller(PaymentController::class)->group(function () {
         Route::get('/', 'index')->name('index');
-        Route::post('/', 'store')->name('store'); // This fixes the "Method Not Allowed" error
+        Route::post('/', 'store')->name('store');
         Route::post('process', 'process')->name('process');
         Route::get('success/{order}', 'success')->name('success');
         Route::get('failed/{order?}', 'failed')->name('failed');
@@ -242,25 +246,16 @@ Route::middleware('auth')->prefix('user')->name('user.')->group(function () {
 
     // Orders Routes
     Route::prefix('orders')->name('orders.')->controller(OrderController::class)->group(function () {
-        // List views
         Route::get('/', 'index')->name('index');
         Route::get('history', 'history')->name('history.index');
-
-        // Order CRUD operations in logical order
         Route::post('create', 'create')->name('create');
         Route::get('checkout/success/{order}', 'checkoutSuccess')->name('checkout.success');
-
-        // Order detail view
         Route::get('{order}', 'show')->name('show');
         Route::post('{order}/pay', 'pay')->name('pay');
-
-        // Order state change operations - FIXED: This was conflicting with global routes
         Route::post('{order}/cancel', 'cancel')->name('cancel');
         Route::post('{order}/expire', 'expire')->name('expire');
         Route::post('{order}/complete', 'complete')->name('complete');
         Route::post('{order}/finish', 'finish')->name('finish');
-
-        // Order management operations
         Route::post('cancel-confirm', 'cancelConfirm')->name('cancelConfirm');
         Route::post('cancel-draft', 'cancelDraft')->name('cancel-draft');
         Route::post('clear_expired', 'clearExpired')->name('clear_expired');
@@ -282,16 +277,12 @@ Route::prefix('admin')->name('admin.')->middleware('guest:admin')->group(functio
 // -----------------------------
 Route::prefix('admin')->name('admin.')->middleware(['auth:admin', 'admin'])->group(function () {
     Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
-
-    // Admin Profile
     Route::controller(AdminProfileController::class)->group(function () {
         Route::get('profile', 'index')->name('profile');
         Route::get('profile/edit', 'edit')->name('profile.edit');
         Route::put('profile', 'update')->name('profile.update');
     });
-
-    // Admin Logout
-    Route::post('logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
+    Route::post('logout', [AdminAuthController::class, 'logout'])->name('logout');
 });
 
 // -----------------------------
@@ -303,7 +294,6 @@ Route::prefix('dev')->name('dev.')->middleware('guest:developer')->group(functio
     Route::get('login', [DevController::class, 'showLogin'])->name('login');
     Route::post('login', [DevController::class, 'login'])->name('login.submit');
 });
-
 Route::prefix('dev')->name('dev.')->middleware(['auth:developer', 'developer'])->group(function () {
     Route::get('/', [DevController::class, 'dashboard'])->name('dashboard');
     Route::get('profile', [DevController::class, 'profile'])->name('profile');

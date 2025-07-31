@@ -8,7 +8,7 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     * 
+     *
      * Migration untuk tabel master shipping methods
      * Created: 2025-07-29 13:14:08 by mulyadafa
      */
@@ -22,11 +22,13 @@ return new class extends Migration
             $table->decimal('cost', 12, 2)->default(0)->comment('Biaya pengiriman default');
             $table->text('description')->nullable()->comment('Deskripsi metode pengiriman');
             $table->boolean('is_active')->default(true)->comment('Status aktif');
-            $table->integer('sort_order')->default(0)->comment('Urutan tampilan');
+            $table->integer('sort')->default(0)->comment('Urutan tampilan');
+            $table->date('start_date')->nullable()->comment('Tanggal mulai aktif');
+            $table->date('end_date')->nullable()->comment('Tanggal berakhir aktif');
             $table->json('settings')->nullable()->comment('Pengaturan tambahan dalam JSON');
             $table->timestamps();
-            
-            $table->index(['is_active', 'sort_order']);
+
+            $table->index(['is_active', 'sort']);
             $table->index('code');
         });
     }

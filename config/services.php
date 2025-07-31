@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'googlemaps' => [
+        'key' => env('AIzaSyCTUfem9YaXy7FPguX6wa26V4lRuYOgF4w', ''),
+    ],
+
 ];

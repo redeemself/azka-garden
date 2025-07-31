@@ -10,6 +10,7 @@ use App\Models\Contact;
 use App\Models\Review;
 use App\Models\Category;
 use App\Models\Cart;
+use App\Models\ShippingMethod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\JsonResponse;
@@ -67,6 +68,7 @@ class ProductController extends Controller
                     $q->whereNull('end_date')->orWhere('end_date', '>=', now());
                 })
                 ->first();
+
             if ($promo) {
                 session(['promo_code' => $promoCode]);
                 session(['promo_type' => $promo->discount_type]);
@@ -81,10 +83,18 @@ class ProductController extends Controller
         $contacts = Contact::all();
         $banners = []; // Sesuaikan dengan query banner Anda jika ada
 
-        // Jumlah keranjang
-        $cartItemCount = 0;
+        // Ambil metode pengiriman aktif dan urutkan
+        $shippingMethods = ShippingMethod::where('is_active', 1)->orderBy('sort_order')->get();
+
+        // Ambil metode pengiriman yang dipilih dari session, atau null
+        $selectedShipId = session('shipping_method_id');
+
+        // Ambil isi keranjang user atau session
         if (Auth::check()) {
-            $cartItemCount = Cart::where('user_id', Auth::id())->sum('quantity');
+            $items = Cart::with('product')->where('user_id', Auth::id())->get();
+        } else {
+            $cartItems = session('cart_items') ?? (session('cartItems') ?? []);
+            $items = collect($cartItems);
         }
 
         // Kirim semua data ke view
@@ -94,7 +104,10 @@ class ProductController extends Controller
             'promo' => $promo,
             'contacts' => $contacts,
             'banners' => $banners,
-            'cartItemCount' => $cartItemCount, // <-- PERBAIKAN: jumlah keranjang
+            'cartItemCount' => $items->sum('quantity'), // total quantity keranjang
+            'shippingMethods' => $shippingMethods,
+            'selectedShipId' => $selectedShipId,
+            'items' => $items,
         ]);
     }
 
@@ -125,6 +138,7 @@ class ProductController extends Controller
                     $q->whereNull('end_date')->orWhere('end_date', '>=', now());
                 })
                 ->first();
+
             if ($promo) {
                 session(['promo_code' => $promoCode]);
                 session(['promo_type' => $promo->discount_type]);
@@ -140,10 +154,12 @@ class ProductController extends Controller
 
         $comments = Review::where('product_id', $product->getKey())->with('user')->get();
 
-        // Jumlah keranjang
-        $cartItemCount = 0;
+        // Ambil isi keranjang user atau session
         if (Auth::check()) {
-            $cartItemCount = Cart::where('user_id', Auth::id())->sum('quantity');
+            $items = Cart::with('product')->where('user_id', Auth::id())->get();
+        } else {
+            $cartItems = session('cart_items') ?? (session('cartItems') ?? []);
+            $items = collect($cartItems);
         }
 
         return view('user.products.show', [
@@ -152,7 +168,7 @@ class ProductController extends Controller
             'promo' => $promo,
             'contacts' => $contacts,
             'comments' => $comments,
-            'cartItemCount' => $cartItemCount, // <-- PERBAIKAN: jumlah keranjang
+            'cartItemCount' => $items->sum('quantity'), // total quantity keranjang
         ]);
     }
 

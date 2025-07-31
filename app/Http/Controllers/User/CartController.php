@@ -4,1025 +4,247 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
-use App\Models\Product;
-use App\Models\Cart;
-use App\Models\Contact;
-use App\Models\Promotion;
-use Illuminate\Http\Response;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Contracts\View\View;
-use Exception;
-use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Schema;
+use App\Models\Cart;
+use App\Models\Product;
+use App\Models\ShippingMethod;
 
-/**
- * Cart Controller
- *
- * Handles all shopping cart related functionality including
- * adding, updating, and removing items, applying promos,
- * and checkout processing.
- *
- * @updated 2025-07-30 14:42:35 by marseltriwanto
- */
 class CartController extends Controller
 {
     /**
-     * Tampilkan isi keranjang user.
-     *
-     * @return View|RedirectResponse
+     * Tampilkan halaman keranjang
      */
-    public function index(): View|RedirectResponse
+    public function index()
     {
-        $user = Auth::user();
+        $items = Auth::check()
+            ? Cart::with('product')->where('user_id', Auth::id())->get()
+            : collect(Session::get('cart_items', []));
 
-        if (!$user) {
-            return redirect()->route('login')
-                ->with('error', 'Anda harus login untuk melihat keranjang');
+        $shipQ = ShippingMethod::query();
+
+        if (Schema::hasColumn('shipping_methods', 'is_active')) {
+            $shipQ->where('is_active', 1);
         }
 
-        $cartItems = Cart::with('product')->where('user_id', $user->id)->get();
+        if (
+            Schema::hasColumn('shipping_methods', 'start_date') &&
+            Schema::hasColumn('shipping_methods', 'end_date')
+        ) {
+            $today = now()->toDateString();
 
-        // Promo aktif di session
-        $activePromo = null;
-        $promoCode = session('promo_code');
-        if ($promoCode) {
-            $activePromo = Promotion::where('promo_code', $promoCode)->first();
+            $shipQ->where(function ($q) use ($today) {
+                $q->whereNull('start_date')
+                    ->orWhereDate('start_date', '<=', $today);
+            })->where(function ($q) use ($today) {
+                $q->whereNull('end_date')
+                    ->orWhereDate('end_date', '>=', $today);
+            });
         }
 
-        // Tambahkan informasi alamat untuk pengiriman
-        $primaryAddress = $user->addresses()->where('is_primary', true)->first();
-        $hasAddress = !empty($primaryAddress);
+        if (Schema::hasColumn('shipping_methods', 'sort')) {
+            $shipQ->orderBy('sort');
+        } else {
+            $shipQ->orderBy('id');
+        }
 
-        return view('user.cart', compact('cartItems', 'activePromo', 'primaryAddress', 'hasAddress'));
+        $shippingMethods = $shipQ->get();
+        $selectedShipId  = Session::get('shipping_method_id');
+
+        return view('user.cart', compact('items', 'shippingMethods', 'selectedShipId'));
     }
 
     /**
-     * Tampilkan halaman konfirmasi pesanan dengan shipping cost yang benar
-     *
-     * @return View|RedirectResponse
+     * Tambah produk ke keranjang (AJAX/normal)
      */
-    public function confirm(): View|RedirectResponse
+    public function add(Request $r): JsonResponse
     {
-        $user = Auth::user();
-
-        if (!$user) {
-            return redirect()->route('login')
-                ->with('error', 'Anda harus login untuk melakukan konfirmasi pesanan');
-        }
-
-        $cartItems = Cart::where('user_id', $user->id)->with('product')->get();
-
-        if ($cartItems->isEmpty()) {
-            return redirect()->route('user.cart.index')
-                ->with('error', 'Keranjang Anda kosong. Silahkan tambahkan produk terlebih dahulu.');
-        }
-
-        // Get shipping method from session or set default
-        $shippingMethod = session('shipping_method', 'JNT');
-        $paymentMethod = session('payment_method', 'CASH');
-        $shippingAddressId = session('shipping_address_id');
-
-        // Calculate shipping cost based on method
-        $shippingCost = $this->calculateShippingCost($shippingMethod);
-
-        // Store shipping cost in session for consistency
-        session(['shipping_cost' => $shippingCost]);
-
-        // Get user addresses
-        $addresses = $user->addresses()->get();
-        $selectedAddress = null;
-
-        if ($addresses->count()) {
-            $selectedAddress = $shippingAddressId
-                ? $addresses->where('id', $shippingAddressId)->first()
-                : ($addresses->where('is_primary', 1)->first() ?? $addresses->first());
-        }
-
-        // Calculate cart totals
-        $subtotal = 0;
-        $totalDiscount = 0;
-        $originalPriceTotal = 0;
-
-        $promoCode = session('promo_code');
-
-        foreach ($cartItems as $item) {
-            $product = $item->product;
-            if (!$product) continue;
-
-            $itemPromo = $item->promo_code ?? $promoCode;
-            $promotion = $itemPromo ? Promotion::where('promo_code', $itemPromo)->first() : null;
-            $discount = 0;
-            $unitPrice = $product->price ?? 0;
-            $qty = $item->quantity ?? 0;
-
-            $originalPriceTotal += $unitPrice * $qty;
-
-            if ($promotion) {
-                if ($promotion->discount_type === 'percent') {
-                    $percent = $promotion->discount_value ?: 10;
-                    $discount = round($unitPrice * ($percent / 100));
-                } elseif ($promotion->discount_type === 'fixed') {
-                    $discount = min($promotion->discount_value ?: 0, $unitPrice);
-                }
-            }
-
-            $discountedPrice = max(0, $unitPrice - $discount);
-            $itemTotal = $discountedPrice * $qty;
-
-            $subtotal += $itemTotal;
-            $totalDiscount += $discount * $qty;
-        }
-
-        // Calculate final totals
-        $handlingFee = 0;
-        $paymentFee = 0;
-        $totalBeforeTax = $subtotal + $handlingFee + $shippingCost + $paymentFee;
-        $taxAmount = round($totalBeforeTax * 0.11); // PPN 11%
-        $totalWithTax = $totalBeforeTax + $taxAmount;
-
-        // Store order summary in session
-        session([
-            'order_summary' => [
-                'subtotal' => $subtotal,
-                'original_total' => $originalPriceTotal,
-                'discount' => $totalDiscount,
-                'handling_fee' => $handlingFee,
-                'shipping_cost' => $shippingCost,
-                'payment_fee' => $paymentFee,
-                'tax_amount' => $taxAmount,
-                'total' => $totalWithTax,
-                'shipping_method' => $shippingMethod,
-                'payment_method' => $paymentMethod
-            ]
+        $v = Validator::make($r->all(), [
+            'product_id' => ['required', Rule::exists('products', 'id')],
+            'quantity'   => ['sometimes', 'integer', 'min:1'],
+            'price'      => ['sometimes', 'integer', 'min:0'],
         ]);
 
-        return view('user.orders.confirm', compact(
-            'cartItems',
-            'shippingCost',
-            'selectedAddress',
-            'addresses',
-            'subtotal',
-            'totalDiscount',
-            'originalPriceTotal',
-            'taxAmount',
-            'totalWithTax',
-            'shippingMethod',
-            'paymentMethod'
-        ));
+        if ($v->fails()) {
+            return $this->respond(false, 'Validasi gagal', 422, $v->errors()->first());
+        }
+
+        $qty = max(1, (int) $r->input('quantity', 1));
+        $codePrice = (int) $r->input('price', 0);
+
+        $product = Product::select(['id', 'name', 'price', 'image_url'])
+            ->findOrFail($r->product_id);
+
+        $finalPrice = $codePrice > 0 ? $codePrice : $product->price;
+
+        if (Auth::check()) {
+            Cart::updateOrCreate(
+                ['user_id' => Auth::id(), 'product_id' => $product->id],
+                [
+                    'price'    => $finalPrice,
+                    'quantity' => \DB::raw("quantity + {$qty}"),
+                    'name'     => $product->name,
+                    'image'    => $product->image_url,
+                ]
+            );
+        } else {
+            $session = collect(Session::get('cart_items', []));
+            $idx = $session->search(fn($it) => $it['product_id'] == $product->id);
+
+            if ($idx !== false) {
+                $session[$idx]['quantity'] += $qty;
+            } else {
+                $session->push([
+                    'id'         => uniqid(),
+                    'product_id' => $product->id,
+                    'name'       => $product->name,
+                    'price'      => $finalPrice,
+                    'quantity'   => $qty,
+                    'image'      => $product->image_url,
+                ]);
+            }
+            Session::put('cart_items', $session->all());
+        }
+
+        return $this->respond(true, 'Produk ditambahkan', 200, null, [
+            'cart_count' => $this->cartCount(),
+        ]);
     }
 
     /**
-     * Calculate shipping cost based on method - sesuai database shippings.sql
-     *
-     * @param string $method
-     * @return float
+     * Ubah kuantitas (PATCH)
      */
-    private function calculateShippingCost($method): float
+    public function update(Request $r, $id)
     {
-        // Shipping costs sesuai dengan database shippings.sql
-        $costs = [
-            'JNT' => 14000.00,          // ID 15 - J&T EZ
-            'GOSEND' => 25000.00,       // ID 13 - GoSend Sameday
-            'JNE' => 12000.00,          // ID 14 - JNE REG
-            'SICEPAT' => 15000.00,      // ID 16 - SiCepat BEST
-            'KURIR_TOKO' => 15000.00,   // ID 11 - Default middle tier (5-10km)
-            'AMBIL_SENDIRI' => 0.00     // ID 17 - Free pickup
+        $qty = max(1, (int) $r->input('quantity', 1));
+
+        if (Auth::check()) {
+            $row = Cart::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
+            $row->update(['quantity' => $qty]);
+        } else {
+            $items = collect(Session::get('cart_items', []));
+            $idx = $items->search(fn($it) => $it['id'] == $id);
+
+            if ($idx === false) {
+                return $this->respond(false, 'Item tidak ditemukan', 404);
+            }
+            $items[$idx]['quantity'] = $qty;
+            Session::put('cart_items', $items->all());
+        }
+
+        return $this->respond(true, 'Kuantitas berhasil diperbarui');
+    }
+
+    /** Alias POST untuk backward compatibility */
+    public function updatePost(Request $r, $id)
+    {
+        return $this->update($r, $id);
+    }
+
+    /**
+     * Hapus item
+     */
+    public function remove($id)
+    {
+        if (Auth::check()) {
+            Cart::where('id', $id)->where('user_id', Auth::id())->delete();
+        } else {
+            $items = collect(Session::get('cart_items', []))->reject(fn($it) => $it['id'] == $id)->values();
+            Session::put('cart_items', $items->all());
+        }
+
+        return $this->respond(true, 'Item dihapus');
+    }
+
+    /**
+     * Aktifkan promo
+     */
+    public function applyPromo(Request $r)
+    {
+        $r->validate(['promo_code' => 'required|string|max:50']);
+        $valid = [
+            'JULI10' => ['type' => 'percent', 'discount' => 10],
+            'HEMAT5' => ['type' => 'fixed', 'discount' => 5000],
         ];
-
-        // Log untuk debugging
-        Log::info('Calculating shipping cost', [
-            'method' => $method,
-            'cost' => $costs[$method] ?? 0,
-            'timestamp' => now()->format('Y-m-d H:i:s')
+        $code = trim($r->promo_code);
+        if (!isset($valid[$code])) {
+            return $this->respond(false, 'Kode promo tidak valid', 422);
+        }
+        Session::put([
+            'promo_code'     => $code,
+            'promo_type'     => $valid[$code]['type'],
+            'promo_discount' => $valid[$code]['discount'],
         ]);
+        return $this->respond(true, 'Kode promo diterapkan');
+    }
 
-        return $costs[$method] ?? 0;
+    /** Alias untuk compatibility */
+    public function redeemPromo(Request $r)
+    {
+        return $this->applyPromo($r);
+    }
+
+    /** Nonaktifkan kode promo */
+    public function removePromo()
+    {
+        Session::forget(['promo_code', 'promo_type', 'promo_discount']);
+        return $this->respond(true, 'Kode promo dihapus');
     }
 
     /**
-     * Get shipping cost via AJAX
-     *
-     * @param Request $request
-     * @return JsonResponse
+     * Pilih Pengiriman
      */
-    public function getShippingCost(Request $request): JsonResponse
+    public function selectShipping(Request $r)
     {
-        try {
-            $method = $request->input('method');
-            $cost = $this->calculateShippingCost($method);
+        $r->validate(['shipping_method_id' => 'required|integer']);
 
-            return response()->json([
-                'success' => true,
-                'cost' => $cost,
-                'formatted_cost' => 'Rp' . number_format($cost, 0, ',', '.')
-            ]);
-        } catch (Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menghitung ongkos kirim',
-                'error' => config('app.debug') ? $e->getMessage() : null
-            ], 500);
+        $shipQ = ShippingMethod::query();
+
+        if (Schema::hasColumn('shipping_methods', 'is_active')) {
+            $shipQ->where('is_active', 1);
         }
+
+        $method = $shipQ->findOrFail($r->shipping_method_id);
+
+        Session::put('shipping_method_id', $method->id);
+        return $this->respond(true, 'Metode pengiriman disimpan');
+    }
+
+    /** Alias untuk compatibility */
+    public function saveShipping(Request $r)
+    {
+        return $this->selectShipping($r);
     }
 
     /**
-     * Process checkout from cart
-     *
-     * @param Request $request
-     * @return View|RedirectResponse
+     * Hitung total quantity
      */
-    public function checkout(Request $request): View|RedirectResponse
+    private function cartCount(): int
     {
-        $user = Auth::user();
-
-        if (!$user) {
-            return redirect()->route('login')
-                ->with('error', 'Anda harus login untuk melakukan checkout');
+        if (Auth::check()) {
+            return Cart::where('user_id', Auth::id())->sum('quantity');
         }
-
-        $cartItems = Cart::where('user_id', $user->id)->with('product')->get();
-
-        if ($cartItems->isEmpty()) {
-            return redirect()->route('user.cart.index')
-                ->with('error', 'Keranjang Anda kosong. Silahkan tambahkan produk terlebih dahulu.');
-        }
-
-        // Save shipping and payment method to session
-        if ($request->has('shipping_method')) {
-            session(['shipping_method' => $request->shipping_method]);
-            // Recalculate shipping cost when method changes
-            $shippingCost = $this->calculateShippingCost($request->shipping_method);
-            session(['shipping_cost' => $shippingCost]);
-        }
-
-        if ($request->has('payment_method')) {
-            session(['payment_method' => $request->payment_method]);
-        }
-
-        if ($request->has('shipping_address_id')) {
-            session(['shipping_address_id' => $request->shipping_address_id]);
-        }
-
-        // Check if shipping method and payment method are set
-        if (!session('shipping_method')) {
-            session(['shipping_method' => 'JNT']); // Default ke JNT
-            session(['shipping_cost' => $this->calculateShippingCost('JNT')]);
-        }
-
-        if (!session('payment_method')) {
-            // Set default payment method from database if available
-            $paymentMethod = \DB::table('local_payment_methods')
-                ->where('status', 1)
-                ->first();
-
-            if ($paymentMethod) {
-                session(['payment_method' => $paymentMethod->code]);
-            } else {
-                session(['payment_method' => 'CASH']);
-            }
-        }
-
-        return redirect()->route('user.cart.confirm');
+        return collect(Session::get('cart_items', []))->sum('quantity');
     }
 
     /**
-     * Update jumlah produk di keranjang dengan improved error handling
-     *
-     * @param Request $request
-     * @param int $id ID cart item yang akan diupdate
-     * @return JsonResponse
+     * Respon standar: JSON jika AJAX, flash+redirect jika non-AJAX
      */
-    public function update(Request $request, $id): JsonResponse
-    {
-        try {
-            Log::info('Update cart item request received', [
-                'id' => $id,
-                'method' => $request->method(),
-                'has_quantity' => $request->has('quantity'),
-                'quantity' => $request->input('quantity'),
-                'headers' => [
-                    'accept' => $request->header('Accept'),
-                    'content-type' => $request->header('Content-Type'),
-                    'csrf' => $request->header('X-CSRF-TOKEN') ? 'present' : 'missing'
-                ]
-            ]);
-
-            // Validate request
-            $request->validate([
-                'quantity' => 'required|integer|min:1',
-            ]);
-
-            $user = Auth::user();
-
-            if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Anda harus login untuk mengubah jumlah produk'
-                ], 401);
-            }
-
-            // Find the cart item with explicit user check
-            $cartItem = Cart::where('id', $id)
-                ->where('user_id', $user->id)
-                ->first();
-
-            if (!$cartItem) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Item tidak ditemukan di keranjang Anda'
-                ], 404);
-            }
-
-            // Validasi stok produk
-            $product = Product::find($cartItem->product_id);
-            if (!$product) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Produk tidak ditemukan'
-                ], 404);
-            }
-
-            // Check product stock
-            if ($request->quantity > $product->stock) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Jumlah melebihi stok yang tersedia'
-                ], 400);
-            }
-
-            // Update quantity
-            $cartItem->quantity = $request->quantity;
-            $cartItem->save();
-
-            // Hitung total dengan diskon
-            $promo = $cartItem->promo_code ?? session('promo_code');
-            $promotion = $promo ? Promotion::where('promo_code', $promo)->first() : null;
-
-            $discount = 0;
-            $unit_price = $product->price ?? 0;
-
-            if ($promotion) {
-                if ($promotion->discount_type === 'percent') {
-                    $percent = $promotion->discount_value ?: 10;
-                    $discount = round($unit_price * ($percent / 100));
-                } elseif ($promotion->discount_type === 'fixed') {
-                    $discount = min($promotion->discount_value ?: 0, $unit_price);
-                }
-            }
-
-            $discounted_price = max(0, $unit_price - $discount);
-            $item_total = $discounted_price * $request->quantity;
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Jumlah produk berhasil diubah',
-                'data' => [
-                    'quantity' => $request->quantity,
-                    'unit_price' => $unit_price,
-                    'discounted_price' => $discounted_price,
-                    'item_total' => $item_total,
-                    'formatted_total' => 'Rp ' . number_format($item_total, 0, ',', '.'),
-                ]
-            ]);
-        } catch (QueryException $e) {
-            Log::error('Database error when updating cart item', [
-                'cart_item_id' => $id,
-                'error' => $e->getMessage(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan database saat mengubah jumlah produk',
-                'error' => config('app.debug') ? $e->getMessage() : null
-            ], 500);
-        } catch (Exception $e) {
-            Log::error('Error when updating cart item', [
-                'cart_item_id' => $id,
-                'error' => $e->getMessage(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengubah jumlah produk',
-                'error' => config('app.debug') ? $e->getMessage() : null
-            ], 500);
+    private function respond(
+        bool $success,
+        string $message,
+        int $status = 200,
+        ?string $error = null,
+        array $data = []
+    ) {
+        if (request()->expectsJson()) {
+            return response()->json(compact('success', 'message', 'error', 'data'), $status);
         }
-    }
-
-    /**
-     * Process update via POST for browsers that don't support PUT
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
-     */
-    public function updatePost(Request $request, $id): JsonResponse
-    {
-        Log::info('Update POST method received', [
-            'id' => $id,
-            'method' => $request->method(),
-            'has_quantity' => $request->has('quantity'),
-            'quantity' => $request->input('quantity'),
-            'csrf' => $request->header('X-CSRF-TOKEN') ? 'present' : 'missing'
-        ]);
-
-        return $this->update($request, $id);
-    }
-
-    /**
-     * Delete item from cart with improved error handling (JSON response)
-     * Supports both DELETE and POST methods for better compatibility
-     *
-     * @param int $id Cart item ID
-     * @return JsonResponse
-     */
-    public function delete($id): JsonResponse
-    {
-        try {
-            $user = Auth::user();
-
-            // Log request for debugging
-            Log::info('Delete cart item request received', [
-                'id' => $id,
-                'user_id' => $user ? $user->id : 'not authenticated',
-                'method' => request()->method(),
-                'headers' => [
-                    'accept' => request()->header('Accept'),
-                    'content-type' => request()->header('Content-Type'),
-                    'csrf' => request()->header('X-CSRF-TOKEN') ? 'present' : 'missing'
-                ]
-            ]);
-
-            if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Anda harus login untuk menghapus produk dari keranjang'
-                ], 401);
-            }
-
-            // Find the cart item with explicit user check
-            $cartItem = Cart::where('id', $id)
-                ->where('user_id', $user->id)
-                ->first();
-
-            if (!$cartItem) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Produk tidak ditemukan di keranjang Anda'
-                ], 404);
-            }
-
-            // Get product details before deletion for logging
-            $productId = $cartItem->product_id;
-            $productName = $cartItem->product ? $cartItem->product->name : 'unknown';
-
-            // Log before deletion (optional but helpful for debugging)
-            Log::info('Deleting cart item', [
-                'user_id' => $user->id,
-                'cart_item_id' => $id,
-                'product_id' => $productId,
-                'product_name' => $productName
-            ]);
-
-            // Perform the deletion
-            $cartItem->delete();
-
-            // Get updated cart count for the user
-            $cartCount = Cart::where('user_id', $user->id)->sum('quantity');
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Produk berhasil dihapus dari keranjang',
-                'data' => [
-                    'cart_count' => $cartCount,
-                    'deleted_id' => $id
-                ]
-            ]);
-        } catch (QueryException $e) {
-            Log::error('Database error when deleting cart item', [
-                'cart_item_id' => $id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan database saat menghapus produk',
-                'error' => config('app.debug') ? $e->getMessage() : null
-            ], 500);
-        } catch (Exception $e) {
-            Log::error('Error when deleting cart item', [
-                'cart_item_id' => $id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menghapus produk dari keranjang: ' . $e->getMessage(),
-                'error' => config('app.debug') ? $e->getMessage() : null
-            ], 500);
-        }
-    }
-
-    /**
-     * Hapus produk dari keranjang (redirect response)
-     * Supports form submission with POST method
-     *
-     * @param int $id
-     * @return RedirectResponse
-     */
-    public function remove($id): RedirectResponse
-    {
-        try {
-            $user = Auth::user();
-
-            if (!$user) {
-                return redirect()->route('login')
-                    ->with('error', 'Anda harus login untuk menghapus produk dari keranjang');
-            }
-
-            $cartItem = Cart::where('user_id', $user->id)
-                ->where('id', $id)
-                ->first();
-
-            if (!$cartItem) {
-                return redirect()->back()
-                    ->with('error', 'Produk tidak ditemukan di keranjang Anda.');
-            }
-
-            // Log before deletion
-            Log::info('Removing cart item (redirect)', [
-                'user_id' => $user->id,
-                'cart_item_id' => $id,
-                'product_id' => $cartItem->product_id,
-            ]);
-
-            $cartItem->delete();
-            return redirect()->back()->with('success', 'Produk berhasil dihapus dari keranjang.');
-        } catch (Exception $e) {
-            Log::error('Error when removing cart item', [
-                'cart_item_id' => $id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return redirect()->back()->with('error', 'Gagal menghapus produk dari keranjang.');
-        }
-    }
-
-    /**
-     * Alternative delete endpoint that accepts POST method for compatibility
-     * This helps with browsers or situations where DELETE method might not be supported
-     *
-     * @param Request $request
-     * @param int $id
-     * @return JsonResponse
-     */
-    public function deletePost(Request $request, $id): JsonResponse
-    {
-        Log::info('Delete POST method received', [
-            'id' => $id,
-            'csrf' => $request->header('X-CSRF-TOKEN') ? 'present' : 'missing'
-        ]);
-
-        // Simply call the delete method
-        return $this->delete($id);
-    }
-
-    /**
-     * Save shipping method to session
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function saveShipping(Request $request): JsonResponse
-    {
-        try {
-            $request->validate([
-                'shipping_method' => 'required|string|max:50',
-            ]);
-
-            $shippingMethod = $request->input('shipping_method');
-            $shippingCost = $this->calculateShippingCost($shippingMethod);
-
-            session([
-                'shipping_method' => $shippingMethod,
-                'shipping_cost' => $shippingCost
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Shipping method saved successfully',
-                'data' => [
-                    'shipping_method' => $shippingMethod,
-                    'shipping_cost' => $shippingCost,
-                    'formatted_cost' => 'Rp' . number_format($shippingCost, 0, ',', '.')
-                ]
-            ]);
-        } catch (Exception $e) {
-            Log::error('Error saving shipping method', [
-                'error' => $e->getMessage(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menyimpan metode pengiriman',
-                'error' => config('app.debug') ? $e->getMessage() : null
-            ], 500);
-        }
-    }
-
-    /**
-     * Handle updating shipping method via AJAX
-     * This method ensures compatibility with the JavaScript in cart.blade.php
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function updateShipping(Request $request): JsonResponse
-    {
-        // Simply call saveShipping to handle the request
-        return $this->saveShipping($request);
-    }
-
-    /**
-     * Simpan metode pembayaran ke session.
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function savePayment(Request $request): JsonResponse
-    {
-        try {
-            $request->validate([
-                'payment_method' => 'required|string|max:50',
-            ]);
-
-            session(['payment_method' => $request->payment_method]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Metode pembayaran berhasil disimpan'
-            ]);
-        } catch (Exception $e) {
-            Log::error('Error saving payment method', [
-                'error' => $e->getMessage(),
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menyimpan metode pembayaran',
-                'error' => config('app.debug') ? $e->getMessage() : null
-            ], 500);
-        }
-    }
-
-    /**
-     * Handle updating payment method via AJAX
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
-    public function updatePayment(Request $request): JsonResponse
-    {
-        // Simply call savePayment to handle the request
-        return $this->savePayment($request);
-    }
-
-    /**
-     * Tambah produk ke keranjang dengan validasi promo code dan diskon.
-     *
-     * @param Request $request
-     * @return RedirectResponse|JsonResponse
-     */
-    public function add(Request $request)
-    {
-        try {
-            $request->validate([
-                'product_id' => 'required|exists:products,id',
-                'promo_code' => 'nullable|string|max:50',
-                'quantity' => 'nullable|integer|min:1',
-            ]);
-
-            $user = Auth::user();
-
-            if (!$user) {
-                if ($request->expectsJson() || $request->ajax()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Anda harus login untuk menambahkan produk ke keranjang'
-                    ], 401);
-                }
-                return redirect()->route('login')
-                    ->with('error', 'Anda harus login untuk menambahkan produk ke keranjang');
-            }
-
-            $productId = $request->input('product_id');
-            $promoCode = trim($request->input('promo_code')) ?: session('promo_code');
-            $quantity = $request->input('quantity', 1);
-            $discount = 0;
-            $discountMsg = '';
-
-            // Pastikan $product adalah model, bukan Collection
-            $product = Product::find($productId);
-
-            if (!$product || !($product instanceof Product)) {
-                if ($request->expectsJson() || $request->ajax()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Produk tidak ditemukan.'
-                    ], 404);
-                }
-                return back()->with('error', 'Produk tidak ditemukan.');
-            }
-
-            // Check stock
-            if ($quantity > $product->stock) {
-                if ($request->expectsJson() || $request->ajax()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Jumlah melebihi stok yang tersedia.'
-                    ], 400);
-                }
-                return back()->with('error', 'Jumlah melebihi stok yang tersedia.');
-            }
-
-            // Validasi dan hitung diskon dari promo
-            $promotion = null;
-            if ($promoCode) {
-                $promotion = Promotion::where('promo_code', $promoCode)
-                    ->where('active', true)
-                    ->first();
-
-                // Pastikan $promotion tidak null sebelum akses property discount_type
-                if ($promotion && (method_exists($promotion, 'isValid') ? $promotion->isValid() : true)) {
-                    if ($promotion->discount_type === 'fixed') {
-                        // Diskon fixed tidak boleh melebihi harga produk
-                        $discount = min($promotion->discount_value ?? 0, $product->price);
-                        $discountMsg = "Diskon Rp " . number_format($discount, 0, ',', '.');
-                    } elseif ($promotion->discount_type === 'percent') {
-                        $percent = $promotion->discount_value ?: 10;
-                        $discount = round($product->price * ($percent / 100));
-                        $discountMsg = "Diskon {$percent}%";
-                    }
-                } else {
-                    // Promo code dari newsletter?
-                    $contact = Contact::where('email', $user->email)
-                        ->where('promo_code', $promoCode)
-                        ->first();
-                    if ($contact) {
-                        $discount = round($product->price * 0.10);
-                        $discountMsg = "Diskon Newsletter 10%";
-                    }
-                }
-            }
-
-            // Cek dan update Cart dengan diskon yang benar
-            $cartItem = Cart::where('user_id', $user->id)
-                ->where('product_id', $productId)
-                ->first();
-
-            if ($cartItem) {
-                // Jika sudah ada, tambah quantity
-                $cartItem->quantity = ($cartItem->quantity ?? 0) + $quantity;
-
-                // Pastikan tidak melebihi stok
-                if ($cartItem->quantity > $product->stock) {
-                    $cartItem->quantity = $product->stock;
-                }
-
-                $cartItem->promo_code = $promoCode;
-                $cartItem->discount = $discount;
-                $cartItem->save();
-
-                Log::info('Updated cart item quantity', [
-                    'user_id' => $user->id,
-                    'product_id' => $productId,
-                    'quantity' => $cartItem->quantity,
-                    'promo_code' => $promoCode
-                ]);
-            } else {
-                // Jika belum ada, buat baru
-                $cartData = [
-                    'user_id'    => $user->id,
-                    'product_id' => $productId,
-                    'quantity'   => $quantity,
-                    'promo_code' => $promoCode,
-                    'discount'   => $discount,
-                ];
-
-                // Tambahkan interface_id jika model membutuhkannya
-                if (in_array('interface_id', (new Cart)->getFillable())) {
-                    $cartData['interface_id'] = 1;
-                }
-
-                $cartItem = Cart::create($cartData);
-
-                Log::info('Added new item to cart', [
-                    'user_id' => $user->id,
-                    'product_id' => $productId,
-                    'quantity' => $quantity,
-                    'promo_code' => $promoCode
-                ]);
-            }
-
-            // Simpan promo ke session
-            session([
-                'promo_code' => $promoCode,
-                'promo_discount' => $discount
-            ]);
-
-            $message = 'Produk berhasil ditambahkan ke keranjang';
-            if ($discount > 0) {
-                $message .= ' dengan promo! ' . $discountMsg;
-            } else if ($promoCode) {
-                $message .= '. Kode promo tidak valid.';
-            } else {
-                $message .= '.';
-            }
-
-            // Return JSON response if requested
-            if ($request->expectsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => $message,
-                    'data' => [
-                        'cart_count' => Cart::where('user_id', $user->id)->sum('quantity'),
-                        'item_id' => $cartItem->id,
-                        'quantity' => $cartItem->quantity,
-                        'discount' => $discount
-                    ]
-                ]);
-            }
-
-            return back()->with('success', $message);
-        } catch (Exception $e) {
-            Log::error('Error adding product to cart', [
-                'product_id' => $request->input('product_id'),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            if ($request->expectsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Gagal menambahkan produk ke keranjang: ' . $e->getMessage(),
-                    'error' => config('app.debug') ? $e->getMessage() : null
-                ], 500);
-            }
-
-            return back()->with('error', 'Gagal menambahkan produk ke keranjang.');
-        }
-    }
-
-    /**
-     * Apply promo code to cart
-     *
-     * @param Request $request
-     * @return RedirectResponse|JsonResponse
-     */
-    public function redeemPromo(Request $request)
-    {
-        try {
-            $request->validate([
-                'promo_code' => 'required|string|min:3|max:50',
-            ]);
-
-            // Check if promo code exists
-            $promotion = Promotion::where('promo_code', $request->promo_code)
-                ->where('status', 1) // Using 'status' column instead of 'active'
-                ->first();
-
-            if (!$promotion) {
-                if ($request->expectsJson()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Kode promo tidak valid atau sudah tidak aktif'
-                    ], 400);
-                }
-                return back()->with('error', 'Kode promo tidak valid atau sudah tidak aktif');
-            }
-
-            // Store promo in session
-            session([
-                'promo_code' => $promotion->promo_code,
-                'promo_type' => $promotion->discount_type,
-                'promo_discount' => $promotion->discount_value
-            ]);
-
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Kode promo berhasil diterapkan',
-                    'data' => [
-                        'promo_code' => $promotion->promo_code,
-                        'promo_type' => $promotion->discount_type,
-                        'promo_value' => $promotion->discount_value
-                    ]
-                ]);
-            }
-
-            return back()->with('success', 'Kode promo berhasil diterapkan');
-        } catch (Exception $e) {
-            Log::error('Error applying promo code', [
-                'promo_code' => $request->promo_code,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Gagal menerapkan kode promo: ' . $e->getMessage()
-                ], 500);
-            }
-
-            return back()->with('error', 'Gagal menerapkan kode promo');
-        }
-    }
-
-    /**
-     * Handle updating quantity via AJAX
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function updateQuantity(Request $request): JsonResponse
-    {
-        try {
-            $request->validate([
-                'cart_id' => 'required|integer|exists:carts,id',
-                'quantity' => 'required|integer|min:1',
-            ]);
-            $cart = Cart::find($request->cart_id);
-            if (!$cart) {
-                return response()->json(['success' => false, 'message' => 'Item keranjang tidak ditemukan']);
-            }
-
-            // Validate quantity
-            $quantity = (int)$request->quantity;
-            if ($quantity < 1) {
-                $quantity = 1;
-            }
-
-            // Check stock
-            $product = $cart->product;
-            if ($product && $quantity > $product->stock) {
-                $quantity = $product->stock;
-                $message = 'Jumlah disesuaikan dengan stok tersedia';
-            } else {
-                $message = 'Jumlah berhasil diperbarui';
-            }
-
-            // Update cart
-            $cart->quantity = $quantity;
-            $cart->save();
-
-            return response()->json([
-                'success' => true,
-                'message' => $message,
-                'cart' => $cart
-            ]);
-        } catch (Exception $e) {
-            Log::error('Error updating cart quantity', [
-                'error' => $e->getMessage(),
-            ]);
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * Handle removing item via AJAX
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function removeItem(Request $request): JsonResponse
-    {
-        try {
-            $request->validate([
-                'cart_id' => 'required|integer|exists:carts,id',
-            ]);
-            $cart = Cart::find($request->cart_id);
-            if (!$cart) {
-                return response()->json(['success' => false, 'message' => 'Item keranjang tidak ditemukan']);
-            }
-
-            $cart->delete();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Item berhasil dihapus dari keranjang'
-            ]);
-        } catch (Exception $e) {
-            Log::error('Error removing cart item', [
-                'error' => $e->getMessage(),
-            ]);
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
-        }
+        return back()->with($success ? 'success' : 'error', $message)
+            ->with($data);
     }
 }
