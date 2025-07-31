@@ -6,122 +6,25 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 @endpush
 
-@section('content')
-    @php
-        $user = auth()->user();
-        $cartItems = \App\Models\Cart::with(['product', 'product.images'])
-            ->where('user_id', $user->id)
-            ->get();
-        $promo_code = session('promo_code') ?? '';
-        $localMethods = \DB::table('local_payment_methods')->where('status', 1)->get();
-        $globalMethods = \DB::table('global_payment_methods')->where('status', 1)->get();
-        $allMethods = collect($localMethods)->merge($globalMethods);
-        $selected_payment = old('payment_method', session('payment_method') ?? ($allMethods->first()->code ?? null));
-        $shippingMethods = [
-            [
-                'code' => 'KURIR_TOKO',
-                'name' => 'Kurir Toko',
-                'desc' =>
-                    'Pengiriman langsung dari toko Azka Garden. <b>Ongkir flat sesuai jarak:</b> <br><span style="color:#047857;font-size:0.98em;">(&lt;5km) Rp10.000, (5-10km) Rp15.000, (&gt;10km) Rp20.000</span>',
-                'icon' => 'truck',
-            ],
-            [
-                'code' => 'GOSEND',
-                'name' => 'GoSend Sameday',
-                'desc' => 'Kirim instan via GoSend (estimasi Rp15.000-30.000 sesuai aplikasi)',
-                'icon' => 'bicycle',
-            ],
-            [
-                'code' => 'JNE',
-                'name' => 'JNE REG',
-                'desc' => 'Reguler via JNE (8.000-20.000/kg, estimasi aplikasi atau admin)',
-                'icon' => 'box',
-            ],
-            [
-                'code' => 'JNT',
-                'name' => 'J&T EZ',
-                'desc' => 'J&T EZ (10.000-22.000/kg, estimasi aplikasi atau admin)',
-                'icon' => 'truck-fast',
-            ],
-            [
-                'code' => 'SICEPAT',
-                'name' => 'SiCepat BEST',
-                'desc' => 'SiCepat BEST (10.000-18.000/kg, estimasi aplikasi atau admin)',
-                'icon' => 'bolt',
-            ],
-            [
-                'code' => 'AMBIL_SENDIRI',
-                'name' => 'Ambil Sendiri di Toko',
-                'desc' => 'Ambil langsung ke Azka Garden, <b style="color:#16a34a;">bebas ongkir</b>!',
-                'icon' => 'store',
-            ],
-        ];
-        $selected_shipping = old('shipping_method', session('shipping_method') ?? $shippingMethods[0]['code']);
-
-        // Properly get user addresses
-        $hasAddress = $user && method_exists($user, 'addresses') && $user->addresses()->count();
-
-        // Get primary address or first address
-        $primaryAddress = null;
-        if ($hasAddress) {
-            $primaryAddress = $user->addresses()->where('is_primary', 1)->first() ?? $user->addresses()->first();
-        }
-
-        // Set store location coordinates - Toko Bunga Hendrik di Jalan Raya KSU
-        $storeLocation = [
-            'lat' => -6.4122794,
-            'lng' => 106.829692,
-            'address' => 'Jalan Raya KSU, Kelurahan Tirtajaya, Kecamatan Sukmajaya, Kota Depok, Jawa Barat 16412',
-            'plus_code' => 'HRQH+3VP',
-        ];
-
-        // Pajak 10%
-        $tax_rate = 0.1;
-
-        // Calculate totals
-        $grand_total = 0;
-        $total_discount = 0;
-        $total_weight = 0;
-
-        foreach ($cartItems as $item) {
-            $promo = $item->promo_code ?? $promo_code;
-            $promotion = $promo ? \App\Models\Promotion::where('promo_code', $promo)->first() : null;
-            $discount = 0;
-            $unit_price = $item->product->price ?? 0;
-            $qty = $item->quantity ?? 0;
-
-            if ($promotion) {
-                if ($promotion->discount_type === 'percent') {
-                    $percent = $promotion->discount_value ?: 10;
-                    $discount = round($unit_price * ($percent / 100));
-                } elseif ($promotion->discount_type === 'fixed') {
-                    $discount = min($promotion->discount_value ?: 0, $unit_price);
-                }
-            }
-
-            $discounted_price = max(0, $unit_price - $discount);
-            $item_total = $discounted_price * $qty;
-            $grand_total += $item_total;
-            $total_discount += $discount * $qty;
-            $total_weight += ($item->product->weight ?? 0) * $qty;
-        }
-
-        // Hitung pajak 10%
-        $tax_total = round($grand_total * $tax_rate);
-
-        // Total akhir termasuk pajak (tanpa shipping yang akan dikalkulasi dengan JS)
-        $final_total = $grand_total + $tax_total;
-    @endphp
-
+@push('styles')
     <style>
-        /* Styling for checkout page */
+        /**
+             * Azka Garden Checkout Page Styles
+             * Created: 2025-07-31 15:29:34
+             * Updated by: DenuJanuari
+             * Enhanced checkout system with payment integration
+             */
+
         :root {
+            /* Main colors */
             --primary: #166534;
             --primary-light: #16a34a;
             --primary-dark: #14532d;
             --primary-bg: #f0fdf4;
             --primary-bg-hover: #dcfce7;
             --accent: #4ade80;
+
+            /* Neutral colors */
             --white: #ffffff;
             --black: #111827;
             --gray-50: #f9fafb;
@@ -134,6 +37,8 @@
             --gray-700: #374151;
             --gray-800: #1f2937;
             --gray-900: #111827;
+
+            /* Status colors */
             --error: #b91c1c;
             --error-bg: #fee2e2;
             --warning: #ea580c;
@@ -142,66 +47,427 @@
             --success-bg: #dcfce7;
             --info: #0284c7;
             --info-bg: #e0f2fe;
+
+            /* Shadow styles */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+            /* Typography */
+            --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+            /* Transitions */
+            --transition-all: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
+        /* Typography & Base Styles */
+        body {
+            font-family: var(--font-sans);
+            color: var(--gray-800);
+            background-color: #f8f9fa;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-weight: 700;
+            line-height: 1.25;
+            color: var(--gray-900);
+        }
+
+        .page-heading {
+            position: relative;
+            margin-bottom: 2rem;
+            font-weight: 800;
+            font-size: 2rem;
+            letter-spacing: -0.025em;
+            color: var(--gray-900);
+            text-align: center;
+        }
+
+        .page-heading::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background-color: var(--primary);
+            border-radius: 3px;
+        }
+
+        /* Container & Layout */
         .checkout-container {
             max-width: 1200px;
-            margin: 2rem auto 3rem;
+            margin: 2rem auto;
             padding: 0 1rem;
-        }
-
-        .checkout-header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .checkout-header h1 {
-            font-size: 2rem;
-            font-weight: 800;
-            color: var(--primary-dark);
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.025em;
-        }
-
-        .checkout-header p {
-            color: var(--gray-600);
-            font-size: 1.1rem;
         }
 
         .checkout-grid {
             display: grid;
-            grid-template-columns: 1fr 400px;
+            grid-template-columns: 2fr 1fr;
             gap: 2rem;
+            align-items: flex-start;
         }
 
-        .checkout-main {
+        /* Progress Bar */
+        .progress-bar {
+            background-color: var(--white);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--gray-100);
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .progress-steps::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: var(--gray-200);
+            z-index: 1;
+        }
+
+        .progress-steps::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            height: 2px;
+            background-color: var(--primary);
+            z-index: 2;
+            width: 66.67%;
+            /* Progress to step 2 (checkout) */
+            transition: var(--transition-all);
+        }
+
+        .progress-step {
             display: flex;
             flex-direction: column;
-            gap: 1.5rem;
+            align-items: center;
+            position: relative;
+            z-index: 3;
+            background-color: #f8f9fa;
+            padding: 0.5rem;
         }
 
-        .checkout-panel {
-            background: var(--white);
-            border-radius: 1rem;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        .progress-step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: var(--white);
+            margin-bottom: 0.5rem;
+            transition: var(--transition-all);
         }
 
-        .checkout-panel:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        .progress-step.completed .progress-step-circle {
+            background-color: var(--primary);
         }
 
-        .checkout-panel-header {
-            background: var(--primary-bg);
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--gray-200);
+        .progress-step.active .progress-step-circle {
+            background-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(22, 101, 52, 0.2);
         }
 
-        .checkout-panel-header h2 {
+        .progress-step.inactive .progress-step-circle {
+            background-color: var(--gray-300);
+            color: var(--gray-600);
+        }
+
+        .progress-step-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--gray-700);
+            text-align: center;
+        }
+
+        .progress-step.active .progress-step-label {
             color: var(--primary);
-            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        /* Card Styles */
+        .checkout-card {
+            background-color: var(--white);
+            border-radius: 1rem;
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--gray-100);
+            transition: var(--transition-all);
+        }
+
+        .checkout-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .checkout-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--gray-100);
+            background-color: var(--gray-50);
+        }
+
+        .checkout-card-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--gray-800);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .checkout-card-title svg {
+            color: var(--primary);
+        }
+
+        .checkout-card-body {
+            padding: 1.5rem;
+        }
+
+        /* Delivery Information */
+        .delivery-info {
+            background-color: var(--info-bg);
+            border: 1px solid var(--info);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .delivery-address {
+            background-color: var(--white);
+            border: 1px solid var(--gray-200);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .address-label {
+            display: inline-block;
+            background-color: var(--primary-bg);
+            color: var(--primary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .address-recipient {
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 0.25rem;
+        }
+
+        .address-details {
+            color: var(--gray-600);
+            font-size: 0.95rem;
+            line-height: 1.4;
+            margin-bottom: 0.25rem;
+        }
+
+        .address-phone {
+            color: var(--gray-700);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        /* Order Items */
+        .order-items {
+            border: 1px solid var(--gray-200);
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+
+        .order-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-100);
+            transition: var(--transition-fast);
+        }
+
+        .order-item:last-child {
+            border-bottom: none;
+        }
+
+        .order-item:hover {
+            background-color: var(--gray-50);
+        }
+
+        .item-details {
+            flex: 1;
+        }
+
+        .item-name {
+            font-weight: 600;
+            color: var(--gray-800);
+            margin-bottom: 0.25rem;
+        }
+
+        .item-price {
+            color: var(--gray-600);
+            font-size: 0.875rem;
+        }
+
+        .item-quantity {
+            font-weight: 500;
+            color: var(--gray-700);
+            margin: 0 1rem;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .item-subtotal {
+            font-weight: 600;
+            color: var(--primary);
+            min-width: 100px;
+            text-align: right;
+        }
+
+        /* Shipping Information */
+        .shipping-info {
+            background-color: var(--success-bg);
+            border: 1px solid var(--success);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .shipping-method {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .shipping-name {
+            font-weight: 600;
+            color: var(--success);
+        }
+
+        .shipping-cost {
+            font-weight: 600;
+            color: var(--success);
+        }
+
+        .shipping-description {
+            color: var(--gray-700);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .shipping-distance {
+            color: var(--gray-600);
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        /* Payment Methods */
+        .payment-methods {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .payment-method {
+            border: 2px solid var(--gray-200);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            cursor: pointer;
+            transition: var(--transition-all);
+            position: relative;
+            background-color: var(--white);
+        }
+
+        .payment-method:hover {
+            border-color: var(--primary-light);
+            box-shadow: var(--shadow-sm);
+            transform: translateY(-1px);
+        }
+
+        .payment-method.selected {
+            border-color: var(--primary);
+            background-color: var(--primary-bg);
+            box-shadow: var(--shadow-md);
+        }
+
+        .payment-method-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .payment-method input[type="radio"] {
+            width: 1.25rem;
+            height: 1.25rem;
+            accent-color: var(--primary);
+        }
+
+        .payment-method-name {
+            font-weight: 600;
+            color: var(--gray-800);
+            flex: 1;
+        }
+
+        .payment-method-fee {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .payment-method-description {
+            color: var(--gray-600);
+            font-size: 0.875rem;
+            margin-left: 2rem;
+        }
+
+        /* Order Summary */
+        .summary-card {
+            position: sticky;
+            top: 2rem;
+            background-color: var(--white);
+            border-radius: 1rem;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--gray-200);
+            overflow: hidden;
+        }
+
+        .summary-header {
+            background-color: var(--gray-800);
+            color: var(--white);
+            padding: 1.25rem 1.5rem;
+        }
+
+        .summary-title {
+            font-size: 1.125rem;
             font-weight: 700;
             margin: 0;
             display: flex;
@@ -209,372 +475,144 @@
             gap: 0.5rem;
         }
 
-        .checkout-panel-body {
+        .summary-body {
             padding: 1.5rem;
-        }
-
-        /* Order Items */
-        .order-item {
-            display: flex;
-            align-items: center;
-            padding: 1rem 0;
-            border-bottom: 1px solid var(--gray-100);
-        }
-
-        .order-item:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-
-        .order-item-image {
-            width: 60px;
-            height: 60px;
-            border-radius: 0.5rem;
-            object-fit: cover;
-            background: var(--gray-100);
-            border: 1px solid var(--gray-200);
-            margin-right: 1rem;
-        }
-
-        .order-item-details {
-            flex: 1;
-        }
-
-        .order-item-name {
-            font-weight: 600;
-            color: var(--gray-800);
-            margin-bottom: 0.25rem;
-            font-size: 1rem;
-        }
-
-        .order-item-price {
-            color: var(--gray-600);
-            font-size: 0.875rem;
-            margin-bottom: 0.25rem;
-        }
-
-        .order-item-quantity {
-            color: var(--gray-500);
-            font-size: 0.875rem;
-        }
-
-        .order-item-total {
-            font-weight: 600;
-            color: var(--primary);
-            white-space: nowrap;
-        }
-
-        /* Address Panel */
-        .address-panel {
-            background: var(--info-bg);
-            border: 1px solid #bae6fd;
-            padding: 1rem;
-            border-radius: 0.75rem;
-            margin-bottom: 1rem;
-        }
-
-        .address-panel h3 {
-            color: var(--info);
-            font-size: 1rem;
-            margin-bottom: 0.75rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .address-card {
-            background: var(--white);
-            border: 1px solid #93c5fd;
-            padding: 1rem;
-            border-radius: 0.5rem;
-        }
-
-        .address-name {
-            font-weight: 600;
-            color: var(--gray-800);
-            margin-bottom: 0.5rem;
-        }
-
-        .address-detail {
-            color: var(--gray-600);
-            font-size: 0.95rem;
-            margin-bottom: 0.25rem;
-        }
-
-        /* Shipping Methods */
-        .shipping-methods {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .shipping-method {
-            display: flex;
-            align-items: flex-start;
-            padding: 1rem;
-            border: 1px solid var(--gray-200);
-            border-radius: 0.75rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .shipping-method:hover {
-            border-color: var(--primary-light);
-            background: var(--gray-50);
-            transform: translateY(-2px);
-        }
-
-        .shipping-method.selected {
-            border-color: var(--primary);
-            background: var(--primary-bg);
-        }
-
-        .shipping-method-radio {
-            margin-top: 0.25rem;
-            margin-right: 0.75rem;
-            accent-color: var(--primary);
-        }
-
-        .shipping-method-icon {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 2.5rem;
-            height: 2.5rem;
-            background: var(--primary-bg);
-            color: var(--primary);
-            border-radius: 0.5rem;
-            margin-right: 0.75rem;
-            font-size: 1.25rem;
-            transition: all 0.2s ease;
-        }
-
-        .shipping-method.selected .shipping-method-icon {
-            background: var(--primary);
-            color: var(--white);
-        }
-
-        .shipping-method-details {
-            flex: 1;
-        }
-
-        .shipping-method-name {
-            font-weight: 600;
-            color: var(--gray-800);
-            margin-bottom: 0.25rem;
-        }
-
-        .shipping-method-desc {
-            font-size: 0.875rem;
-            color: var(--gray-500);
-        }
-
-        /* Payment Methods */
-        .payment-methods {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .payment-method {
-            display: flex;
-            align-items: center;
-            padding: 1rem;
-            border: 1px solid var(--gray-200);
-            border-radius: 0.75rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .payment-method:hover {
-            border-color: var(--primary-light);
-            background: var(--gray-50);
-            transform: translateY(-2px);
-        }
-
-        .payment-method.selected {
-            border-color: var(--primary);
-            background: var(--primary-bg);
-        }
-
-        .payment-method-radio {
-            margin-right: 0.75rem;
-            accent-color: var(--primary);
-        }
-
-        .payment-method-icon {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 3rem;
-            height: 2rem;
-            margin-right: 0.75rem;
-            font-size: 1.5rem;
-            color: var(--primary);
-            transition: all 0.2s ease;
-        }
-
-        .payment-method.selected .payment-method-icon {
-            transform: scale(1.1);
-        }
-
-        .payment-method-details {
-            flex: 1;
-        }
-
-        .payment-method-name {
-            font-weight: 600;
-            color: var(--gray-800);
-        }
-
-        .payment-method-desc {
-            font-size: 0.875rem;
-            color: var(--gray-500);
-        }
-
-        /* Order Notes */
-        .order-notes-input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--gray-300);
-            border-radius: 0.5rem;
-            font-family: inherit;
-            font-size: 1rem;
-            transition: all 0.2s ease;
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        .order-notes-input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(22, 101, 52, 0.1);
-        }
-
-        /* Order Summary */
-        .order-summary {
-            background: var(--white);
-            border-radius: 1rem;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-            overflow: hidden;
-            position: sticky;
-            top: 2rem;
         }
 
         .summary-row {
             display: flex;
             justify-content: space-between;
-            padding: 0.75rem 0;
-            color: var(--gray-600);
+            margin-bottom: 0.75rem;
+            color: var(--gray-700);
         }
 
-        .summary-row.summary-total {
+        .summary-row.discount {
+            color: var(--success);
+            font-weight: 500;
+        }
+
+        .summary-row.shipping {
+            color: var(--info);
+            font-weight: 500;
+        }
+
+        .summary-row.tax {
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .summary-row.payment-fee {
+            color: var(--warning);
+            font-weight: 500;
+        }
+
+        .summary-divider {
+            height: 1px;
+            background-color: var(--gray-200);
+            margin: 1rem 0;
+        }
+
+        .summary-total {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1.25rem;
             font-weight: 700;
             color: var(--gray-900);
-            font-size: 1.25rem;
-            border-top: 1px solid var(--gray-200);
-            padding-top: 1rem;
-            margin-top: 0.5rem;
         }
 
-        /* Button Styles */
-        .back-button {
-            background: var(--gray-100);
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .back-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.875rem 1rem;
+            background-color: var(--white);
             color: var(--gray-700);
             border: 1px solid var(--gray-300);
             border-radius: 0.5rem;
-            padding: 1rem;
             font-weight: 600;
-            font-size: 1rem;
-            width: 100%;
-            cursor: pointer;
-            transition: all 0.2s ease;
+            transition: var(--transition-fast);
+            text-decoration: none;
+        }
+
+        .back-btn:hover {
+            background-color: var(--gray-100);
+            color: var(--gray-800);
+            transform: translateY(-1px);
+            text-decoration: none;
+        }
+
+        .proceed-btn {
+            flex: 2;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            margin-bottom: 1rem;
-            text-decoration: none;
-            text-align: center;
-        }
-
-        .back-button:hover {
-            background: var(--gray-200);
-            border-color: var(--gray-400);
-            transform: translateY(-1px);
-            color: var(--gray-700);
-            text-decoration: none;
-        }
-
-        .checkout-button {
-            background: var(--primary);
+            padding: 0.875rem 1rem;
+            background-color: var(--primary);
             color: var(--white);
             border: none;
             border-radius: 0.5rem;
-            padding: 1rem;
-            font-weight: 700;
-            font-size: 1.1rem;
-            width: 100%;
+            font-weight: 600;
+            transition: var(--transition-fast);
             cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
             position: relative;
             overflow: hidden;
         }
 
-        .checkout-button:hover {
-            background: var(--primary-dark);
+        .proceed-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: btn-shine 2s infinite;
+        }
+
+        @keyframes btn-shine {
+            100% {
+                left: 100%;
+            }
+        }
+
+        .proceed-btn:hover {
+            background-color: var(--primary-dark);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: var(--shadow-md);
         }
 
-        .checkout-button:active {
-            transform: translateY(0);
-        }
-
-        .checkout-button:disabled {
-            background: var(--gray-400);
+        .proceed-btn:disabled {
+            background-color: var(--gray-400);
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
 
-        /* Loading overlay */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease, visibility 0.3s;
+        /* Loading State */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
         }
 
-        .loading-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .loading-spinner {
-            border: 4px solid var(--gray-200);
+        .spinner {
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
-            border-top: 4px solid var(--primary);
-            width: 40px;
-            height: 40px;
+            border-left-color: currentColor;
             animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: text-bottom;
         }
 
         @keyframes spin {
@@ -587,30 +625,96 @@
             }
         }
 
-        /* Responsive */
+        /* Notes Section */
+        .order-notes {
+            margin-top: 1rem;
+        }
+
+        .order-notes label {
+            font-weight: 600;
+            color: var(--gray-800);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .order-notes textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 0.75rem;
+            border: 1px solid var(--gray-300);
+            border-radius: 0.5rem;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            resize: vertical;
+            transition: var(--transition-fast);
+        }
+
+        .order-notes textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(22, 101, 52, 0.1);
+        }
+
+        /* User Info */
+        .user-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px dashed var(--gray-200);
+            color: var(--gray-500);
+            font-size: 0.75rem;
+        }
+
+        /* Responsive Design */
         @media (max-width: 1024px) {
             .checkout-grid {
                 grid-template-columns: 1fr;
+                gap: 1rem;
             }
 
-            .order-summary {
+            .summary-card {
                 position: static;
-                margin-top: 1rem;
+                margin-top: 1.5rem;
             }
         }
 
         @media (max-width: 768px) {
             .checkout-container {
-                margin-top: 1rem;
-                padding: 0 0.5rem;
+                padding: 0 0.75rem;
+                margin: 1rem auto;
             }
 
-            .checkout-header h1 {
-                font-size: 1.75rem;
+            .page-heading {
+                font-size: 1.5rem;
             }
 
-            .checkout-panel-body {
+            .checkout-card-header,
+            .checkout-card-body {
                 padding: 1rem;
+            }
+
+            .progress-steps {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .progress-steps::before,
+            .progress-steps::after {
+                display: none;
+            }
+
+            .progress-step {
+                flex-direction: row;
+                width: 100%;
+                justify-content: flex-start;
+                background-color: transparent;
+                padding: 0;
+            }
+
+            .progress-step-circle {
+                margin-bottom: 0;
+                margin-right: 1rem;
             }
 
             .order-item {
@@ -619,869 +723,711 @@
                 gap: 0.5rem;
             }
 
-            .order-item-image {
-                width: 50px;
-                height: 50px;
+            .item-quantity,
+            .item-subtotal {
+                margin: 0;
+                text-align: left;
+                min-width: auto;
+            }
+
+            .payment-method-description {
+                margin-left: 0;
+                margin-top: 0.5rem;
+            }
+
+            .action-buttons {
+                flex-direction: column;
             }
         }
-
-        /* Error states */
-        .error-message {
-            background: var(--error-bg);
-            color: var(--error);
-            padding: 1rem;
-            border-radius: 0.5rem;
-            border: 1px solid #fca5a5;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .shipping-estimate {
-            background: var(--primary-bg);
-            border: 1px solid #a7f3d0;
-            padding: 1rem;
-            border-radius: 0.75rem;
-            margin: 1rem 0;
-        }
-
-        .shipping-estimate-title {
-            font-weight: 600;
-            color: var(--primary);
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .shipping-estimate-text {
-            color: var(--gray-600);
-        }
-
-        /* Map preview styles */
-        .map-preview {
-            height: 200px;
-            border-radius: 0.5rem;
-            overflow: hidden;
-            margin-top: 1rem;
-            border: 1px solid var(--gray-300);
-        }
-
-        /* Tax highlight */
-        .tax-highlight {
-            color: var(--primary);
-            font-weight: 500;
-        }
     </style>
+@endpush
 
-    <div class="loading-overlay">
-        <div class="loading-spinner"></div>
-    </div>
+@section('content')
+    @php
+        // Checkout data initialization
+        $user = auth()->user();
+        $currentDateTime = '2025-07-31 15:29:34';
+        $currentUser = 'DenuJanuari';
+
+        // Calculate order totals (received from cart checkout)
+        $cartItems = session('checkout_cart_items', collect());
+        $subtotal = session('checkout_subtotal', 0);
+        $discount = session('checkout_discount', 0);
+        $shippingFee = session('checkout_shipping_fee', 0);
+        $shippingMethod = session('checkout_shipping_method', 'KURIR_TOKO_SEDANG');
+        $shippingDistance = session('checkout_distance_km', 7.2);
+        $tax = session('checkout_tax', $subtotal * 0.1);
+
+        // Customer address
+        $deliveryAddress = $user->addresses()->where('is_primary', 1)->first() ?? $user->addresses()->first();
+
+        // Payment methods available
+        $paymentMethods = [
+            [
+                'id' => 'bank_transfer',
+                'name' => 'Transfer Bank',
+                'description' => 'Transfer melalui BCA, BNI, BRI, atau Mandiri',
+                'fee' => 0,
+                'icon' => 'credit-card',
+            ],
+            [
+                'id' => 'ewallet',
+                'name' => 'E-Wallet',
+                'description' => 'Bayar melalui GoPay, OVO, DANA, atau ShopeePay',
+                'fee' => 2500,
+                'icon' => 'smartphone',
+            ],
+            [
+                'id' => 'cash_on_delivery',
+                'name' => 'Bayar di Tempat (COD)',
+                'description' => 'Bayar tunai saat barang diterima',
+                'fee' => 5000,
+                'icon' => 'dollar-sign',
+            ],
+            [
+                'id' => 'credit_card',
+                'name' => 'Kartu Kredit',
+                'description' => 'Visa, MasterCard, atau American Express',
+                'fee' => 3000,
+                'icon' => 'credit-card',
+            ],
+        ];
+
+        // Default selected payment method
+        $selectedPaymentMethod = $paymentMethods[0];
+        $paymentFee = $selectedPaymentMethod['fee'];
+
+        // Calculate grand total
+        $grandTotal = $subtotal - $discount + $shippingFee + $tax + $paymentFee;
+
+        // Shipping method details
+        $shippingMethodDetails = [
+            'KURIR_TOKO_DEKAT' => ['name' => 'Kurir Toko (< 5km)', 'estimated' => '1-2 jam'],
+            'KURIR_TOKO_SEDANG' => ['name' => 'Kurir Toko (5-10km)', 'estimated' => '2-3 jam'],
+            'KURIR_TOKO_JAUH' => ['name' => 'Kurir Toko (> 10km)', 'estimated' => '3-4 jam'],
+            'JNE' => ['name' => 'JNE Regular', 'estimated' => '2-3 hari'],
+            'JNT' => ['name' => 'J&T Express', 'estimated' => '1-2 hari'],
+            'AMBIL_SENDIRI' => ['name' => 'Ambil Sendiri di Toko', 'estimated' => 'Langsung'],
+        ];
+
+        $currentShippingMethod = $shippingMethodDetails[$shippingMethod] ?? $shippingMethodDetails['KURIR_TOKO_SEDANG'];
+    @endphp
 
     <div class="checkout-container">
-        <div class="checkout-header">
-            <h1>Checkout</h1>
-            <p>Konfirmasi pesanan Anda sebelum melanjutkan pembayaran</p>
+        <h1 class="page-heading">Checkout Pesanan</h1>
+
+        {{-- Progress Bar --}}
+        <div class="progress-bar">
+            <div class="progress-steps">
+                <div class="progress-step completed">
+                    <div class="progress-step-circle">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                            stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                    <div class="progress-step-label">Keranjang</div>
+                </div>
+                <div class="progress-step active">
+                    <div class="progress-step-circle">2</div>
+                    <div class="progress-step-label">Checkout</div>
+                </div>
+                <div class="progress-step inactive">
+                    <div class="progress-step-circle">3</div>
+                    <div class="progress-step-label">Pembayaran</div>
+                </div>
+                <div class="progress-step inactive">
+                    <div class="progress-step-circle">4</div>
+                    <div class="progress-step-label">Selesai</div>
+                </div>
+            </div>
         </div>
 
-        @if ($cartItems->count() == 0)
-            <div class="error-message">
-                <i data-feather="alert-circle"></i>
-                <div>
-                    <strong>Keranjang Kosong</strong>
-                    <p>Tidak ada item di keranjang Anda. Silakan <a href="{{ route('products.index') }}"
-                            class="text-primary underline">belanja terlebih dahulu</a>.</p>
+        <div class="checkout-grid">
+            <div class="checkout-main">
+                {{-- Delivery Information --}}
+                <div class="checkout-card">
+                    <div class="checkout-card-header">
+                        <h2 class="checkout-card-title">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Informasi Pengiriman
+                        </h2>
+                        <a href="{{ route('user.address.index') }}"
+                            style="color: var(--primary); text-decoration: none; font-size: 0.875rem;">
+                            Ubah Alamat
+                        </a>
+                    </div>
+                    <div class="checkout-card-body">
+                        @if ($deliveryAddress)
+                            <div class="delivery-address">
+                                <div class="address-label">{{ $deliveryAddress->label }}</div>
+                                <div class="address-recipient">{{ $deliveryAddress->recipient }}</div>
+                                <div class="address-details">{{ $deliveryAddress->full_address }}</div>
+                                <div class="address-details">{{ $deliveryAddress->city }}, {{ $deliveryAddress->zip_code }}
+                                </div>
+                                <div class="address-phone">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path
+                                            d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z">
+                                        </path>
+                                    </svg>
+                                    {{ $deliveryAddress->phone_number }}
+                                </div>
+                            </div>
+
+                            <div class="shipping-info">
+                                <div class="shipping-method">
+                                    <div class="shipping-name">{{ $currentShippingMethod['name'] }}</div>
+                                    <div class="shipping-cost">
+                                        {{ $shippingFee > 0 ? 'Rp ' . number_format($shippingFee, 0, ',', '.') : 'Gratis' }}
+                                    </div>
+                                </div>
+                                <div class="shipping-description">
+                                    Estimasi pengiriman: {{ $currentShippingMethod['estimated'] }}
+                                </div>
+                                <div class="shipping-distance">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                        <circle cx="12" cy="10" r="3"></circle>
+                                    </svg>
+                                    Jarak dari toko: {{ number_format($shippingDistance, 1) }} km
+                                </div>
+                            </div>
+                        @else
+                            <div class="delivery-info">
+                                <p style="margin: 0; color: var(--error);">
+                                    <strong>Alamat pengiriman belum tersedia.</strong>
+                                    <a href="{{ route('user.address.create') }}" style="color: var(--primary);">Tambah
+                                        alamat pengiriman</a>
+                                </p>
+                            </div>
+                        @endif
+                    </div>
                 </div>
-            </div>
-        @elseif(!$hasAddress)
-            <div class="error-message">
-                <i data-feather="map-pin"></i>
-                <div>
-                    <strong>Alamat Pengiriman Diperlukan</strong>
-                    <p>Anda perlu menambahkan alamat pengiriman terlebih dahulu. <a
-                            href="{{ route('user.address.create') }}" class="text-primary underline">Tambah Alamat</a>.</p>
-                </div>
-            </div>
-        @else
-            <form id="checkout-form" action="{{ route('checkout.process') }}" method="POST">
-                @csrf
-                <input type="hidden" name="shipping_fee" id="shipping_fee" value="0">
-                <input type="hidden" name="tax_amount" id="tax_amount" value="{{ $tax_total }}">
-                <div class="checkout-grid">
-                    <div class="checkout-main">
-                        <!-- Order Items -->
-                        <div class="checkout-panel">
-                            <div class="checkout-panel-header">
-                                <h2>
-                                    <i data-feather="shopping-bag"></i>
-                                    Ringkasan Pesanan ({{ $cartItems->count() }} item)
-                                </h2>
-                            </div>
-                            <div class="checkout-panel-body">
-                                @foreach ($cartItems as $item)
-                                    @php
-                                        $promo = $item->promo_code ?? $promo_code;
-                                        $promotion = $promo
-                                            ? \App\Models\Promotion::where('promo_code', $promo)->first()
-                                            : null;
-                                        $discount = 0;
-                                        $unit_price = $item->product->price ?? 0;
-                                        $qty = $item->quantity ?? 0;
 
-                                        if ($promotion) {
-                                            if ($promotion->discount_type === 'percent') {
-                                                $percent = $promotion->discount_value ?: 10;
-                                                $discount = round($unit_price * ($percent / 100));
-                                            } elseif ($promotion->discount_type === 'fixed') {
-                                                $discount = min($promotion->discount_value ?: 0, $unit_price);
-                                            }
-                                        }
-
-                                        $discounted_price = max(0, $unit_price - $discount);
-                                        $item_total = $discounted_price * $qty;
-                                    @endphp
-                                    <div class="order-item">
-                                        <img src="{{ asset($item->product->image_url ?? ($item->product->images->first()->url ?? 'images/no-image.png')) }}"
-                                            alt="{{ $item->product->name }}" class="order-item-image">
-                                        <div class="order-item-details">
-                                            <div class="order-item-name">{{ $item->product->name }}</div>
-                                            <div class="order-item-price">
-                                                @if ($discount > 0)
-                                                    <span style="text-decoration: line-through; color: var(--gray-400);">Rp
-                                                        {{ number_format($unit_price, 0, ',', '.') }}</span>
-                                                @endif
-                                                Rp {{ number_format($discounted_price, 0, ',', '.') }}
+                {{-- Order Items --}}
+                <div class="checkout-card">
+                    <div class="checkout-card-header">
+                        <h2 class="checkout-card-title">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <circle cx="9" cy="21" r="1"></circle>
+                                <circle cx="20" cy="21" r="1"></circle>
+                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                            </svg>
+                            Item Pesanan ({{ $cartItems->count() }} produk)
+                        </h2>
+                        <a href="{{ route('cart.index') }}"
+                            style="color: var(--primary); text-decoration: none; font-size: 0.875rem;">
+                            Edit Keranjang
+                        </a>
+                    </div>
+                    <div class="checkout-card-body">
+                        <div class="order-items">
+                            @forelse($cartItems as $item)
+                                <div class="order-item">
+                                    <div class="item-details">
+                                        <div class="item-name">{{ $item->product->name ?? $item->name }}</div>
+                                        <div class="item-price">Rp{{ number_format($item->price, 0, ',', '.') }} per item
+                                        </div>
+                                        @if (isset($item->product->weight) && $item->product->weight > 0)
+                                            <div style="font-size: 0.75rem; color: var(--gray-500);">
+                                                Berat: {{ $item->product->weight }}kg
                                             </div>
-                                            <div class="order-item-quantity">Qty: {{ $qty }}</div>
-                                            @if ($promotion)
-                                                <div class="mt-1" style="font-size: 0.8rem; color: var(--primary);">
-                                                    <i data-feather="tag" style="width: 12px; height: 12px;"></i>
-                                                    {{ $promotion->promo_code }}
-                                                </div>
-                                            @endif
-                                        </div>
-                                        <div class="order-item-total">Rp {{ number_format($item_total, 0, ',', '.') }}
-                                        </div>
+                                        @endif
                                     </div>
-                                @endforeach
-                            </div>
-                        </div>
-
-                        <!-- Address Information -->
-                        <div class="checkout-panel">
-                            <div class="checkout-panel-header">
-                                <h2>
-                                    <i data-feather="map-pin"></i>
-                                    Alamat Pengiriman
-                                </h2>
-                            </div>
-                            <div class="checkout-panel-body">
-                                <div class="address-panel">
-                                    <div class="address-card">
-                                        <div class="address-name">{{ $primaryAddress->label ?? 'Alamat Utama' }}</div>
-                                        <div class="address-detail"><strong>{{ $primaryAddress->recipient }}</strong></div>
-                                        <div class="address-detail">{{ $primaryAddress->full_address }}</div>
-                                        <div class="address-detail">{{ $primaryAddress->city }},
-                                            {{ $primaryAddress->zip_code }}</div>
-                                        <div class="address-detail">{{ $primaryAddress->phone_number }}</div>
-                                    </div>
-
-                                    <!-- Menampilkan preview peta dan jarak -->
-                                    <div id="map-container" class="map-preview mt-4">
-                                        <!-- Map will be loaded here -->
-                                    </div>
-                                    <div id="distance-info" class="mt-2 text-sm text-gray-600">
-                                        Menghitung jarak ke toko...
+                                    <div class="item-quantity">{{ $item->quantity }}x</div>
+                                    <div class="item-subtotal">
+                                        Rp{{ number_format($item->price * $item->quantity, 0, ',', '.') }}
                                     </div>
                                 </div>
-                                <input type="hidden" name="shipping_address_id" value="{{ $primaryAddress->id }}">
-                                <input type="hidden" id="customer_lat" name="customer_lat"
-                                    value="{{ $primaryAddress->latitude ?? '' }}">
-                                <input type="hidden" id="customer_lng" name="customer_lng"
-                                    value="{{ $primaryAddress->longitude ?? '' }}">
-                                <input type="hidden" id="distance_km" name="distance_km" value="0">
-                            </div>
-                        </div>
-
-                        <!-- Shipping Methods -->
-                        <div class="checkout-panel">
-                            <div class="checkout-panel-header">
-                                <h2>
-                                    <i data-feather="truck"></i>
-                                    Metode Pengiriman
-                                </h2>
-                            </div>
-                            <div class="checkout-panel-body">
-                                <div class="shipping-methods">
-                                    @foreach ($shippingMethods as $method)
-                                        <label
-                                            class="shipping-method{{ $selected_shipping == $method['code'] ? ' selected' : '' }}">
-                                            <input type="radio" name="shipping_method" value="{{ $method['code'] }}"
-                                                class="shipping-method-radio"
-                                                {{ $selected_shipping == $method['code'] ? 'checked' : '' }} required>
-                                            <div class="shipping-method-icon">
-                                                <i data-feather="{{ $method['icon'] }}"></i>
-                                            </div>
-                                            <div class="shipping-method-details">
-                                                <div class="shipping-method-name">{!! $method['name'] !!}</div>
-                                                <div class="shipping-method-desc">{!! $method['desc'] !!}</div>
-                                            </div>
-                                        </label>
-                                    @endforeach
-                                </div>
-
-                                <div id="shippingCalc" class="shipping-estimate">
-                                    <div class="shipping-estimate-title">
-                                        <i data-feather="map"></i>
-                                        Estimasi Ongkir
-                                    </div>
-                                    <div id="shippingEstimateText" class="shipping-estimate-text">
-                                        Silakan pilih metode pengiriman untuk estimasi biaya kirim.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Payment Methods -->
-                        <div class="checkout-panel">
-                            <div class="checkout-panel-header">
-                                <h2>
-                                    <i data-feather="credit-card"></i>
-                                    Metode Pembayaran
-                                </h2>
-                            </div>
-                            <div class="checkout-panel-body">
-                                @if ($allMethods->count())
-                                    <div class="payment-methods">
-                                        @foreach ($allMethods as $method)
-                                            <label
-                                                class="payment-method{{ $selected_payment === $method->code ? ' selected' : '' }}">
-                                                <input type="radio" name="payment_method" value="{{ $method->code }}"
-                                                    class="payment-method-radio"
-                                                    {{ $selected_payment === $method->code ? 'checked' : '' }} required>
-                                                <div class="payment-method-icon">
-                                                    @switch($method->code)
-                                                        @case('CASH')
-                                                            <i data-feather="dollar-sign"></i>
-                                                        @break
-
-                                                        @case('COD_QRIS')
-                                                            <i data-feather="smartphone"></i>
-                                                        @break
-
-                                                        @case('QRIS')
-                                                            <svg width="24" height="24" viewBox="0 0 24 24"
-                                                                fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                                <path d="M3 3H9V9H3V3Z" stroke="currentColor" stroke-width="2"
-                                                                    stroke-linecap="round" stroke-linejoin="round" />
-                                                                <path d="M15 3H21V9H15V3Z" stroke="currentColor" stroke-width="2"
-                                                                    stroke-linecap="round" stroke-linejoin="round" />
-                                                                <path d="M3 15H9V21H3V15Z" stroke="currentColor" stroke-width="2"
-                                                                    stroke-linecap="round" stroke-linejoin="round" />
-                                                                <path d="M15 15H21V21H15V15Z" stroke="currentColor"
-                                                                    stroke-width="2" stroke-linecap="round"
-                                                                    stroke-linejoin="round" />
-                                                            </svg>
-                                                        @break
-
-                                                        @case('EWALLET')
-                                                            <i data-feather="smartphone"></i>
-                                                        @break
-
-                                                        @default
-                                                            <i data-feather="credit-card"></i>
-                                                    @endswitch
-                                                </div>
-                                                <div class="payment-method-details">
-                                                    <div class="payment-method-name">{{ $method->name }}</div>
-                                                    {{-- Safe check untuk description --}}
-                                                    @if (property_exists($method, 'description') && $method->description)
-                                                        <div class="payment-method-desc">{{ $method->description }}</div>
-                                                    @elseif(isset($method->config))
-                                                        @php
-                                                            $desc = '';
-                                                            if (is_array($method->config)) {
-                                                                $desc = $method->config['desc'] ?? '';
-                                                            } elseif (is_object($method->config)) {
-                                                                $desc = $method->config->desc ?? '';
-                                                            } else {
-                                                                $json = @json_decode($method->config);
-                                                                $desc = $json->desc ?? '';
-                                                            }
-                                                        @endphp
-                                                        @if ($desc)
-                                                            <div class="payment-method-desc">{{ $desc }}</div>
-                                                        @endif
-                                                    @endif
-                                                </div>
-                                            </label>
-                                        @endforeach
-                                    </div>
-                                @else
-                                    <div class="error-message">
-                                        <i data-feather="alert-circle"></i>
-                                        <div>
-                                            <strong>Tidak ada metode pembayaran yang tersedia.</strong>
+                            @empty
+                                <div class="order-item">
+                                    <div class="item-details">
+                                        <div class="item-name" style="color: var(--error);">Tidak ada item dalam keranjang
+                                        </div>
+                                        <div class="item-price">
+                                            <a href="{{ route('cart.index') }}" style="color: var(--primary);">Kembali ke
+                                                keranjang</a>
                                         </div>
                                     </div>
-                                @endif
-                            </div>
-                        </div>
-
-                        <!-- Order Notes -->
-                        <div class="checkout-panel">
-                            <div class="checkout-panel-header">
-                                <h2>
-                                    <i data-feather="message-square"></i>
-                                    Catatan Pesanan (Opsional)
-                                </h2>
-                            </div>
-                            <div class="checkout-panel-body">
-                                <textarea name="note" class="order-notes-input"
-                                    placeholder="Tambahkan catatan untuk pesanan Anda (misalnya: instruksi khusus, permintaan waktu pengiriman, dll.)">{{ old('note') }}</textarea>
-                            </div>
+                                </div>
+                            @endforelse
                         </div>
                     </div>
+                </div>
 
-                    <!-- Order Summary Sidebar -->
-                    <div class="order-summary">
-                        <div class="checkout-panel-header">
-                            <h2>
-                                <i data-feather="receipt"></i>
-                                Ringkasan Pembayaran
-                            </h2>
+                {{-- Payment Method --}}
+                <div class="checkout-card">
+                    <div class="checkout-card-header">
+                        <h2 class="checkout-card-title">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                                <line x1="1" y1="10" x2="23" y2="10"></line>
+                            </svg>
+                            Metode Pembayaran
+                        </h2>
+                    </div>
+                    <div class="checkout-card-body">
+                        <div class="payment-methods">
+                            @foreach ($paymentMethods as $index => $method)
+                                <div class="payment-method {{ $index === 0 ? 'selected' : '' }}"
+                                    data-method="{{ $method['id'] }}" data-fee="{{ $method['fee'] }}">
+                                    <div class="payment-method-header">
+                                        <input type="radio" name="payment_method" id="payment_{{ $method['id'] }}"
+                                            value="{{ $method['id'] }}" {{ $index === 0 ? 'checked' : '' }}>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            @if ($method['icon'] === 'credit-card')
+                                                <rect x="1" y="4" width="22" height="16" rx="2"
+                                                    ry="2"></rect>
+                                                <line x1="1" y1="10" x2="23" y2="10">
+                                                </line>
+                                            @elseif($method['icon'] === 'smartphone')
+                                                <rect x="5" y="2" width="14" height="20" rx="2"
+                                                    ry="2"></rect>
+                                                <line x1="12" y1="18" x2="12.01" y2="18">
+                                                </line>
+                                            @elseif($method['icon'] === 'dollar-sign')
+                                                <line x1="12" y1="1" x2="12" y2="23">
+                                                </line>
+                                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                            @endif
+                                        </svg>
+                                        <label for="payment_{{ $method['id'] }}"
+                                            class="payment-method-name">{{ $method['name'] }}</label>
+                                        <div class="payment-method-fee">
+                                            {{ $method['fee'] > 0 ? '+Rp ' . number_format($method['fee'], 0, ',', '.') : 'Gratis' }}
+                                        </div>
+                                    </div>
+                                    <div class="payment-method-description">{{ $method['description'] }}</div>
+                                </div>
+                            @endforeach
                         </div>
-                        <div class="checkout-panel-body">
-                            <!-- Back to Cart Button -->
-                            <a href="{{ route('cart.index') }}" class="back-button">
-                                <i data-feather="arrow-left"></i>
-                                Kembali ke Keranjang
+
+                        {{-- Order Notes --}}
+                        <div class="order-notes">
+                            <label for="order_notes">Catatan Pesanan (Opsional)</label>
+                            <textarea id="order_notes" name="order_notes" placeholder="Tambahkan catatan khusus untuk pesanan Anda..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Order Summary Sidebar --}}
+            <div class="checkout-sidebar">
+                <div class="summary-card">
+                    <div class="summary-header">
+                        <h2 class="summary-title">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <line x1="12" y1="1" x2="12" y2="23"></line>
+                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                            Ringkasan Pesanan
+                        </h2>
+                    </div>
+                    <div class="summary-body">
+                        <div class="summary-row">
+                            <span>Subtotal ({{ $cartItems->count() }} item)</span>
+                            <span>Rp{{ number_format($subtotal, 0, ',', '.') }}</span>
+                        </div>
+
+                        @if ($discount > 0)
+                            <div class="summary-row discount">
+                                <span>Diskon</span>
+                                <span>−Rp{{ number_format($discount, 0, ',', '.') }}</span>
+                            </div>
+                        @endif
+
+                        <div class="summary-row shipping">
+                            <span>Ongkos Kirim</span>
+                            <span id="summary-shipping-cost">Rp{{ number_format($shippingFee, 0, ',', '.') }}</span>
+                        </div>
+
+                        <div class="summary-row tax">
+                            <span>Pajak (10%)</span>
+                            <span>Rp{{ number_format($tax, 0, ',', '.') }}</span>
+                        </div>
+
+                        <div class="summary-row payment-fee">
+                            <span>Biaya Pembayaran</span>
+                            <span id="summary-payment-fee">Rp{{ number_format($paymentFee, 0, ',', '.') }}</span>
+                        </div>
+
+                        <div class="summary-divider"></div>
+
+                        <div class="summary-total">
+                            <span>Total Bayar</span>
+                            <span id="summary-total">Rp{{ number_format($grandTotal, 0, ',', '.') }}</span>
+                        </div>
+
+                        <div class="action-buttons">
+                            <a href="{{ route('cart.index') }}" class="back-btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                                    <polyline points="12 19 5 12 12 5"></polyline>
+                                </svg>
+                                Kembali
                             </a>
 
-                            <div class="summary-row">
-                                <span>Subtotal ({{ $cartItems->count() }} item)</span>
-                                <span id="checkout-subtotal">Rp
-                                    {{ number_format($grand_total + $total_discount, 0, ',', '.') }}</span>
-                            </div>
-                            @if ($total_discount > 0)
-                                <div class="summary-row">
-                                    <span>Diskon</span>
-                                    <span id="checkout-discount" style="color: var(--success);">-Rp
-                                        {{ number_format($total_discount, 0, ',', '.') }}</span>
-                                </div>
-                            @endif
-                            <div class="summary-row tax-highlight">
-                                <span>Pajak (10%)</span>
-                                <span id="checkout-tax">Rp {{ number_format($tax_total, 0, ',', '.') }}</span>
-                            </div>
-                            <div class="summary-row">
-                                <span>Berat Total</span>
-                                <span>{{ number_format($total_weight, 1) }} kg</span>
-                            </div>
-                            <div class="summary-row">
-                                <span>Ongkir</span>
-                                <span id="checkout-shipping" data-value="0">Pilih metode pengiriman</span>
-                            </div>
-                            <div class="summary-row summary-total">
-                                <span>Total Pembayaran</span>
-                                <span id="checkout-total">Rp {{ number_format($final_total, 0, ',', '.') }}</span>
-                            </div>
+                            @if ($deliveryAddress && $cartItems->count() > 0)
+                                <form action="{{ route('checkout.process') }}" method="POST" id="checkout-form">
+                                    @csrf
+                                    <input type="hidden" name="payment_method" id="selected_payment_method"
+                                        value="{{ $selectedPaymentMethod['id'] }}">
+                                    <input type="hidden" name="payment_fee" id="selected_payment_fee"
+                                        value="{{ $paymentFee }}">
+                                    <input type="hidden" name="shipping_method" value="{{ $shippingMethod }}">
+                                    <input type="hidden" name="shipping_fee" value="{{ $shippingFee }}">
+                                    <input type="hidden" name="distance_km" value="{{ $shippingDistance }}">
+                                    <input type="hidden" name="delivery_address_id" value="{{ $deliveryAddress->id }}">
+                                    <input type="hidden" name="subtotal" value="{{ $subtotal }}">
+                                    <input type="hidden" name="discount" value="{{ $discount }}">
+                                    <input type="hidden" name="tax" value="{{ $tax }}">
+                                    <input type="hidden" name="total" id="final_total" value="{{ $grandTotal }}">
 
-                            @if ($allMethods->count())
-                                <button type="submit" class="checkout-button">
-                                    <i data-feather="credit-card"></i>
-                                    Bayar
+                                    <button type="submit" class="proceed-btn" id="proceed-payment-btn">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                            viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="1" y="4" width="22" height="16" rx="2"
+                                                ry="2"></rect>
+                                            <line x1="1" y1="10" x2="23" y2="10"></line>
+                                        </svg>
+                                        Lanjut ke Pembayaran
+                                    </button>
+                                </form>
+                            @else
+                                <button class="proceed-btn" disabled>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                    </svg>
+                                    Lengkapi Data Dulu
                                 </button>
                             @endif
                         </div>
+
+                        <div class="user-info">
+                            <span>Login: {{ $currentUser }}</span>
+                            <span>{{ date('d/m/Y H:i', strtotime($currentDateTime)) }}</span>
+                        </div>
                     </div>
                 </div>
-            </form>
-        @endif
+            </div>
+        </div>
     </div>
 
     <script>
         /**
-         * Checkout System
-         * Enhanced checkout experience with validation and calculations
+         * Enhanced Checkout Page JavaScript
+         * Created: 2025-07-31 15:29:34
+         * Updated by: DenuJanuari
+         * Integrated checkout system with payment handling
          */
 
-        // Checkout state management
-        const checkoutState = {
-            subtotal: {{ $grand_total + $total_discount }},
-            discount: {{ $total_discount }},
-            shipping: 0,
-            tax: {{ $tax_total }},
-            total: {{ $final_total }},
-            weight: {{ $total_weight }},
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize checkout state
+            let checkoutState = {
+                subtotal: {{ $subtotal }},
+                discount: {{ $discount }},
+                shippingFee: {{ $shippingFee }},
+                tax: {{ $tax }},
+                paymentFee: {{ $paymentFee }},
+                total: {{ $grandTotal }},
+                selectedPaymentMethod: '{{ $selectedPaymentMethod['id'] }}',
+                timestamp: '{{ $currentDateTime }}',
+                user: '{{ $currentUser }}'
+            };
 
-            updateTotal() {
-                this.total = this.subtotal - this.discount + this.tax + this.shipping;
-                this.displayTotal();
+            // DOM elements
+            const paymentMethods = document.querySelectorAll('.payment-method');
+            const paymentFeeElement = document.getElementById('summary-payment-fee');
+            const totalElement = document.getElementById('summary-total');
+            const selectedPaymentMethodInput = document.getElementById('selected_payment_method');
+            const selectedPaymentFeeInput = document.getElementById('selected_payment_fee');
+            const finalTotalInput = document.getElementById('final_total');
+            const checkoutForm = document.getElementById('checkout-form');
+            const proceedBtn = document.getElementById('proceed-payment-btn');
+            const orderNotesTextarea = document.getElementById('order_notes');
 
-                // Update hidden shipping fee field
-                const shippingFeeInput = document.getElementById('shipping_fee');
-                if (shippingFeeInput) {
-                    shippingFeeInput.value = this.shipping;
+            // Payment method selection handler
+            paymentMethods.forEach(method => {
+                method.addEventListener('click', function() {
+                    const methodId = this.dataset.method;
+                    const methodFee = parseInt(this.dataset.fee) || 0;
+                    const radio = this.querySelector('input[type="radio"]');
+
+                    if (radio) {
+                        // Update radio selection
+                        radio.checked = true;
+
+                        // Update visual selection
+                        paymentMethods.forEach(m => m.classList.remove('selected'));
+                        this.classList.add('selected');
+
+                        // Update checkout state
+                        checkoutState.selectedPaymentMethod = methodId;
+                        checkoutState.paymentFee = methodFee;
+                        checkoutState.total = checkoutState.subtotal - checkoutState.discount +
+                            checkoutState.shippingFee + checkoutState.tax + methodFee;
+
+                        // Update hidden form inputs
+                        if (selectedPaymentMethodInput) {
+                            selectedPaymentMethodInput.value = methodId;
+                        }
+                        if (selectedPaymentFeeInput) {
+                            selectedPaymentFeeInput.value = methodFee;
+                        }
+                        if (finalTotalInput) {
+                            finalTotalInput.value = checkoutState.total;
+                        }
+
+                        // Update summary display with animation
+                        updatePaymentSummary(methodFee, checkoutState.total);
+
+                        console.log('Payment method changed:', {
+                            method_id: methodId,
+                            method_fee: methodFee,
+                            new_total: checkoutState.total,
+                            timestamp: '{{ $currentDateTime }}',
+                            user: '{{ $currentUser }}'
+                        });
+                    }
+                });
+            });
+
+            // Update payment summary with animation
+            function updatePaymentSummary(paymentFee, total) {
+                if (paymentFeeElement) {
+                    // Add animation
+                    paymentFeeElement.style.transition = 'all 0.3s ease';
+                    paymentFeeElement.style.color = 'var(--warning)';
+                    paymentFeeElement.style.transform = 'scale(1.05)';
+
+                    // Update value
+                    paymentFeeElement.textContent = paymentFee > 0 ?
+                        `Rp${new Intl.NumberFormat('id-ID').format(paymentFee)}` : 'Gratis';
+
+                    // Reset animation
+                    setTimeout(() => {
+                        paymentFeeElement.style.transform = '';
+                        paymentFeeElement.style.color = '';
+                    }, 1000);
                 }
-            },
-
-            displayTotal() {
-                const totalElement = document.getElementById('checkout-total');
-                const shippingElement = document.getElementById('checkout-shipping');
-                const taxElement = document.getElementById('checkout-tax');
 
                 if (totalElement) {
-                    totalElement.textContent = `Rp ${this.formatNumber(this.total)}`;
-                }
+                    // Add animation
+                    totalElement.style.transition = 'all 0.3s ease';
+                    totalElement.style.transform = 'scale(1.1)';
+                    totalElement.style.color = 'var(--primary)';
 
-                if (shippingElement && this.shipping > 0) {
-                    shippingElement.textContent = `Rp ${this.formatNumber(this.shipping)}`;
-                    shippingElement.setAttribute('data-value', this.shipping);
-                } else if (shippingElement) {
-                    shippingElement.textContent = this.shipping === 0 ? 'Gratis' : 'Pilih metode pengiriman';
-                }
+                    // Update value
+                    totalElement.textContent = `Rp${new Intl.NumberFormat('id-ID').format(total)}`;
 
-                if (taxElement) {
-                    taxElement.textContent = `Rp ${this.formatNumber(this.tax)}`;
-                }
-            },
-
-            formatNumber(num) {
-                return new Intl.NumberFormat('id-ID').format(num);
-            }
-        };
-
-        /**
-         * Initialize map and distance calculation
-         */
-        function initMap() {
-            // Koordinat toko - Azka Garden (Toko Bunga Hendrik di Jalan Raya KSU)
-            const storeLat = {{ $storeLocation['lat'] }};
-            const storeLng = {{ $storeLocation['lng'] }};
-            const storeLocation = {
-                lat: storeLat,
-                lng: storeLng
-            };
-
-            // Koordinat pelanggan dari alamat tersimpan
-            let customerLat = {{ $primaryAddress && $primaryAddress->latitude ? $primaryAddress->latitude : 'null' }};
-            let customerLng = {{ $primaryAddress && $primaryAddress->longitude ? $primaryAddress->longitude : 'null' }};
-
-            // Jika tidak ada koordinat tersimpan, coba geocode alamat
-            if (!customerLat || !customerLng) {
-                const customerAddress =
-                    "{{ $primaryAddress ? $primaryAddress->full_address . ', ' . $primaryAddress->city . ', ' . $primaryAddress->zip_code : '' }}";
-
-                const geocoder = new google.maps.Geocoder();
-                geocoder.geocode({
-                    address: customerAddress
-                }, function(results, status) {
-                    if (status === 'OK' && results[0]) {
-                        customerLat = results[0].geometry.location.lat();
-                        customerLng = results[0].geometry.location.lng();
-
-                        // Set nilai koordinat ke input hidden
-                        document.getElementById('customer_lat').value = customerLat;
-                        document.getElementById('customer_lng').value = customerLng;
-
-                        // Render peta dengan lokasi yang sudah digeocoding
-                        renderMap(storeLocation, {
-                            lat: customerLat,
-                            lng: customerLng
-                        });
-
-                        // Hitung jarak dan perbarui tampilan
-                        calculateDistance({
-                            lat: customerLat,
-                            lng: customerLng
-                        }, storeLocation);
-                    } else {
-                        console.error('Geocode failed: ' + status);
-                        // Render peta hanya dengan lokasi toko jika geocoding gagal
-                        renderMap(storeLocation);
-
-                        const distanceInfo = document.getElementById('distance-info');
-                        if (distanceInfo) {
-                            distanceInfo.innerHTML = 'Tidak dapat menghitung jarak karena alamat tidak lengkap.';
-                        }
-                    }
-                });
-            } else {
-                // Jika koordinat sudah ada, langsung render peta
-                renderMap(storeLocation, {
-                    lat: customerLat,
-                    lng: customerLng
-                });
-
-                // Hitung jarak dan perbarui tampilan
-                calculateDistance({
-                    lat: customerLat,
-                    lng: customerLng
-                }, storeLocation);
-            }
-        }
-
-        /**
-         * Render map with markers
-         */
-        function renderMap(storeLocation, customerLocation = null) {
-            const mapContainer = document.getElementById('map-container');
-            if (!mapContainer) return;
-
-            const map = new google.maps.Map(mapContainer, {
-                zoom: customerLocation ? 12 : 15,
-                center: customerLocation ? midpoint(storeLocation, customerLocation) : storeLocation,
-                mapTypeControl: false,
-                streetViewControl: false,
-                fullscreenControl: true,
-                zoomControl: true,
-            });
-
-            // Marker untuk toko
-            new google.maps.Marker({
-                position: storeLocation,
-                map: map,
-                title: 'Azka Garden (Toko Bunga Hendrik)',
-                icon: {
-                    url: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
-                }
-            });
-
-            // Marker untuk alamat pelanggan jika tersedia
-            if (customerLocation) {
-                new google.maps.Marker({
-                    position: customerLocation,
-                    map: map,
-                    title: 'Lokasi Pengiriman Anda',
-                });
-
-                // Gambar garis penghubung
-                new google.maps.Polyline({
-                    path: [storeLocation, customerLocation],
-                    geodesic: true,
-                    strokeColor: '#10b981',
-                    strokeOpacity: 1.0,
-                    strokeWeight: 2,
-                    map: map
-                });
-
-                // Pastikan kedua marker terlihat
-                const bounds = new google.maps.LatLngBounds();
-                bounds.extend(storeLocation);
-                bounds.extend(customerLocation);
-                map.fitBounds(bounds);
-            }
-        }
-
-        /**
-         * Calculate midpoint between two coordinates
-         */
-        function midpoint(point1, point2) {
-            return {
-                lat: (point1.lat + point2.lat) / 2,
-                lng: (point1.lng + point2.lng) / 2
-            };
-        }
-
-        /**
-         * Calculate distance between customer and store
-         */
-        function calculateDistance(customerLocation, storeLocation) {
-            const distanceService = new google.maps.DistanceMatrixService();
-            distanceService.getDistanceMatrix({
-                origins: [customerLocation],
-                destinations: [storeLocation],
-                travelMode: 'DRIVING',
-                unitSystem: google.maps.UnitSystem.METRIC,
-            }, function(response, status) {
-                const distanceInfo = document.getElementById('distance-info');
-
-                if (status === 'OK' && response.rows[0].elements[0].status === 'OK') {
-                    const distanceText = response.rows[0].elements[0].distance.text;
-                    const distanceValue = response.rows[0].elements[0].distance.value / 1000; // km
-                    const durationText = response.rows[0].elements[0].duration.text;
-
-                    // Simpan jarak untuk perhitungan ongkir
-                    document.getElementById('distance_km').value = distanceValue.toFixed(2);
-
-                    if (distanceInfo) {
-                        distanceInfo.innerHTML =
-                            `<strong>Jarak ke toko:</strong> ${distanceText} (waktu tempuh: ${durationText})`;
-                    }
-
-                    // Update ongkir otomatis jika metode pengiriman adalah kurir toko
-                    if (document.querySelector('input[name="shipping_method"]:checked')?.value === 'KURIR_TOKO') {
-                        updateShippingFeeByDistance(distanceValue);
-                    }
-                } else {
-                    if (distanceInfo) {
-                        distanceInfo.innerHTML = 'Tidak dapat menghitung jarak secara akurat.';
-                    }
-                }
-            });
-        }
-
-        /**
-         * Update shipping fee based on distance
-         */
-        function updateShippingFeeByDistance(distanceKm) {
-            let fee = 10000; // Default untuk < 5km
-
-            if (distanceKm > 10) {
-                fee = 20000;
-            } else if (distanceKm > 5) {
-                fee = 15000;
-            }
-
-            // Update state and UI
-            checkoutState.shipping = fee;
-            checkoutState.updateTotal();
-
-            // Update shipping estimate text
-            const shippingEstimateText = document.getElementById('shippingEstimateText');
-            if (shippingEstimateText) {
-                let zoneLabel = '';
-                if (distanceKm > 10) zoneLabel = '&gt;10km';
-                else if (distanceKm > 5) zoneLabel = '5-10km';
-                else zoneLabel = '&lt;5km';
-
-                shippingEstimateText.innerHTML =
-                    `<b>Kurir Toko</b> | Jarak: ${distanceKm.toFixed(2)} km<br>Zona ${zoneLabel}, Ongkir: <b>Rp ${checkoutState.formatNumber(fee)}</b>`;
-            }
-        }
-
-        /**
-         * Initialize shipping calculation
-         */
-        function initCheckoutShippingCalc() {
-            const shippingEstimateText = document.getElementById('shippingEstimateText');
-            const radios = document.querySelectorAll('.shipping-method-radio');
-            const distanceKm = parseFloat(document.getElementById('distance_km')?.value || 0);
-
-            function calculateShipping() {
-                try {
-                    let selectedShipping = document.querySelector('.shipping-method-radio:checked')?.value || 'KURIR_TOKO';
-
-                    // Update visual selection
-                    document.querySelectorAll('.shipping-method').forEach(method => {
-                        method.classList.remove('selected');
-                    });
-                    const selectedMethod = document.querySelector(`.shipping-method input[value="${selectedShipping}"]`);
-                    if (selectedMethod) {
-                        selectedMethod.closest('.shipping-method').classList.add('selected');
-                    }
-
-                    if (!shippingEstimateText) return;
-
-                    if (selectedShipping === 'KURIR_TOKO') {
-                        // Gunakan jarak yang sudah dihitung sebelumnya
-                        updateShippingFeeByDistance(distanceKm);
-                    } else if (selectedShipping === 'AMBIL_SENDIRI') {
-                        checkoutState.shipping = 0;
-                        checkoutState.updateTotal();
-                        shippingEstimateText.innerHTML =
-                            `<b>Ambil Sendiri di Toko</b> | <a href="https://www.google.com/maps/place/Toko+Bunga+Hendrik/@-6.4122794,106.829692" target="_blank" class="underline" style="color: var(--primary);">Lihat Lokasi Toko</a><br>Bebas Ongkir!`;
-                    } else if (selectedShipping === 'GOSEND') {
-                        checkoutState.shipping = 25000;
-                        checkoutState.updateTotal();
-                        shippingEstimateText.innerHTML = `<b>GoSend Sameday</b> | Estimasi aplikasi Rp15.000-30.000`;
-                    } else if (selectedShipping === 'JNE') {
-                        // Estimasi berdasarkan berat
-                        const weight = {{ $total_weight }};
-                        const baseFee = 12000;
-                        const weightFee = Math.ceil(weight) * 5000;
-                        const jneFee = baseFee + weightFee;
-
-                        checkoutState.shipping = jneFee;
-                        checkoutState.updateTotal();
-                        shippingEstimateText.innerHTML =
-                            `<b>JNE REG</b> | Berat: ${weight.toFixed(1)} kg<br>Estimasi: Rp ${checkoutState.formatNumber(jneFee)}`;
-                    } else if (selectedShipping === 'JNT') {
-                        // Estimasi berdasarkan berat
-                        const weight = {{ $total_weight }};
-                        const baseFee = 14000;
-                        const weightFee = Math.ceil(weight) * 6000;
-                        const jntFee = baseFee + weightFee;
-
-                        checkoutState.shipping = jntFee;
-                        checkoutState.updateTotal();
-                        shippingEstimateText.innerHTML =
-                            `<b>J&T EZ</b> | Berat: ${weight.toFixed(1)} kg<br>Estimasi: Rp ${checkoutState.formatNumber(jntFee)}`;
-                    } else if (selectedShipping === 'SICEPAT') {
-                        // Estimasi berdasarkan berat
-                        const weight = {{ $total_weight }};
-                        const baseFee = 11000;
-                        const weightFee = Math.ceil(weight) * 5500;
-                        const sicepatFee = baseFee + weightFee;
-
-                        checkoutState.shipping = sicepatFee;
-                        checkoutState.updateTotal();
-                        shippingEstimateText.innerHTML =
-                            `<b>SiCepat BEST</b> | Berat: ${weight.toFixed(1)} kg<br>Estimasi: Rp ${checkoutState.formatNumber(sicepatFee)}`;
-                    }
-                } catch (error) {
-                    console.error('Error in shipping calculation:', error);
-                    if (shippingEstimateText) {
-                        shippingEstimateText.innerHTML =
-                            'Terjadi kesalahan saat menghitung ongkir. Silakan refresh halaman.';
-                    }
+                    // Reset animation
+                    setTimeout(() => {
+                        totalElement.style.transform = '';
+                        totalElement.style.color = '';
+                    }, 1000);
                 }
             }
 
-            // Add event listeners to shipping method radios
-            radios.forEach(function(radio) {
-                if (radio) {
-                    radio.addEventListener('change', calculateShipping);
-                }
-            });
-
-            // Initialize shipping calculation
-            try {
-                calculateShipping();
-            } catch (error) {
-                console.error('Error initializing shipping estimate:', error);
-            }
-        }
-
-        /**
-         * Initialize payment method selection
-         */
-        function initPaymentMethods() {
-            document.querySelectorAll('.payment-method-radio').forEach(function(radio) {
-                if (radio) {
-                    radio.addEventListener('change', function() {
-                        // Update visual selection
-                        document.querySelectorAll('.payment-method').forEach(method => {
-                            method.classList.remove('selected');
-                        });
-                        const parent = this.closest('.payment-method');
-                        if (parent) {
-                            parent.classList.add('selected');
-                        }
-                    });
-                }
-            });
-        }
-
-        /**
-         * Initialize form validation
-         */
-        function initFormValidation() {
-            const form = document.getElementById('checkout-form');
-            if (!form) return;
-
-            form.addEventListener('submit', function(e) {
-                const loadingOverlay = document.querySelector('.loading-overlay');
-
-                // Show loading
-                if (loadingOverlay) {
-                    loadingOverlay.classList.add('active');
-                }
-
-                // Validate shipping method
-                const shippingMethod = document.querySelector('input[name="shipping_method"]:checked');
-                if (!shippingMethod) {
+            // Enhanced form submission handler
+            if (checkoutForm) {
+                checkoutForm.addEventListener('submit', function(e) {
                     e.preventDefault();
-                    if (loadingOverlay) loadingOverlay.classList.remove('active');
-                    alert('Silakan pilih metode pengiriman');
-                    return;
-                }
 
-                // Validate payment method
-                const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
-                if (!paymentMethod) {
-                    e.preventDefault();
-                    if (loadingOverlay) loadingOverlay.classList.remove('active');
-                    alert('Silakan pilih metode pembayaran');
-                    return;
-                }
-
-                // Make sure shipping fee is set
-                const shippingFee = document.getElementById('shipping_fee');
-                if (shippingFee && (shippingFee.value === '' || isNaN(parseFloat(shippingFee.value)))) {
-                    shippingFee.value = checkoutState.shipping;
-                }
-
-                // Basic validation passed, allow form submission
-                console.log('Form submitted with:', {
-                    shipping: shippingMethod.value,
-                    payment: paymentMethod.value,
-                    shipping_fee: shippingFee ? shippingFee.value : 0,
-                    tax: checkoutState.tax,
-                    total: checkoutState.total,
-                    created_by: 'DenuJanuari',
-                    timestamp: '2025-07-31 09:33:32'
-                });
-            });
-        }
-
-        /**
-         * Initialize checkout page
-         */
-        document.addEventListener('DOMContentLoaded', function() {
-            try {
-                // Initialize Feather Icons
-                if (typeof feather !== 'undefined') {
-                    feather.replace();
-                }
-
-                // Initialize checkout functions
-                initPaymentMethods();
-                initFormValidation();
-
-                // Load Google Maps for shipping calculations if address is available
-                if ({{ $hasAddress ? 'true' : 'false' }}) {
-                    if (!window.google) {
-                        const loadGoogleMaps = () => {
-                            const googleMapsScript = document.createElement('script');
-                            googleMapsScript.src =
-                                "https://maps.googleapis.com/maps/api/js?key=AIzaSyCTUfem9YaXy7FPguX6wa26V4lRuYOgF4w&libraries=places&callback=initMap";
-                            googleMapsScript.async = true;
-                            googleMapsScript.defer = true;
-                            document.head.appendChild(googleMapsScript);
-                        };
-
-                        setTimeout(loadGoogleMaps, 100);
-                    } else {
-                        initMap();
+                    // Validate required fields
+                    const selectedPayment = document.querySelector('input[name="payment_method"]:checked');
+                    if (!selectedPayment) {
+                        alert('Silakan pilih metode pembayaran terlebih dahulu.');
+                        return;
                     }
 
-                    // Initialize shipping calculation after map is loaded
-                    setTimeout(initCheckoutShippingCalc, 500);
-                } else {
-                    // If no address, still initialize shipping methods
-                    initCheckoutShippingCalc();
-                }
+                    // Add order notes to form data
+                    if (orderNotesTextarea && orderNotesTextarea.value.trim()) {
+                        const notesInput = document.createElement('input');
+                        notesInput.type = 'hidden';
+                        notesInput.name = 'order_notes';
+                        notesInput.value = orderNotesTextarea.value.trim();
+                        this.appendChild(notesInput);
+                    }
 
-                // Add hover effects to payment and shipping methods
-                document.querySelectorAll('.payment-method, .shipping-method').forEach(method => {
-                    method.addEventListener('click', function(e) {
-                        const radio = this.querySelector('input[type="radio"]');
-                        if (radio && !radio.checked) {
-                            radio.checked = true;
-                            const event = new Event('change', {
-                                bubbles: true
-                            });
-                            radio.dispatchEvent(event);
-                        }
+                    // Show loading state
+                    if (proceedBtn) {
+                        proceedBtn.disabled = true;
+                        proceedBtn.innerHTML = `
+                            <div style="width: 20px; height: 20px; border: 2px solid transparent; border-top: 2px solid white; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 0.5rem; display: inline-block;"></div>
+                            Memproses Checkout...
+                        `;
+                    }
+
+                    // Add loading overlay
+                    showLoadingOverlay('Memproses checkout Anda...',
+                        'Mohon tunggu, kami sedang menyiapkan pesanan Anda.');
+
+                    console.log('Checkout form submitted:', {
+                        payment_method: selectedPayment.value,
+                        payment_fee: checkoutState.paymentFee,
+                        total: checkoutState.total,
+                        order_notes: orderNotesTextarea?.value.trim() || null,
+                        timestamp: '{{ $currentDateTime }}',
+                        user: '{{ $currentUser }}'
                     });
+
+                    // Submit form after brief delay for UX
+                    setTimeout(() => {
+                        this.submit();
+                    }, 800);
                 });
-
-            } catch (error) {
-                console.error('Error in checkout initialization:', error);
             }
-        });
 
-        // Handle page unload during checkout process
-        window.addEventListener('beforeunload', function(e) {
-            const loadingOverlay = document.querySelector('.loading-overlay');
-            if (loadingOverlay && loadingOverlay.classList.contains('active')) {
-                const message = 'Proses checkout sedang berlangsung. Yakin ingin meninggalkan halaman?';
-                e.returnValue = message;
-                return message;
+            // Auto-save order notes
+            if (orderNotesTextarea) {
+                let notesTimeout;
+                orderNotesTextarea.addEventListener('input', function() {
+                    clearTimeout(notesTimeout);
+                    notesTimeout = setTimeout(() => {
+                        console.log('Order notes updated:', {
+                            notes: this.value.trim(),
+                            timestamp: '{{ $currentDateTime }}',
+                            user: '{{ $currentUser }}'
+                        });
+                    }, 1000);
+                });
             }
+
+            // Show loading overlay function
+            function showLoadingOverlay(title, message) {
+                const overlay = document.createElement('div');
+                overlay.className = 'loading-overlay active';
+                overlay.innerHTML = `
+                    <div style="background-color: white; padding: 2rem; border-radius: 0.75rem; text-align: center; box-shadow: var(--shadow-xl); max-width: 400px;">
+                        <div style="width: 50px; height: 50px; border: 4px solid var(--gray-200); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1.5rem;"></div>
+                        <h3 style="margin: 0 0 1rem; font-weight: 600; color: var(--gray-800);">${title}</h3>
+                        <p style="margin: 0; color: var(--gray-600);">${message}</p>
+                        <div style="margin-top: 1rem; font-size: 0.875rem; color: var(--gray-500);">
+                            Jangan tutup halaman ini
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+            }
+
+            // Initialize animations
+            function initializeAnimations() {
+                const cards = document.querySelectorAll('.checkout-card, .summary-card');
+                cards.forEach((card, index) => {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(20px)';
+                    card.style.transition = 'all 0.4s ease';
+
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, 100 * (index + 1));
+                });
+            }
+
+            // Initialize page
+            setTimeout(initializeAnimations, 200);
+
+            // Initialize Feather Icons
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+
+            console.log('Enhanced checkout system initialized:', {
+                checkout_state: checkoutState,
+                payment_methods_count: {{ count($paymentMethods) }},
+                cart_items_count: {{ $cartItems->count() }},
+                delivery_address: {{ $deliveryAddress ? 'true' : 'false' }},
+                timestamp: '{{ $currentDateTime }}',
+                user: '{{ $currentUser }}',
+                version: '2.0.0'
+            });
         });
     </script>
+
+    {{-- Additional CSS for loading overlay --}}
+    <style>
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-overlay.active {
+            display: flex !important;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Enhanced hover effects */
+        .payment-method:hover {
+            transform: translateY(-2px);
+        }
+
+        .payment-method.selected {
+            transform: translateY(-2px);
+        }
+
+        /* Better responsive design */
+        @media (max-width: 640px) {
+            .order-item {
+                padding: 0.75rem;
+            }
+
+            .payment-method {
+                padding: 0.75rem;
+            }
+
+            .payment-method-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .payment-method-fee {
+                margin-left: 2rem;
+            }
+        }
+    </style>
 @endsection
