@@ -25,7 +25,7 @@ use Illuminate\Database\QueryException;
  * adding, updating, and removing items, applying promos,
  * and checkout processing.
  *
- * @updated 2025-07-30 04:17:25 by mulyadafa
+ * @updated 2025-07-30 14:42:35 by marseltriwanto
  */
 class CartController extends Controller
 {
@@ -594,7 +594,7 @@ class CartController extends Controller
     }
 
     /**
-     * Simpan metode pengiriman ke session dan update shipping cost.
+     * Save shipping method to session
      *
      * @param Request $request
      * @return JsonResponse
@@ -606,7 +606,7 @@ class CartController extends Controller
                 'shipping_method' => 'required|string|max:50',
             ]);
 
-            $shippingMethod = $request->shipping_method;
+            $shippingMethod = $request->input('shipping_method');
             $shippingCost = $this->calculateShippingCost($shippingMethod);
 
             session([
@@ -616,7 +616,7 @@ class CartController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Metode pengiriman berhasil disimpan',
+                'message' => 'Shipping method saved successfully',
                 'data' => [
                     'shipping_method' => $shippingMethod,
                     'shipping_cost' => $shippingCost,
@@ -634,6 +634,19 @@ class CartController extends Controller
                 'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
+    }
+
+    /**
+     * Handle updating shipping method via AJAX
+     * This method ensures compatibility with the JavaScript in cart.blade.php
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function updateShipping(Request $request): JsonResponse
+    {
+        // Simply call saveShipping to handle the request
+        return $this->saveShipping($request);
     }
 
     /**
@@ -666,6 +679,18 @@ class CartController extends Controller
                 'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
+    }
+
+    /**
+     * Handle updating payment method via AJAX
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function updatePayment(Request $request): JsonResponse
+    {
+        // Simply call savePayment to handle the request
+        return $this->savePayment($request);
     }
 
     /**
@@ -917,68 +942,6 @@ class CartController extends Controller
             }
 
             return back()->with('error', 'Gagal menerapkan kode promo');
-        }
-    }
-
-    /**
-     * Handle updating shipping method via AJAX
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function updateShipping(Request $request): JsonResponse
-    {
-        try {
-            $request->validate([
-                'shipping_method' => 'required|string|max:50',
-            ]);
-            $shippingMethod = $request->shipping_method;
-            $shippingCost = $this->calculateShippingCost($shippingMethod);
-            session([
-                'shipping_method' => $shippingMethod,
-                'shipping_cost' => $shippingCost
-            ]);
-            return response()->json([
-                'success' => true,
-                'shipping_method' => $shippingMethod,
-                'shipping_cost' => $shippingCost,
-                'formatted_cost' => 'Rp' . number_format($shippingCost, 0, ',', '.')
-            ]);
-        } catch (Exception $e) {
-            Log::error('Error updating shipping method', [
-                'error' => $e->getMessage(),
-            ]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memperbarui metode pengiriman',
-                'error' => config('app.debug') ? $e->getMessage() : null
-            ], 500);
-        }
-    }
-
-    /**
-     * Handle updating payment method via AJAX
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function updatePayment(Request $request): JsonResponse
-    {
-        try {
-            $request->validate([
-                'payment_method' => 'required|string|max:50',
-            ]);
-            session(['payment_method' => $request->payment_method]);
-            return response()->json(['success' => true]);
-        } catch (Exception $e) {
-            Log::error('Error updating payment method', [
-                'error' => $e->getMessage(),
-            ]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memperbarui metode pembayaran',
-                'error' => config('app.debug') ? $e->getMessage() : null
-            ], 500);
         }
     }
 

@@ -27,8 +27,8 @@ use App\Http\Controllers\User\AddressController;
  * ==================================
  * AZKA GARDEN E-COMMERCE APPLICATION
  * Routes Configuration
- * Last updated: 2025-07-30 12:50:57
- * Author: mulyadafa
+ * Last updated: 2025-07-30 14:39:40
+ * Author: marseltriwanto
  * ==================================
  */
 
@@ -125,23 +125,26 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->post('logout', [UserAuthController::class, 'logout'])->name('logout');
 
 // -----------------------------
-// DIRECT CART ROUTES - ADDED TO FIX 405 ERRORS
+// DIRECT CART ROUTES - FIXED FOR JAVASCRIPT ACCESS
 // These routes match the paths used in JavaScript without /user prefix
 // -----------------------------
 Route::middleware(['auth'])->controller(CartController::class)->group(function () {
-    // Update routes for AJAX requests (fixes 405 Method Not Allowed errors)
-    Route::post('/cart/update-shipping', 'updateShipping')->name('cart.update-shipping');
-    Route::post('/cart/update-payment', 'updatePayment')->name('cart.update-payment');
+    // Fix for the 405 Method Not Allowed error by adding the route used in JavaScript
+    Route::post('/cart/update-shipping', 'saveShipping')->name('cart.update-shipping');
+    Route::post('/cart/update-payment', 'savePayment')->name('cart.update-payment');
+
+    // The existing AJAX routes
     Route::post('/cart/update-quantity', 'updateQuantity')->name('cart.update-quantity');
     Route::post('/cart/remove-item', 'removeItem')->name('cart.remove-item');
-    
-    // Optional backward compatibility routes with the paths used in JavaScript
+    Route::post('/cart/add', 'add')->name('cart.add'); // Added missing route
+
+    // Keep the "save-" routes for compatibility with newer code
+    Route::post('/cart/save-shipping', 'saveShipping')->name('cart.save-shipping');
+    Route::post('/cart/save-payment', 'savePayment')->name('cart.save-payment');
+
+    // Optional backward compatibility routes
     Route::post('/cart/{id}/update', 'update')->name('cart.item.update');
     Route::post('/cart/{id}/delete', 'destroy')->name('cart.item.delete');
-    
-    // Mapping to existing functionality
-    Route::post('/cart/save-shipping', 'saveShipping')->name('cart.external.save-shipping');
-    Route::post('/cart/save-payment', 'savePayment')->name('cart.external.save-payment');
 });
 
 // -----------------------------
@@ -288,7 +291,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:admin', 'admin'])->gro
     });
 
     // Admin Logout
-    Route::post('logout', [AdminAuthController::class, 'logout'])->name('logout');
+    Route::post('logout', [AdminAuthController::class, 'logout'])->name('admin.logout');
 });
 
 // -----------------------------
