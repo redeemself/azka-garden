@@ -625,6 +625,7 @@ class ComposerStaticInit4da9d539f1efe9ebd01010deb0b2a9bd
         'App\\Developer\\TestingQA\\TestCase' => __DIR__ . '/../..' . '/app/Developer/TestingQA/TestCase.php',
         'App\\Developer\\TestingQA\\TestReport' => __DIR__ . '/../..' . '/app/Developer/TestingQA/TestReport.php',
         'App\\Exceptions\\Handler' => __DIR__ . '/../..' . '/app/Exceptions/Handler.php',
+        'App\\Extensions\\Database\\ConnectionExtension' => __DIR__ . '/../..' . '/app/Extensions/Database/ConnectionExtension.php',
         'App\\Http\\Controllers\\AdminAuthController' => __DIR__ . '/../..' . '/app/Http/Controllers/AdminAuthController.php',
         'App\\Http\\Controllers\\AdminController' => __DIR__ . '/../..' . '/app/Http/Controllers/AdminController.php',
         'App\\Http\\Controllers\\Admin\\AdminAuthController' => __DIR__ . '/../..' . '/app/Http/Controllers/Admin/AdminAuthController.php',

@@ -75,11 +75,33 @@ Route::post('/policy/reset', function (Request $request) {
 })->name('policy.reset');
 
 // -----------------------------
-// PROMO CODE ACTIVATION
+// PROMO CODE ACTIVATION & CART UTILITIES
 // -----------------------------
 Route::middleware('web')->group(function () {
+    // Promo code routes
     Route::post('/promo/activate',   [PromoController::class, 'activate'])->name('promo.activate');
     Route::post('/promo/deactivate', [PromoController::class, 'deactivate'])->name('promo.deactivate');
+
+    // Cart count utilities
+    Route::get('/get-cart-count', function () {
+        if (auth()->check()) {
+            $count = \App\Models\Cart::where('user_id', auth()->id())->sum('quantity');
+        } else {
+            $cartItems = session('cart_items', []);
+            $count = collect($cartItems)->sum('quantity');
+        }
+
+        // Update session with accurate count
+        session(['cart_count' => $count]);
+
+        return response()->json(['count' => $count]);
+    });
+
+    Route::post('/update-cart-count', function (Request $request) {
+        $count = $request->input('count', 0);
+        session(['cart_count' => $count]);
+        return response()->json(['success' => true]);
+    })->middleware('csrf');
 });
 
 // -----------------------------
@@ -94,24 +116,33 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->post('logout', [UserAuthController::class, 'logout'])->name('logout');
 
 // -----------------------------
-// CART & CHECKOUT ROUTES (redeemself)
+// CART & CHECKOUT ROUTES
 // -----------------------------
 Route::middleware(['auth'])->group(function () {
-    // Cart
+    // Cart - Main Views
     Route::get('/cart',             [CartController::class, 'index'])->name('cart.index');
     Route::get('/user/cart',        [CartController::class, 'index'])->name('user.cart.index');
+
+    // Cart - Item Management (Enhanced with increment/decrement)
     Route::post('/cart/add',        [CartController::class, 'add'])->name('cart.add');
-    Route::match(['patch', 'post'], '/cart/{id}',           [CartController::class, 'update'])->name('cart.update');
+    Route::match(['patch', 'post'], '/cart/{id}', [CartController::class, 'update'])->name('cart.update');
     Route::match(['patch', 'post'], '/user/cart/update/{id}', [CartController::class, 'update'])->name('user.cart.update');
     Route::delete('/cart/{id}',     [CartController::class, 'remove'])->name('cart.remove');
     Route::delete('/user/cart/remove/{id}', [CartController::class, 'remove'])->name('user.cart.remove');
+
+    // Cart - New Clear Cart Functionality
+    Route::post('/cart/clear',      [CartController::class, 'clear'])->name('cart.clear');
+    Route::post('/user/cart/clear', [CartController::class, 'clear'])->name('user.cart.clear');
+
     // Promo on Cart
     Route::post('/cart/apply-promo',   [CartController::class, 'applyPromo'])->name('user.cart.apply-promo');
     Route::post('/cart/redeem-promo',  [CartController::class, 'redeemPromo'])->name('cart.redeem-promo');
     Route::delete('/cart/remove-promo', [CartController::class, 'removePromo'])->name('user.cart.remove-promo');
+
     // Shipping
     Route::post('/cart/select-shipping', [CartController::class, 'selectShipping'])->name('cart.select-shipping');
     Route::post('/cart/save-shipping',  [CartController::class, 'saveShipping'])->name('cart.save-shipping');
+
     // Prepare checkout AJAX
     Route::post('/user/cart/prepare-checkout', function (Request $request) {
         try {
@@ -131,16 +162,16 @@ Route::middleware(['auth'])->group(function () {
             \Log::info('Checkout data prepared successfully', [
                 'user_id' => auth()->id(),
                 'items_count' => count($cartData['items']),
-                'timestamp' => '2025-07-31 19:36:09',
-                'prepared_by' => 'redeemself'
+                'timestamp' => '2025-08-01 05:21:01',
+                'prepared_by' => 'DenuJanuari'
             ]);
             return response()->json(['success' => true, 'message' => 'Data checkout berhasil disiapkan']);
         } catch (\Exception $e) {
             \Log::error('Checkout preparation failed', [
                 'error' => $e->getMessage(),
                 'user_id' => auth()->id(),
-                'timestamp' => '2025-07-31 19:36:09',
-                'error_by' => 'redeemself'
+                'timestamp' => '2025-08-01 05:21:01',
+                'error_by' => 'DenuJanuari'
             ]);
             return response()->json(['success' => false, 'message' => 'Terjadi kesalahan sistem'], 500);
         }
@@ -161,8 +192,22 @@ Route::middleware(['auth'])->group(function () {
 // AUTHENTICATED USER ROUTES
 // -----------------------------
 Route::middleware(['auth'])->group(function () {
+    // User profile routes
+    Route::prefix('user/profile')->name('user.profile.')->controller(ProfileController::class)->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/edit', 'edit')->name('edit');
+        Route::put('/update', 'update')->name('update');
+        Route::get('/password', 'editPassword')->name('password.edit');
+        Route::put('/password', 'updatePassword')->name('password.update');
+        Route::delete('/delete', 'delete')->name('delete');
+    });
+    
+    // User product routes
+    Route::get('/user/products/{id}', [ProductController::class, 'show'])->name('user.products.show');
+    
     Route::post('/products/{id}/like',    [ProductController::class, 'like'])->name('products.like');
     Route::post('/products/{id}/comment', [ProductController::class, 'comment'])->name('products.comment');
+    
     // Address management
     Route::prefix('user/address')->name('user.address.')->controller(AddressController::class)->group(function () {
         Route::get('/',     'index')->name('index');
@@ -174,7 +219,9 @@ Route::middleware(['auth'])->group(function () {
         Route::patch('{address}/primary', 'setPrimary')->name('setPrimary');
     });
     Route::post('/address/update-coords', [AddressController::class, 'updateCoords'])->name('address.updateCoords');
+    
     // Order management
+    Route::get('/user/orders', [OrderController::class, 'index'])->name('user.orders.index');
     Route::patch('user/orders/{order}/expire',   [OrderController::class, 'expire'])->name('user.orders.expire.global');
     Route::patch('user/orders/{order}/cancel',   [OrderController::class, 'cancel'])->name('user.orders.cancel.global');
     Route::patch('user/orders/{order}/complete', [OrderController::class, 'complete'])->name('user.orders.complete.global');
@@ -185,5 +232,37 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // -----------------------------
-// ADMIN & DEV ROUTES (omitted for brevity)
+// ADMIN ROUTES
 // -----------------------------
+Route::prefix('admin')->name('admin.')->group(function () {
+    // Admin Auth Routes
+    Route::middleware('guest:admin')->group(function () {
+        Route::get('/login', [AdminAuthController::class, 'showLoginForm'])->name('login');
+        Route::post('/login', [AdminAuthController::class, 'login'])->name('login.submit');
+        
+        // Admin Registration Routes
+        Route::get('/register', [AdminAuthController::class, 'showRegistrationForm'])->name('register');
+        Route::post('/register', [AdminAuthController::class, 'register'])->name('register.submit');
+    });
+
+    // Protected Admin Routes
+    Route::middleware('auth:admin')->group(function () {
+        Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
+        Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
+        
+        // Admin Profile
+        Route::get('/profile', [AdminProfileController::class, 'edit'])->name('profile.edit');
+        Route::put('/profile', [AdminProfileController::class, 'update'])->name('profile.update');
+        Route::get('/profile/password', [AdminProfileController::class, 'editPassword'])->name('profile.password.edit');
+        Route::put('/profile/password', [AdminProfileController::class, 'updatePassword'])->name('profile.password.update');
+    });
+});
+
+// -----------------------------
+// DEV ROUTES (for development only)
+// -----------------------------
+if (app()->environment('local')) {
+    Route::prefix('dev')->group(function () {
+        Route::get('/test', [DevController::class, 'test'])->name('dev.test');
+    });
+}

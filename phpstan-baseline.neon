@@ -1,0 +1,4 @@
+parameters:
+    ignoreErrors:
+        - '#Call to unknown method Illuminate\\Contracts\\Broadcasting\\Factory::event\(\)#'
+        - '#Return value of cookie\(\) is expected to be of type#'

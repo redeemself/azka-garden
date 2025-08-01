@@ -13,6 +13,7 @@
     "intelephense.diagnostics.undefinedMethods": false,
     "intelephense.diagnostics.undefinedTypes": false,
     "intelephense.diagnostics.typeErrors": false,
+    "intelephense.compatibility.correctReturnTypeCase": true,
     "php.validate.enable": false,
     "DockerRun.DisableDockerrc": true,
     "files.associations": {
@@ -21,5 +22,5 @@
     "tailwindCSS.includeLanguages": {
         "postcss": "css"
     },
-    "// Updated": "2025-07-30 03:44:59 by mulyadafa"
+    "// Updated": "2025-08-01 04:26:30 by DenuJanuari"
 }

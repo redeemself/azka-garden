@@ -65,6 +65,7 @@ return array(
     'App\\Developer\\TestingQA\\TestCase' => $baseDir . '/app/Developer/TestingQA/TestCase.php',
     'App\\Developer\\TestingQA\\TestReport' => $baseDir . '/app/Developer/TestingQA/TestReport.php',
     'App\\Exceptions\\Handler' => $baseDir . '/app/Exceptions/Handler.php',
+    'App\\Extensions\\Database\\ConnectionExtension' => $baseDir . '/app/Extensions/Database/ConnectionExtension.php',
     'App\\Http\\Controllers\\AdminAuthController' => $baseDir . '/app/Http/Controllers/AdminAuthController.php',
     'App\\Http\\Controllers\\AdminController' => $baseDir . '/app/Http/Controllers/AdminController.php',
     'App\\Http\\Controllers\\Admin\\AdminAuthController' => $baseDir . '/app/Http/Controllers/Admin/AdminAuthController.php',
