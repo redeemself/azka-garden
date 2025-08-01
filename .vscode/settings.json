@@ -22,5 +22,6 @@
     "tailwindCSS.includeLanguages": {
         "postcss": "css"
     },
-    "// Updated": "2025-08-01 04:26:30 by DenuJanuari"
+    "// Updated": "2025-08-01 04:26:30 by DenuJanuari",
+    "i18n-ally.localesPaths": []
 }

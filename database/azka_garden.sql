@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Aug 01, 2025 at 05:34 AM
+-- Generation Time: Aug 01, 2025 at 12:12 PM
 -- Server version: 8.0.36
 -- PHP Version: 8.3.16
 
@@ -52,7 +52,8 @@ CREATE TABLE `addresses` (
 --
 
 INSERT INTO `addresses` (`id`, `user_id`, `label`, `recipient`, `phone_number`, `full_address`, `city`, `zip_code`, `is_primary`, `interface_id`, `created_at`, `updated_at`, `state`, `postal_code`, `address`, `latitude`, `longitude`) VALUES
-(1, 5, 'Alamat Saya', 'Roberto', '081281349115', 'Taman Manggis Indah, Tole Iskandar, Sukamaju, Depok, West Java, Java, 16415, Indonesia', 'Depok', '16415', 1, 1, '2025-07-31 19:40:03', '2025-07-31 19:40:03', NULL, NULL, NULL, -6.40795200, 106.85772890);
+(1, 5, 'Alamat Saya', 'Roberto', '081281349115', 'Taman Manggis Indah, Tole Iskandar, Sukamaju, Depok, West Java, Java, 16415, Indonesia', 'Depok', '16415', 1, 1, '2025-07-31 19:40:03', '2025-07-31 19:40:03', NULL, NULL, NULL, -6.40795200, 106.85772890),
+(2, 5, '2121', 'Roberto', '081281349115', 'Margonda, Jakarta Outer Ring Road 2, Kemirimuka, Beji, Depok, West Java, Java, 16235, Indonesia', 'Depok', '16415', 0, 1, '2025-08-01 04:55:27', '2025-08-01 04:55:27', NULL, NULL, NULL, -6.37693560, 106.83430970);
 
 -- --------------------------------------------------------
 
@@ -314,6 +315,13 @@ CREATE TABLE `carts` (
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Dumping data for table `carts`
+--
+
+INSERT INTO `carts` (`id`, `user_id`, `product_id`, `quantity`, `promo_code`, `discount`, `price`, `note`, `interface_id`, `created_at`, `updated_at`) VALUES
+(9, 5, 56, 5, NULL, 0, 22500, NULL, 1, '2025-08-01 03:18:41', '2025-08-01 03:26:46');
+
 -- --------------------------------------------------------
 
 --
@@ -371,6 +379,13 @@ CREATE TABLE `contacts` (
   `created_at` timestamp NULL DEFAULT NULL,
   `updated_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `contacts`
+--
+
+INSERT INTO `contacts` (`id`, `name`, `email`, `phone`, `message`, `promo_code`, `created_at`, `updated_at`) VALUES
+(1, 'Newsletter Subscriber', 'gohs01381@gmail.com', NULL, 'newsletter', 'PROMO-4BL48Q', '2025-07-31 23:44:53', '2025-07-31 23:44:53');
 
 -- --------------------------------------------------------
 
@@ -850,13 +865,13 @@ CREATE TABLE `feedback` (
 -- (See below for the actual view)
 --
 CREATE TABLE `global_payment_methods` (
-`id` bigint unsigned
-,`code` varchar(30)
-,`name` varchar(50)
-,`type` enum('LOCAL','GLOBAL')
+`code` varchar(30)
 ,`config` json
-,`status` tinyint(1)
 ,`created_at` timestamp
+,`id` bigint unsigned
+,`name` varchar(50)
+,`status` tinyint(1)
+,`type` enum('LOCAL','GLOBAL')
 ,`updated_at` timestamp
 );
 
@@ -906,13 +921,13 @@ CREATE TABLE `interface_methods` (
 -- (See below for the actual view)
 --
 CREATE TABLE `local_payment_methods` (
-`id` bigint unsigned
-,`code` varchar(30)
-,`name` varchar(50)
-,`type` enum('LOCAL','GLOBAL')
+`code` varchar(30)
 ,`config` json
-,`status` tinyint(1)
 ,`created_at` timestamp
+,`id` bigint unsigned
+,`name` varchar(50)
+,`status` tinyint(1)
+,`type` enum('LOCAL','GLOBAL')
 ,`updated_at` timestamp
 );
 
@@ -1529,7 +1544,8 @@ CREATE TABLE `promotions` (
 
 INSERT INTO `promotions` (`id`, `promo_code`, `title`, `description`, `discount_type`, `discount_value`, `minimum_purchase`, `maximum_discount`, `usage_limit`, `used_count`, `start_date`, `end_date`, `status`, `created_at`, `updated_at`, `interface_id`) VALUES
 (2, 'PROMOJULI10', 'Diskon 10% untuk Tanaman Hias', 'Dapatkan diskon 10% untuk pembelian minimal Rp200.000 tanaman hias.', 'percent', 10.00, NULL, NULL, NULL, 0, '2025-07-01 00:00:00', '2025-07-31 00:00:00', 1, '2025-07-24 00:53:22', NULL, 1),
-(3, 'PROMO-SV294G', 'Promo Newsletter untuk wdawdaaw02@gmail.com', 'Promo khusus subscriber newsletter.', 'percent', 10.00, NULL, NULL, NULL, 0, '2025-07-24 11:43:32', '2025-08-23 11:43:32', 1, '2025-07-24 04:43:32', NULL, 1);
+(3, 'PROMO-SV294G', 'Promo Newsletter untuk wdawdaaw02@gmail.com', 'Promo khusus subscriber newsletter.', 'percent', 10.00, NULL, NULL, NULL, 0, '2025-07-24 11:43:32', '2025-08-23 11:43:32', 1, '2025-07-24 04:43:32', NULL, 1),
+(4, 'PROMO-4BL48Q', 'Promo Newsletter untuk gohs01381@gmail.com', 'Promo khusus subscriber newsletter.', 'percent', 10.00, NULL, NULL, NULL, 2, '2025-08-01 06:44:53', '2025-08-31 06:44:53', 1, '2025-07-31 23:44:53', '2025-08-01 01:00:25', 1);
 
 -- --------------------------------------------------------
 
@@ -1788,7 +1804,7 @@ CREATE TABLE `sessions` (
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`, `token`, `expires_at`, `created_at`, `updated_at`) VALUES
-('wzFMUMqMpaLghktQWEaCw6nz5CGDnxvd5YuGXHTe', 5, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36', 'YTo2OntzOjY6Il90b2tlbiI7czo0MDoiWWN3dzJPQTBvZkRwdjdUZ1F1TGwwamdMa0pCd2F6cmFvM2dIS1ZkRiI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MzI6Imh0dHA6Ly9hemthLWdhcmRlbi50ZXN0L3Byb2R1Y3RzIjt9czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyODoiaHR0cDovL2F6a2EtZ2FyZGVuLnRlc3QvY2FydCI7fXM6NTA6ImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjtpOjU7czoxMDoiY2FydF9jb3VudCI7aTowO30=', 1754026276, NULL, NULL, NULL, NULL);
+('wzFMUMqMpaLghktQWEaCw6nz5CGDnxvd5YuGXHTe', 5, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36', 'YToxMTp7czo2OiJfdG9rZW4iO3M6NDA6Illjd3cyT0Ewb2ZEcHY3VGdRdUxsMGpnTGtKQndhenJhbzNnSEtWZEYiO3M6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fXM6OToiX3ByZXZpb3VzIjthOjE6e3M6MzoidXJsIjtzOjI4OiJodHRwOi8vYXprYS1nYXJkZW4udGVzdC9jYXJ0Ijt9czozOiJ1cmwiO2E6MTp7czo4OiJpbnRlbmRlZCI7czoyODoiaHR0cDovL2F6a2EtZ2FyZGVuLnRlc3QvY2FydCI7fXM6NTA6ImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjtpOjU7czoxMDoiY2FydF9jb3VudCI7czoxOiI1IjtzOjEwOiJwcm9tb19jb2RlIjtzOjEyOiJQUk9NTy00Qkw0OFEiO3M6MTA6InByb21vX3R5cGUiO3M6NzoicGVyY2VudCI7czoxNDoicHJvbW9fZGlzY291bnQiO2Q6MTA7czoxNzoicHJvbW9fZGVzY3JpcHRpb24iO3M6MzU6IlByb21vIGtodXN1cyBzdWJzY3JpYmVyIG5ld3NsZXR0ZXIuIjtzOjE4OiJwcm9tb19hY3RpdmF0ZWRfYXQiO3M6MTk6IjIwMjUtMDgtMDEgMDg6MDA6MjUiO30=', 1754050303, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -2766,7 +2782,7 @@ ALTER TABLE `vulnerabilities`
 -- AUTO_INCREMENT for table `addresses`
 --
 ALTER TABLE `addresses`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `admins`
@@ -2844,7 +2860,7 @@ ALTER TABLE `bug_reports`
 -- AUTO_INCREMENT for table `carts`
 --
 ALTER TABLE `carts`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT for table `categories`
@@ -2862,7 +2878,7 @@ ALTER TABLE `charts`
 -- AUTO_INCREMENT for table `contacts`
 --
 ALTER TABLE `contacts`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `customer_support`
@@ -3114,7 +3130,7 @@ ALTER TABLE `product_likes`
 -- AUTO_INCREMENT for table `promotions`
 --
 ALTER TABLE `promotions`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `purchase_orders`

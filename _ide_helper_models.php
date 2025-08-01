@@ -13,6 +13,11 @@
 
 namespace App\Models{
 /**
+ * Address Model
+ * 
+ * Last updated: 2025-07-30 07:31:30
+ * Updated by: mulyadafa
+ *
  * @property int $id
  * @property int $user_id
  * @property string $label
@@ -20,14 +25,16 @@ namespace App\Models{
  * @property string $phone_number
  * @property string $full_address
  * @property string $city
+ * @property string $state
  * @property string $zip_code
+ * @property string $postal_code
  * @property bool $is_primary
  * @property int $interface_id
  * @property float|null $latitude
  * @property float|null $longitude
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read InterfaceModel $interface
+ * @property-read InterfaceModel|null $interface
  * @property-read User $user
  * @method static \Illuminate\Database\Eloquent\Builder|Address newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder|Address newQuery()
@@ -44,9 +51,13 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder|Address whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Address whereUserId($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Address whereZipCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Address wherePostalCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder|Address whereState($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Address whereLatitude($value)
  * @method static \Illuminate\Database\Eloquent\Builder|Address whereLongitude($value)
  * @mixin \Eloquent
+ * @property string|null $address
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Address whereAddress($value)
  */
 	class Address extends \Eloquent {}
 }
@@ -389,20 +400,44 @@ namespace App\Models{
 
 namespace App\Models{
 /**
+ * Enhanced Cart Model
+ * 
+ * Updated: 2025-08-01 12:36:10 UTC by DenuJanuari
+ * - CRITICAL FIX: Added missing 'name' field for compatibility
+ * - Fixed decimal type casting to prevent number_format errors
+ * - Enhanced calculation methods with type safety
+ * - Added comprehensive validation and helper methods
+ * - Improved documentation and error handling
+ *
  * @property int $id
  * @property int $user_id
  * @property int $product_id
  * @property int $quantity
+ * @property string|null $name Added for compatibility
  * @property string|null $note
  * @property int $interface_id
- * @property int|null $discount
- * @property int $price
+ * @property float|null $discount Fixed casting
+ * @property float $price Fixed casting
  * @property string|null $promo_code
+ * @property array|null $options
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\InterfaceModel $interface
  * @property-read \App\Models\Product $product
  * @property-read \App\Models\User $user
+ * @property-read float $subtotal
+ * @property-read float $final_price
+ * @property-read string $formatted_price
+ * @property-read string $formatted_subtotal
+ * @author mulyadafa, enhanced by DenuJanuari
+ * @updated 2025-08-01 12:36:10 UTC
+ * @property-read int $available_stock
+ * @property-read float $discount_amount
+ * @property-read float $discount_percentage
+ * @property-read string $formatted_final_price
+ * @property-read string $product_name
+ * @property-read array $summary
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Cart forUser($userId)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Cart newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Cart newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Cart query()
@@ -417,6 +452,8 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Cart whereQuantity($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Cart whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Cart whereUserId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Cart withValidProducts()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Cart withValidStock()
  */
 	class Cart extends \Eloquent {}
 }
@@ -1111,44 +1148,41 @@ namespace App\Models{
 /**
  * @property int $id
  * @property int $user_id
- * @property string $order_code
- * @property string $order_date
- * @property int $enum_order_status_id
- * @property string $total_price
- * @property string $shipping_cost
+ * @property string|null $shipping_method
+ * @property string|null $order_code
+ * @property string|null $order_date
+ * @property int|null $enum_order_status_id
+ * @property string|null $total_price
+ * @property string|null $shipping_cost
  * @property string|null $note
  * @property string|null $payment_method
+ * @property string|null $total
+ * @property string $status
  * @property int $interface_id
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\OrderDetail> $orderDetails
- * @property-read int|null $order_details_count
- * @property-read \App\Models\EnumOrderStatus $status
- * @property-read \App\Models\User $user
- * @property-read \App\Models\Shipping $shipping
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Payment> $payments
- * @property-read \App\Models\Payment $payment
- * @method static \Illuminate\Database\Eloquent\Builder|Order newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder|Order newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder|Order query()
- * @method static \Illuminate\Database\Eloquent\Builder|Order whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Order whereEnumOrderStatusId($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Order whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Order whereInterfaceId($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Order whereNote($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Order whereOrderCode($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Order whereOrderDate($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Order whereShippingCost($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Order whereTotalPrice($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Order whereUpdatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Order whereUserId($value)
- * @method static \Illuminate\Database\Eloquent\Builder|Order wherePaymentMethod($value)
- * @mixin \Eloquent
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\OrderDetail> $details
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\OrderItem> $details
  * @property-read int|null $details_count
- * @property-read int|null $payments_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Product> $products
- * @property-read int|null $products_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\OrderItem> $items
+ * @property-read int|null $items_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order whereEnumOrderStatusId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order whereInterfaceId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order whereNote($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order whereOrderCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order whereOrderDate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order wherePaymentMethod($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order whereShippingCost($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order whereShippingMethod($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order whereTotal($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order whereTotalPrice($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Order whereUserId($value)
  */
 	class Order extends \Eloquent {}
 }
@@ -1184,6 +1218,33 @@ namespace App\Models{
  * @mixin \Eloquent
  */
 	class OrderDetail extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $id
+ * @property int $order_id
+ * @property int $product_id
+ * @property string|null $product_name
+ * @property int $quantity
+ * @property string $price
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Order $order
+ * @property-read \App\Models\Product|null $product
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderItem newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderItem newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderItem query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderItem whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderItem whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderItem whereOrderId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderItem wherePrice($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderItem whereProductId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderItem whereProductName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderItem whereQuantity($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OrderItem whereUpdatedAt($value)
+ */
+	class OrderItem extends \Eloquent {}
 }
 
 namespace App\Models{
@@ -1433,23 +1494,42 @@ namespace App\Models{
 
 namespace App\Models{
 /**
+ * Promotion Model
+ *
  * @property int $id
  * @property string|null $promo_code
  * @property string|null $title
  * @property string|null $description
  * @property string|null $discount_type
  * @property float|null $discount_value
+ * @property float|null $minimum_purchase
+ * @property float|null $maximum_discount
+ * @property int|null $usage_limit
+ * @property int $used_count
  * @property \Illuminate\Support\Carbon|null $start_date
  * @property \Illuminate\Support\Carbon|null $end_date
  * @property bool $status
- * @property string $created_at
- * @property int $interface_id
- * @property-read \App\Models\InterfaceModel $interface
- * @property string|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property int|null $interface_id
+ * @property-read \App\Models\InterfaceModel|null $interface
+ * @property-read string $discount_display
+ * @property-read int|null $remaining_usage
+ * 
+ * Updated: 2025-07-31 17:13:30 by DenuJanuari
+ * @property-read int|null $days_until_expiry
+ * @property-read string|null $formatted_end_date
+ * @property-read string|null $formatted_start_date
+ * @property-read string $status_text
+ * @property-read float $usage_percentage
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Promotion active()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Promotion available()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Promotion byCode($promoCode)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Promotion newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Promotion newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Promotion query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Promotion valid()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Promotion validDate()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Promotion whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Promotion whereDescription($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Promotion whereDiscountType($value)
@@ -1457,11 +1537,15 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Promotion whereEndDate($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Promotion whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Promotion whereInterfaceId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Promotion whereMaximumDiscount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Promotion whereMinimumPurchase($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Promotion wherePromoCode($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Promotion whereStartDate($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Promotion whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Promotion whereTitle($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Promotion whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Promotion whereUsageLimit($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Promotion whereUsedCount($value)
  */
 	class Promotion extends \Eloquent {}
 }
@@ -1786,6 +1870,60 @@ namespace App\Models{
 
 namespace App\Models{
 /**
+ * ShippingMethod Model - FINAL DECIMAL ERROR FIX
+ * 
+ * Updated: 2025-08-01 12:38:23 UTC by DenuJanuari
+ * - DEFINITIVELY FIXED: Line 73 decimal type error in number_format()
+ * - Changed decimal casting to float to prevent type conflicts
+ * - Maintained data precision while ensuring PHP compatibility
+ * - All number_format operations now work without errors
+ *
+ * @property int $id
+ * @property string $code Kode metode pengiriman
+ * @property string $name Nama metode pengiriman
+ * @property string $service Jenis layanan
+ * @property float $cost Biaya pengiriman default
+ * @property string|null $description Deskripsi metode pengiriman
+ * @property bool $is_active Status aktif
+ * @property int $sort Urutan tampilan
+ * @property \Illuminate\Support\Carbon|null $start_date Tanggal mulai aktif
+ * @property \Illuminate\Support\Carbon|null $end_date Tanggal berakhir aktif
+ * @property array<array-key, mixed>|null $settings Pengaturan tambahan dalam JSON
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read mixed $detail
+ * @property-read mixed $display_name
+ * @property-read mixed $estimated_time
+ * @property-read mixed $formatted_cost
+ * @property-read mixed $formatted_price
+ * @property-read mixed $icon
+ * @property mixed $price
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ShippingMethod active()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ShippingMethod byCode($code)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ShippingMethod byService($service)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ShippingMethod newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ShippingMethod newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ShippingMethod ordered()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ShippingMethod query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ShippingMethod whereCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ShippingMethod whereCost($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ShippingMethod whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ShippingMethod whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ShippingMethod whereEndDate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ShippingMethod whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ShippingMethod whereIsActive($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ShippingMethod whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ShippingMethod whereService($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ShippingMethod whereSettings($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ShippingMethod whereSort($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ShippingMethod whereStartDate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ShippingMethod whereUpdatedAt($value)
+ */
+	class ShippingMethod extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
  * @property int $stats_type_id
  * @property string $code
  * @property string|null $description
@@ -2007,6 +2145,11 @@ namespace App\Models{
 
 namespace App\Models{
 /**
+ * User Model
+ * 
+ * Last updated: 2025-07-30 07:32:44
+ * Updated by: mulyadafa
+ *
  * @property int $id
  * @property string $name
  * @property string $email
