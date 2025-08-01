@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1:3306
--- Generation Time: Jul 31, 2025 at 06:46 PM
+-- Generation Time: Aug 01, 2025 at 01:03 AM
 -- Server version: 8.0.36
 -- PHP Version: 8.3.16
 
@@ -320,9 +320,8 @@ CREATE TABLE `carts` (
 
 INSERT INTO `carts` (`id`, `user_id`, `product_id`, `quantity`, `promo_code`, `discount`, `price`, `note`, `interface_id`, `created_at`, `updated_at`) VALUES
 (1, 5, 55, 1, 'PROMO-H1MP8N', 12500, 125000, NULL, 1, '2025-07-31 11:19:11', '2025-07-31 11:21:18'),
-(3, 5, 54, 2, NULL, 0, 63000, NULL, 1, '2025-07-31 11:26:04', '2025-07-31 11:39:29'),
-(4, 5, 57, 1, NULL, 0, 67500, NULL, 1, '2025-07-31 11:26:15', '2025-07-31 11:26:15'),
-(6, 5, 59, 1, NULL, 0, 36000, NULL, 1, '2025-07-31 11:34:02', '2025-07-31 11:34:02');
+(6, 5, 59, 1, NULL, 0, 36000, NULL, 1, '2025-07-31 11:34:02', '2025-07-31 11:34:02'),
+(7, 5, 54, 1, NULL, 0, 63000, NULL, 1, '2025-07-31 17:35:25', '2025-07-31 17:35:25');
 
 -- --------------------------------------------------------
 
@@ -1767,7 +1766,7 @@ CREATE TABLE `sessions` (
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`, `token`, `expires_at`, `created_at`, `updated_at`) VALUES
-('dztkjkC0AM6rFB1IXlDSWpMtymefS8BdW6GIoufJ', 5, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36', 'YTo5OntzOjY6Il90b2tlbiI7czo0MDoiU1ptN09rUUxiMVo4a2hFeTZxb1lMQTQwV0NpdlkzcHNhSUtaM21kYiI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6Mjg6Imh0dHA6Ly9hemthLWdhcmRlbi50ZXN0L2NhcnQiO31zOjY6Il9mbGFzaCI7YToyOntzOjM6Im9sZCI7YTowOnt9czozOiJuZXciO2E6MDp7fX1zOjUwOiJsb2dpbl93ZWJfNTliYTM2YWRkYzJiMmY5NDAxNTgwZjAxNGM3ZjU4ZWE0ZTMwOTg5ZCI7aTo1O3M6MTA6InByb21vX2NvZGUiO3M6MTI6IlBST01PLUgxTVA4TiI7czoxMDoicHJvbW9fdHlwZSI7czo3OiJwZXJjZW50IjtzOjE0OiJwcm9tb19kaXNjb3VudCI7ZDoxMDtzOjE3OiJwcm9tb19kZXNjcmlwdGlvbiI7czozNToiUHJvbW8ga2h1c3VzIHN1YnNjcmliZXIgbmV3c2xldHRlci4iO3M6MTg6InByb21vX2FjdGl2YXRlZF9hdCI7czoxOToiMjAyNS0wNy0zMSAxODoyMToxOCI7fQ==', 1753987279, NULL, NULL, NULL, NULL);
+('dztkjkC0AM6rFB1IXlDSWpMtymefS8BdW6GIoufJ', 5, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36', 'YTo5OntzOjY6Il90b2tlbiI7czo0MDoiU1ptN09rUUxiMVo4a2hFeTZxb1lMQTQwV0NpdlkzcHNhSUtaM21kYiI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MzM6Imh0dHA6Ly9hemthLWdhcmRlbi50ZXN0L3VzZXIvY2FydCI7fXM6NjoiX2ZsYXNoIjthOjI6e3M6Mzoib2xkIjthOjA6e31zOjM6Im5ldyI7YTowOnt9fXM6NTA6ImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjtpOjU7czoxMDoicHJvbW9fY29kZSI7czoxMjoiUFJPTU8tSDFNUDhOIjtzOjEwOiJwcm9tb190eXBlIjtzOjc6InBlcmNlbnQiO3M6MTQ6InByb21vX2Rpc2NvdW50IjtkOjEwO3M6MTc6InByb21vX2Rlc2NyaXB0aW9uIjtzOjM1OiJQcm9tbyBraHVzdXMgc3Vic2NyaWJlciBuZXdzbGV0dGVyLiI7czoxODoicHJvbW9fYWN0aXZhdGVkX2F0IjtzOjE5OiIyMDI1LTA3LTMxIDE4OjIxOjE4Ijt9', 1754010090, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -2816,7 +2815,7 @@ ALTER TABLE `bug_reports`
 -- AUTO_INCREMENT for table `carts`
 --
 ALTER TABLE `carts`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `categories`
