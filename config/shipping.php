@@ -56,6 +56,6 @@ return array (
     'free_shipping_threshold' => 100000,
     'tax_rate' => 0.11,
   ),
-  'updated_at' => '2025-07-31 15:17:51',
+  'updated_at' => '2025-07-31 17:30:20',
   'updated_by' => 'mulyadafa',
 );

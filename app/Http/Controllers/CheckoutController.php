@@ -4,12 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Cart;
 use App\Models\Order;
-use App\Models\OrderDetail;
-use App\Models\Product;
+use App\Models\OrderDetail; // Ganti OrderItem dengan OrderDetail
 use App\Models\Address;
-use App\Models\Promotion;
 use App\Models\PaymentMethod;
-use App\Models\Shipping;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -20,8 +17,6 @@ class CheckoutController extends Controller
 {
     /**
      * Create a new controller instance.
-     *
-     * @return void
      */
     public function __construct()
     {
@@ -30,13 +25,11 @@ class CheckoutController extends Controller
 
     /**
      * Display checkout page
-     *
-     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function index()
     {
         $user = Auth::user();
-        
+
         // Check if user has items in cart
         $cartItems = Cart::with(['product', 'product.images'])
             ->where('user_id', $user->id)
@@ -48,9 +41,12 @@ class CheckoutController extends Controller
         }
 
         // Check if user has shipping address
-        $hasAddress = $user->addresses()->count() > 0;
+        $addresses = $user->addresses()->get();
+        $hasAddress = $addresses->count() > 0;
+        $primaryAddress = $addresses->where('is_primary', 1)->first() ?? $addresses->first();
+
         if (!$hasAddress) {
-            return redirect()->route('user.addresses.create')
+            return redirect()->route('user.address.create')
                 ->with('error', 'Anda perlu menambahkan alamat pengiriman terlebih dahulu.');
         }
 
@@ -62,29 +58,59 @@ class CheckoutController extends Controller
             }
         }
 
-        return view('checkout', compact('cartItems'));
+        // Get available payment methods
+        $paymentMethods = PaymentMethod::where('status', 1)->get();
+
+        // Calculate totals
+        $subtotal = $cartItems->sum(fn($i) => $i->price * $i->quantity);
+        $discount = session('promo_type') === 'percent'
+            ? $subtotal * (session('promo_discount', 0) / 100)
+            : session('promo_discount', 0);
+
+        $subtotalAfterDiscount = max(0, $subtotal - $discount);
+        $tax = $subtotalAfterDiscount * 0.1; // 10% tax
+
+        // Store location for distance calculation
+        $storeLocation = [
+            'lat' => -6.4122794,
+            'lng' => 106.829692,
+            'address' => 'Jalan Raya KSU, Kelurahan Tirtajaya, Kecamatan Sukmajaya, Kota Depok, Jawa Barat 16412'
+        ];
+
+        return view('checkout', compact(
+            'cartItems',
+            'addresses',
+            'primaryAddress',
+            'hasAddress',
+            'paymentMethods',
+            'subtotal',
+            'discount',
+            'subtotalAfterDiscount',
+            'tax',
+            'storeLocation'
+        ));
     }
 
     /**
      * Process checkout and create order
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\RedirectResponse
      */
     public function process(Request $request)
     {
         try {
-            // Validate request with shipping_fee included
+            // Enhanced validation untuk menerima data dari cart
             $validated = $request->validate([
                 'shipping_address_id' => 'required|exists:addresses,id',
-                'shipping_method' => 'required|string|max:50',
-                'payment_method' => 'required|string|exists:payment_methods,code',
-                'shipping_fee' => 'required|numeric',
+                'shipping_method_id' => 'required|string|max:50',
+                'payment_method' => 'required|string',
+                'shipping_fee' => 'required|numeric|min:0',
+                'distance_km' => 'nullable|numeric|min:0',
+                'customer_lat' => 'nullable|numeric',
+                'customer_lng' => 'nullable|numeric',
                 'note' => 'nullable|string|max:500'
             ]);
 
             $user = Auth::user();
-            
+
             // Verify cart is not empty
             $cartItems = Cart::with(['product'])
                 ->where('user_id', $user->id)
@@ -105,231 +131,119 @@ class CheckoutController extends Controller
                     ->with('error', 'Alamat pengiriman tidak valid.');
             }
 
-            // Verify payment method exists and is active
-            $paymentMethod = PaymentMethod::where('code', $validated['payment_method'])
-                ->where('status', 1)
-                ->first();
-
-            if (!$paymentMethod) {
-                return redirect()->route('checkout.index')
-                    ->with('error', 'Metode pembayaran tidak valid.');
-            }
-
             // Start database transaction
             DB::beginTransaction();
 
-            // Calculate totals
-            $subtotal = 0;
-            $totalDiscount = 0;
-            $totalWeight = 0;
-            $orderDetails = [];
+            try {
+                // Calculate order totals
+                $subtotal = $cartItems->sum(fn($i) => $i->price * $i->quantity);
+                $discount = session('promo_type') === 'percent'
+                    ? $subtotal * (session('promo_discount', 0) / 100)
+                    : session('promo_discount', 0);
 
-            foreach ($cartItems as $item) {
-                // Double-check stock availability
-                $product = Product::lockForUpdate()->find($item->product_id);
-                
-                if (!$product || $product->stock < $item->quantity) {
-                    DB::rollBack();
-                    return redirect()->route('user.cart.index')
-                        ->with('error', "Stok tidak mencukupi untuk produk: {$item->product->name}");
-                }
+                $subtotalAfterDiscount = max(0, $subtotal - $discount);
+                $tax = $subtotalAfterDiscount * 0.1;
+                $shippingFee = $validated['shipping_fee'];
+                $grandTotal = $subtotalAfterDiscount + $tax + $shippingFee;
 
-                // Calculate pricing
-                $promo = $item->promo_code ?? session('promo_code');
-                $promotion = $promo ? Promotion::where('promo_code', $promo)->first() : null;
-                $discount = 0;
-                $unitPrice = $product->price;
+                // Generate order code yang unik
+                $orderCode = 'ORD-' . date('Ymd') . '-' . strtoupper(Str::random(6));
 
-                if ($promotion) {
-                    if ($promotion->discount_type === 'percent') {
-                        $percent = $promotion->discount_value ?: 10;
-                        $discount = round($unitPrice * ($percent / 100));
-                    } elseif ($promotion->discount_type === 'fixed') {
-                        $discount = min($promotion->discount_value ?: 0, $unitPrice);
+                // Create order sesuai dengan struktur yang ada
+                $order = Order::create([
+                    'order_code' => $orderCode,
+                    'user_id' => $user->id,
+                    'enum_order_status_id' => 1, // Status pending (sesuai enum_order_status)
+                    'total_price' => $grandTotal,
+                    'shipping_cost' => $shippingFee,
+                    'payment_method' => $validated['payment_method'],
+                    'note' => $validated['note'] ?? null,
+                    'order_date' => now(),
+                    'interface_id' => 8 // Default interface ID untuk sistem
+                ]);
+
+                // Create order details menggunakan OrderDetail
+                foreach ($cartItems as $cartItem) {
+                    // Check stock again
+                    if ($cartItem->product->stock < $cartItem->quantity) {
+                        throw new \Exception("Stok tidak mencukupi untuk produk: {$cartItem->product->name}");
                     }
+
+                    OrderDetail::create([
+                        'order_id' => $order->id,
+                        'product_id' => $cartItem->product_id,
+                        'quantity' => $cartItem->quantity,
+                        'price' => $cartItem->price,
+                        'subtotal' => $cartItem->price * $cartItem->quantity,
+                        'note' => "Shipping: {$validated['shipping_method_id']}, Distance: {$validated['distance_km']}km",
+                        'interface_id' => 8
+                    ]);
+
+                    // Update product stock
+                    $cartItem->product->decrement('stock', $cartItem->quantity);
                 }
 
-                $discountedPrice = max(0, $unitPrice - $discount);
-                $itemTotal = $discountedPrice * $item->quantity;
-                
-                $subtotal += $unitPrice * $item->quantity;
-                $totalDiscount += $discount * $item->quantity;
-                $totalWeight += $product->weight * $item->quantity;
+                // Clear cart
+                Cart::where('user_id', $user->id)->delete();
 
-                // Prepare order detail
-                $orderDetails[] = [
-                    'product_id' => $product->id,
-                    'quantity' => $item->quantity,
-                    'price' => $discountedPrice,
-                    'subtotal' => $itemTotal,
-                    'note' => null,
-                    'interface_id' => 1
-                ];
+                // Clear promo session
+                session()->forget(['promo_code', 'promo_discount', 'promo_type']);
 
-                // Update stock
-                $product->decrement('stock', $item->quantity);
+                // Store shipping data in session for later use
+                session([
+                    'order_shipping_data' => [
+                        'order_id' => $order->id,
+                        'shipping_method' => $validated['shipping_method_id'],
+                        'shipping_address' => [
+                            'recipient' => $address->recipient,
+                            'phone' => $address->phone_number,
+                            'address' => $address->full_address,
+                            'city' => $address->city,
+                            'zip_code' => $address->zip_code,
+                            'latitude' => $validated['customer_lat'],
+                            'longitude' => $validated['customer_lng'],
+                            'distance_km' => $validated['distance_km']
+                        ]
+                    ]
+                ]);
+
+                // Commit transaction
+                DB::commit();
+
+                Log::info('Order created successfully', [
+                    'order_id' => $order->id,
+                    'order_code' => $order->order_code,
+                    'user_id' => $user->id,
+                    'total_amount' => $grandTotal,
+                    'shipping_method' => $validated['shipping_method_id'],
+                    'distance_km' => $validated['distance_km'],
+                    'timestamp' => '2025-07-31 15:46:39',
+                    'user' => 'DenuJanuari'
+                ]);
+
+                return redirect()->route('user.orders.show', $order->id)
+                    ->with('success', 'Pesanan berhasil dibuat! Silakan lakukan pembayaran.');
+            } catch (\Exception $e) {
+                DB::rollBack();
+                Log::error('Error creating order: ' . $e->getMessage(), [
+                    'timestamp' => '2025-07-31 15:46:39',
+                    'user' => 'DenuJanuari'
+                ]);
+
+                return redirect()->route('checkout.index')
+                    ->with('error', 'Terjadi kesalahan saat memproses pesanan: ' . $e->getMessage());
             }
-
-            // Use the validated shipping fee from the form
-            $shippingCost = $validated['shipping_fee'];
-
-            // Calculate final total
-            $finalTotal = $subtotal - $totalDiscount + $shippingCost;
-
-            // Generate unique order code
-            $orderCode = $this->generateOrderCode();
-
-            // Create order
-            $order = Order::create([
-                'user_id' => $user->id,
-                'order_code' => $orderCode,
-                'order_date' => now(),
-                'enum_order_status_id' => 1, // WAITING_PAYMENT
-                'total_price' => $finalTotal,
-                'shipping_cost' => $shippingCost,
-                'note' => $validated['note'],
-                'payment_method' => $validated['payment_method'],
-                'interface_id' => 1,
-                'created_by' => 'mulyadafa',
-                'created_at' => '2025-07-30 03:10:41'
-            ]);
-
-            // Create order details
-            foreach ($orderDetails as $detail) {
-                $detail['order_id'] = $order->id;
-                OrderDetail::create($detail);
-            }
-
-            // Create shipping record
-            $this->createShippingRecord($order, $validated['shipping_method'], $shippingCost);
-
-            // Clear cart
-            Cart::where('user_id', $user->id)->delete();
-
-            // Store necessary data in session
-            session([
-                'shipping_method' => $validated['shipping_method'],
-                'payment_method' => $validated['payment_method'],
-                'shipping_fee' => $validated['shipping_fee'],
-                'order_id' => $order->id,
-                'order_code' => $orderCode
-            ]);
-
-            // Clear promo session
-            session()->forget('promo_code');
-
-            // Commit transaction
-            DB::commit();
-
-            Log::info('Order created successfully', [
-                'order_id' => $order->id,
-                'order_code' => $orderCode,
-                'user_id' => $user->id,
-                'total' => $finalTotal,
-                'timestamp' => '2025-07-30 03:10:41',
-                'created_by' => 'mulyadafa'
-            ]);
-
-            // Redirect to payment page (GET request)
-            return redirect()->route('user.payment.index');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            
-            Log::error('Checkout process failed', [
-                'user_id' => Auth::id(),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'timestamp' => '2025-07-30 03:10:41'
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::warning('Checkout validation failed', [
+                'errors' => $e->errors(),
+                'request_data' => $request->all(),
+                'timestamp' => '2025-07-31 15:46:39',
+                'user' => 'DenuJanuari'
             ]);
 
             return redirect()->route('checkout.index')
-                ->with('error', 'Terjadi kesalahan saat memproses pesanan. Silakan coba lagi.');
+                ->withErrors($e->errors())
+                ->withInput();
         }
-    }
-
-    /**
-     * Calculate shipping cost based on method and address
-     *
-     * @param string $method
-     * @param \App\Models\Address $address
-     * @param float $weight
-     * @return float
-     */
-    private function calculateShippingCost($method, $address, $weight)
-    {
-        switch ($method) {
-            case 'KURIR_TOKO':
-                // This would ideally use Google Maps API to calculate distance
-                // For now, return default rate
-                return 15000;
-                
-            case 'GOSEND':
-                return 25000;
-                
-            case 'JNE':
-                return max(12000, ceil($weight) * 12000);
-                
-            case 'JNT':
-                return max(14000, ceil($weight) * 14000);
-                
-            case 'SICEPAT':
-                return max(15000, ceil($weight) * 15000);
-                
-            case 'AMBIL_SENDIRI':
-                return 0;
-                
-            default:
-                return 15000;
-        }
-    }
-
-    /**
-     * Generate unique order code
-     *
-     * @return string
-     */
-    private function generateOrderCode()
-    {
-        do {
-            $code = 'ORD-' . now()->format('Ymd') . '-' . strtoupper(Str::random(6));
-        } while (Order::where('order_code', $code)->exists());
-
-        return $code;
-    }
-
-    /**
-     * Create shipping record
-     *
-     * @param \App\Models\Order $order
-     * @param string $method
-     * @param float $cost
-     * @return void
-     */
-    private function createShippingRecord($order, $method, $cost)
-    {
-        $courierMap = [
-            'KURIR_TOKO' => ['courier' => 'KURIR TOKO', 'service' => 'Internal'],
-            'GOSEND' => ['courier' => 'GOSEND', 'service' => 'Sameday'],
-            'JNE' => ['courier' => 'JNE', 'service' => 'REG'],
-            'JNT' => ['courier' => 'J&T', 'service' => 'EZ'],
-            'SICEPAT' => ['courier' => 'SICEPAT', 'service' => 'BEST'],
-            'AMBIL_SENDIRI' => ['courier' => 'AMBIL_SENDIRI', 'service' => '-']
-        ];
-
-        $courierInfo = $courierMap[$method] ?? ['courier' => 'UNKNOWN', 'service' => 'Unknown'];
-
-        Shipping::create([
-            'order_id' => $order->id,
-            'courier' => $courierInfo['courier'],
-            'service' => $courierInfo['service'],
-            'tracking_number' => null,
-            'shipping_cost' => $cost,
-            'status' => $method === 'AMBIL_SENDIRI' ? 'READY_FOR_PICKUP' : 'WAITING_PICKUP',
-            'estimated_delivery' => null,
-            'interface_id' => 1,
-            'created_by' => 'mulyadafa',
-            'created_at' => '2025-07-30 03:10:41'
-        ]);
     }
 }
