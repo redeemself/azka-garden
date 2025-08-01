@@ -162,7 +162,7 @@ Route::middleware(['auth'])->group(function () {
             \Log::info('Checkout data prepared successfully', [
                 'user_id' => auth()->id(),
                 'items_count' => count($cartData['items']),
-                'timestamp' => '2025-08-01 05:21:01',
+                'timestamp' => '2025-08-01 06:43:13',
                 'prepared_by' => 'DenuJanuari'
             ]);
             return response()->json(['success' => true, 'message' => 'Data checkout berhasil disiapkan']);
@@ -170,7 +170,7 @@ Route::middleware(['auth'])->group(function () {
             \Log::error('Checkout preparation failed', [
                 'error' => $e->getMessage(),
                 'user_id' => auth()->id(),
-                'timestamp' => '2025-08-01 05:21:01',
+                'timestamp' => '2025-08-01 06:43:13',
                 'error_by' => 'DenuJanuari'
             ]);
             return response()->json(['success' => false, 'message' => 'Terjadi kesalahan sistem'], 500);
@@ -201,13 +201,13 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/password', 'updatePassword')->name('password.update');
         Route::delete('/delete', 'delete')->name('delete');
     });
-    
+
     // User product routes
     Route::get('/user/products/{id}', [ProductController::class, 'show'])->name('user.products.show');
-    
+
     Route::post('/products/{id}/like',    [ProductController::class, 'like'])->name('products.like');
     Route::post('/products/{id}/comment', [ProductController::class, 'comment'])->name('products.comment');
-    
+
     // Address management
     Route::prefix('user/address')->name('user.address.')->controller(AddressController::class)->group(function () {
         Route::get('/',     'index')->name('index');
@@ -219,12 +219,15 @@ Route::middleware(['auth'])->group(function () {
         Route::patch('{address}/primary', 'setPrimary')->name('setPrimary');
     });
     Route::post('/address/update-coords', [AddressController::class, 'updateCoords'])->name('address.updateCoords');
-    
+
     // Order management
     Route::get('/user/orders', [OrderController::class, 'index'])->name('user.orders.index');
     Route::patch('user/orders/{order}/expire',   [OrderController::class, 'expire'])->name('user.orders.expire.global');
     Route::patch('user/orders/{order}/cancel',   [OrderController::class, 'cancel'])->name('user.orders.cancel.global');
     Route::patch('user/orders/{order}/complete', [OrderController::class, 'complete'])->name('user.orders.complete.global');
+
+    // Add the missing route for clearing expired orders
+    Route::post('/user/orders/clear-expired', [OrderController::class, 'clearExpired'])->name('user.orders.clear_expired');
 
     // Tambahan: Riwayat dan detail pesanan
     Route::get('/user/orders/history', [OrderController::class, 'history'])->name('user.orders.history.index');
@@ -239,7 +242,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware('guest:admin')->group(function () {
         Route::get('/login', [AdminAuthController::class, 'showLoginForm'])->name('login');
         Route::post('/login', [AdminAuthController::class, 'login'])->name('login.submit');
-        
+
         // Admin Registration Routes
         Route::get('/register', [AdminAuthController::class, 'showRegistrationForm'])->name('register');
         Route::post('/register', [AdminAuthController::class, 'register'])->name('register.submit');
@@ -249,7 +252,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware('auth:admin')->group(function () {
         Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
         Route::get('/', [AdminController::class, 'dashboard'])->name('dashboard');
-        
+
         // Admin Profile
         Route::get('/profile', [AdminProfileController::class, 'edit'])->name('profile.edit');
         Route::put('/profile', [AdminProfileController::class, 'update'])->name('profile.update');

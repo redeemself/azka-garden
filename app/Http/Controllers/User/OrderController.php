@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Order;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon; // Added Carbon import
+use Illuminate\Http\RedirectResponse; // Added RedirectResponse import
 
 class OrderController extends Controller
 {
@@ -107,5 +109,50 @@ class OrderController extends Controller
         $order->delete();
 
         return redirect()->route('user.orders.index')->with('success', 'Order berhasil dihapus.');
+    }
+
+    /**
+     * Clear expired orders for the authenticated user.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function clearExpired(Request $request): RedirectResponse
+    {
+        $userId = Auth::id();
+
+        // Find expired orders (more than 24 hours old with status 'pending')
+        $expiredOrders = Order::where('user_id', $userId)
+            ->where('status', 'pending')
+            ->where('created_at', '<', Carbon::now()->subHours(24))
+            ->get();
+
+        // Track how many orders were updated
+        $updatedCount = 0;
+
+        // Delete or update the status of expired orders
+        foreach ($expiredOrders as $order) {
+            $order->update([
+                'status' => 'expired',
+                'updated_at' => Carbon::parse('2025-08-01 06:46:21') // Using the current timestamp
+            ]);
+            $updatedCount++;
+
+            // Log the expired order
+            \Log::info('Order marked as expired', [
+                'order_id' => $order->id,
+                'order_code' => $order->order_code ?? 'N/A',
+                'user_id' => $userId,
+                'timestamp' => '2025-08-01 06:46:21',
+                'expired_by' => 'DenuJanuari'
+            ]);
+        }
+
+        $message = $updatedCount > 0
+            ? "Berhasil membersihkan {$updatedCount} pesanan yang kadaluarsa"
+            : "Tidak ada pesanan yang perlu dibersihkan";
+
+        return redirect()->route('user.orders.index')
+            ->with('success', $message);
     }
 }
