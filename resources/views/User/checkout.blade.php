@@ -908,11 +908,8 @@
             </a>
 
             @if ($selectedShipping && $selectedPayment)
-                <!-- FIXED: Form action route to use payment.store instead of user.payment.index -->
-                <form action="{{ route('payment.store') }}" method="POST" id="checkout-form"
-                    style="flex: 1; max-width: 300px;">
+                <form action="{{ route('payment.index') }}" method="GET">
                     @csrf
-                    {{-- Hidden data for payment processing --}}
                     <input type="hidden" name="shipping_method" value="{{ request('shipping_method') }}">
                     <input type="hidden" name="payment_method" value="{{ request('payment_method') }}">
                     <input type="hidden" name="subtotal" value="{{ $subtotal }}">
@@ -921,7 +918,7 @@
                     <input type="hidden" name="tax" value="{{ $tax }}">
                     <input type="hidden" name="grand_total" value="{{ $grandTotal }}">
 
-                    {{-- Cart items data --}}
+                    {{-- Tambahkan data produk dari keranjang --}}
                     @foreach ($cartItems as $item)
                         <input type="hidden" name="cart_items[{{ $loop->index }}][product_id]"
                             value="{{ $item->product->id ?? '' }}">
@@ -933,19 +930,9 @@
                             value="{{ $item->price }}">
                         <input type="hidden" name="cart_items[{{ $loop->index }}][discount]"
                             value="{{ $item->discount ?? 0 }}">
-                        @if ($item->promo_code)
-                            <input type="hidden" name="cart_items[{{ $loop->index }}][promo_code]"
-                                value="{{ $item->promo_code }}">
-                        @endif
                     @endforeach
 
-                    <button type="submit" class="btn btn-primary" id="payment-btn">
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                        </svg>
-                        Lanjut ke Pembayaran
-                    </button>
+                    <button type="submit" class="btn btn-primary">Lanjut ke Pembayaran</button>
                 </form>
             @else
                 <div style="flex: 1; max-width: 300px;">

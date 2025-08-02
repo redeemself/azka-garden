@@ -1,10 +1,11 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * 
+ *
  *
  * @property int $id
  * @property int $order_id
@@ -43,14 +44,19 @@ class Payment extends Model
 {
     protected $table = 'payments';
     protected $fillable = [
-        'order_id', 'method_id', 'transaction_code',
-        'bank_account', 'total', 'enum_payment_status_id',
-        'proof_of_payment', 'expired_at'
+        'order_id',
+        'method_id',
+        'transaction_code',
+        'bank_account',
+        'total',
+        'enum_payment_status_id',
+        'proof_of_payment',
+        'expired_at'
     ];
 
     protected $casts = [
-        'total'              => 'decimal:2',
-        'expired_at'         => 'datetime',
+        'total'      => 'decimal:2',
+        'expired_at' => 'datetime',
     ];
 
     public function order()
@@ -66,10 +72,5 @@ class Payment extends Model
     public function status()
     {
         return $this->belongsTo(EnumPaymentStatus::class, 'enum_payment_status_id');
-    }
-
-    public function interface()
-    {
-        return $this->belongsTo(InterfaceModel::class, 'interface_id');
     }
 }

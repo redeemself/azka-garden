@@ -23,18 +23,18 @@
         showPassword: false,
         showPasswordConfirm: false,
         formErrors: {},
-    
+
         validateForm() {
             this.formErrors = {};
             let isValid = true;
-    
+
             // Name validation
             const nameInput = document.getElementById('name');
             if (!nameInput.value.trim()) {
                 this.formErrors.name = 'Nama lengkap wajib diisi';
                 isValid = false;
             }
-    
+
             // Email validation
             const emailInput = document.getElementById('email');
             const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -45,7 +45,7 @@
                 this.formErrors.email = 'Format email tidak valid';
                 isValid = false;
             }
-    
+
             // Phone validation
             const phoneInput = document.getElementById('phone');
             const phonePattern = /^[0-9+\-\s()]{10,15}$/;
@@ -56,7 +56,7 @@
                 this.formErrors.phone = 'Format nomor telepon tidak valid';
                 isValid = false;
             }
-    
+
             // Password validation
             const passwordInput = document.getElementById('password');
             if (!passwordInput.value) {
@@ -66,27 +66,27 @@
                 this.formErrors.password = 'Password minimal 8 karakter';
                 isValid = false;
             }
-    
+
             // Password confirmation validation
             const passwordConfirmInput = document.getElementById('password_confirmation');
             if (passwordInput.value !== passwordConfirmInput.value) {
                 this.formErrors.password_confirmation = 'Konfirmasi password tidak cocok';
                 isValid = false;
             }
-    
+
             // Terms validation
             const termsInput = document.getElementById('terms');
             if (!termsInput.checked) {
                 this.formErrors.terms = 'Anda harus menyetujui syarat dan ketentuan';
                 isValid = false;
             }
-    
+
             return isValid;
         },
-    
+
         init() {
             this.startInterval();
-    
+
             // Form submission handler
             document.getElementById('register-form').addEventListener('submit', (e) => {
                 if (!this.validateForm()) {
@@ -94,16 +94,16 @@
                 }
             });
         },
-    
+
         startInterval() {
             this.stopInterval();
             this.interval = setInterval(() => this.nextBackground(), 10000);
         },
-    
+
         stopInterval() {
             if (this.interval) clearInterval(this.interval);
         },
-    
+
         nextBackground() {
             if (this.transitioning) return;
             this.transitioning = true;
@@ -112,20 +112,20 @@
             this.nextBg = (this.nextBg + 1) % this.heroImages.length;
             setTimeout(() => this.transitioning = false, this.transitionDuration);
         },
-    
+
         prevBackground() {
             this.stopInterval();
             this.nextBg = (this.currentBg - 1 + this.heroImages.length) % this.heroImages.length;
             this.nextBackground();
             this.startInterval();
         },
-    
+
         nextBgManual() {
             this.stopInterval();
             this.nextBackground();
             this.startInterval();
         },
-    
+
         setBg(idx) {
             if (idx === this.currentBg) return;
             this.stopInterval();
@@ -221,20 +221,21 @@
                         <template x-if="!showPassword">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z
-                                               M2.458 12C3.732 7.943 7.523 5 12 5
-                                               c4.477 0 8.268 2.943 9.542 7
-                                               -1.274 4.057-5.065 7-9.542 7
-                                               -4.477 0-8.268-2.943-9.542-7z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z
+                                                                                                   M2.458 12C3.732 7.943 7.523 5 12 5
+                                                                                                   c4.477 0 8.268 2.943 9.542 7
+                                                                                                   -1.274 4.057-5.065 7-9.542 7
+                                                                                                   -4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
                         </template>
                         <template x-if="showPassword">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19
-                                               c-4.477 0-8.268-2.943-9.542-7
-                                               a9.985 9.985 0 012.016-3.436
-                                               M3 3l18 18" />
+                                                                                                   c-4.477 0-8.268-2.943-9.542-7
+                                                                                                   a9.985 9.985 0 012.016-3.436
+                                                                                                   M3 3l18 18" />
                             </svg>
                         </template>
                     </button>
@@ -258,20 +259,21 @@
                         <template x-if="!showPasswordConfirm">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z
-                                               M2.458 12C3.732 7.943 7.523 5 12 5
-                                               c4.477 0 8.268 2.943 9.542 7
-                                               -1.274 4.057-5.065 7-9.542 7
-                                               -4.477 0-8.268-2.943-9.542-7z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z
+                                                                                                   M2.458 12C3.732 7.943 7.523 5 12 5
+                                                                                                   c4.477 0 8.268 2.943 9.542 7
+                                                                                                   -1.274 4.057-5.065 7-9.542 7
+                                                                                                   -4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
                         </template>
                         <template x-if="showPasswordConfirm">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19
-                                               c-4.477 0-8.268-2.943-9.542-7
-                                               a9.985 9.985 0 012.016-3.436
-                                               M3 3l18 18" />
+                                                                                                   c-4.477 0-8.268-2.943-9.542-7
+                                                                                                   a9.985 9.985 0 012.016-3.436
+                                                                                                   M3 3l18 18" />
                             </svg>
                         </template>
                     </button>
@@ -318,7 +320,12 @@
                 Daftar sebagai
                 <a href="{{ route('admin.register') }}"
                     class="font-semibold text-green-400 hover:underline">Administrator</a> |
-                <a href="{{ route('dev.register') }}" class="font-semibold text-green-400 hover:underline">Pengembang</a>
+            <form action="{{ route('auth.register.submit') }}" method="POST">
+                @csrf
+                <!-- form inputs -->
+                <button type="submit">Register</button>
+            </form>
+
             </p>
         </div>
 

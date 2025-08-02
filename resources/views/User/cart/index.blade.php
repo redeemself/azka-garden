@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Keranjang Belanja')
+@section('title', 'Keranjang Belanja | Azka Garden')
 
 @push('meta')
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -521,40 +521,178 @@
             font-size: 0.875rem;
         }
 
-        /* Modern Dropdown Styling */
+        /* Modern Selection Cards for Mobile - Enhanced by gerrymulyadi709 at 2025-08-02 05:05:35 */
+        .selection-container {
+            width: 100%;
+            margin-bottom: 1.5rem;
+        }
+
+        .selection-label {
+            display: block;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .selection-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+
+        .selection-card {
+            background: white;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            min-height: 70px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .selection-card:hover {
+            border-color: var(--primary-light);
+            box-shadow: var(--shadow);
+            transform: translateY(-2px);
+            background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+        }
+
+        .selection-card.selected {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, var(--primary-bg) 0%, rgba(220, 252, 231, 0.8) 100%);
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .selection-card.selected::before {
+            content: '✓';
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: var(--primary);
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            z-index: 2;
+        }
+
+        .selection-icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--gray-50);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .selection-card.selected .selection-icon {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .selection-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .selection-title {
+            font-weight: 600;
+            color: var(--gray-800);
+            font-size: 0.95rem;
+            margin-bottom: 0.25rem;
+            line-height: 1.3;
+        }
+
+        .selection-card.selected .selection-title {
+            color: var(--primary-dark);
+        }
+
+        .selection-description {
+            color: var(--gray-600);
+            font-size: 0.8rem;
+            line-height: 1.3;
+            margin-bottom: 0.25rem;
+        }
+
+        .selection-card.selected .selection-description {
+            color: var(--gray-700);
+        }
+
+        .selection-price {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--gray-800);
+        }
+
+        .selection-card.selected .selection-price {
+            color: var(--primary-dark);
+        }
+
+        .selection-price.free {
+            color: var(--success);
+        }
+
+        .selection-price.with-fee {
+            color: var(--warning);
+        }
+
+        /* Desktop Dropdown (fallback for larger screens) */
         .custom-dropdown-container {
             position: relative;
             width: 100%;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
         }
 
         .custom-dropdown {
             width: 100%;
-            padding: 1rem 3rem 1rem 1rem;
+            padding: 1rem 3.5rem 1rem 1rem;
             border: 2px solid #e5e7eb;
             border-radius: 12px;
             font-size: 1rem;
             background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
             color: var(--gray-800);
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             appearance: none;
             -webkit-appearance: none;
             -moz-appearance: none;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            font-weight: 500;
         }
 
         .custom-dropdown:hover {
             border-color: var(--primary-light);
             box-shadow: 0 4px 12px rgba(22, 163, 74, 0.15);
             transform: translateY(-1px);
+            background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
         }
 
         .custom-dropdown:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+            box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1), 0 4px 12px rgba(22, 163, 74, 0.15);
             transform: translateY(-1px);
+            background: white;
         }
 
         .dropdown-icon {
@@ -564,88 +702,18 @@
             transform: translateY(-50%);
             color: var(--primary);
             pointer-events: none;
-            transition: transform 0.3s ease;
+            transition: all 0.3s ease;
         }
 
-        .custom-dropdown:focus+.dropdown-icon {
-            transform: translateY(-50%) rotate(180deg);
-        }
-
-        /* Custom Option Styling */
-        .custom-dropdown option {
-            padding: 0.75rem;
-            background: white;
-            color: var(--gray-800);
-            font-size: 1rem;
-            border-bottom: 1px solid #f3f4f6;
-        }
-
-        .custom-dropdown option:hover {
-            background: var(--primary-bg);
-            color: var(--primary-dark);
-        }
-
-        .custom-dropdown option:checked {
-            background: var(--primary);
-            color: white;
-            font-weight: 600;
-        }
-
-        /* Dropdown Label Styling */
         .dropdown-label {
             display: block;
             font-weight: 600;
             color: var(--gray-700);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
             font-size: 1rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-        }
-
-        /* Loading State */
-        .custom-dropdown.loading {
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
-
-        .custom-dropdown.loading+.dropdown-icon {
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            from {
-                transform: translateY(-50%) rotate(0deg);
-            }
-
-            to {
-                transform: translateY(-50%) rotate(360deg);
-            }
-        }
-
-        /* Enhanced Visual Feedback */
-        .custom-dropdown:invalid {
-            border-color: #ef4444;
-            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-        }
-
-        .custom-dropdown:valid {
-            border-color: var(--success);
-        }
-
-        /* Interactive Hover Effects */
-        .custom-dropdown-container:hover .dropdown-icon {
-            color: var(--primary-dark);
-            transform: translateY(-50%) scale(1.1);
-        }
-
-        /* Smooth Animations */
-        .custom-dropdown-container {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .custom-dropdown-container:focus-within {
-            transform: translateY(-2px);
         }
 
         /* Buttons */
@@ -764,10 +832,12 @@
             }
         }
 
-        /* Responsive Design */
+        /* Enhanced Responsive Design */
         @media (max-width: 768px) {
             .cart-container {
-                padding: 1rem 0.5rem;
+                padding: 1rem 0.75rem;
+                max-width: 100vw;
+                box-sizing: border-box;
             }
 
             .cart-title {
@@ -781,7 +851,7 @@
 
             .card-header,
             .card-body {
-                padding: 1rem;
+                padding: 1rem 0.75rem;
             }
 
             .product-item {
@@ -830,27 +900,75 @@
             .btn {
                 width: 100%;
                 justify-content: center;
+                font-size: 0.9rem;
+                padding: 0.75rem 1rem;
+                box-sizing: border-box;
             }
 
             .toast {
                 right: 1rem;
                 left: 1rem;
                 max-width: none;
+                position: fixed;
+                top: 1rem;
+                z-index: 9999;
             }
 
-            .custom-dropdown {
-                padding: 0.875rem 2.5rem 0.875rem 0.875rem;
-                font-size: 16px;
-                /* Prevent zoom on iOS */
+            /* Hide dropdown on mobile */
+            .custom-dropdown-container {
+                display: none !important;
             }
 
-            .dropdown-icon {
-                right: 0.75rem;
-                width: 18px;
-                height: 18px;
+            /* Show selection cards on mobile */
+            .selection-container {
+                display: block;
+            }
+
+            /* Enhanced mobile selection cards */
+            .selection-card {
+                padding: 0.75rem;
+                min-height: 60px;
+                gap: 0.75rem;
+            }
+
+            .selection-icon {
+                width: 35px;
+                height: 35px;
+                font-size: 1.25rem;
+            }
+
+            .selection-title {
+                font-size: 0.9rem;
+            }
+
+            .selection-description {
+                font-size: 0.75rem;
+            }
+
+            .selection-price {
+                font-size: 0.85rem;
+            }
+
+            /* Optimize selection grid for mobile */
+            .selection-grid {
+                gap: 0.5rem;
             }
         }
 
+        @media (min-width: 769px) {
+
+            /* Hide selection cards on desktop */
+            .selection-container {
+                display: none;
+            }
+
+            /* Show dropdown on desktop */
+            .custom-dropdown-container {
+                display: block;
+            }
+        }
+
+        /* Ultra Small Mobile Devices */
         @media (max-width: 480px) {
             .cart-title {
                 font-size: 1.75rem;
@@ -868,38 +986,122 @@
 
             .card-header,
             .card-body {
-                padding: 0.75rem;
+                padding: 0.75rem 0.5rem;
+            }
+
+            .cart-container {
+                padding: 0.75rem 0.5rem;
+            }
+
+            .selection-card {
+                padding: 0.625rem;
+                min-height: 55px;
+                gap: 0.625rem;
+            }
+
+            .selection-icon {
+                width: 30px;
+                height: 30px;
+                font-size: 1.125rem;
+            }
+
+            .selection-title {
+                font-size: 0.85rem;
+            }
+
+            .selection-description {
+                font-size: 0.7rem;
+            }
+
+            .selection-price {
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Animation keyframes for mobile cards */
+        @keyframes cardSelect {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.02);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes cardDeselect {
+            0% {
+                transform: scale(1.02);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .selection-card.selected {
+            animation: cardSelect 0.3s ease-out;
+        }
+
+        .selection-card:not(.selected) {
+            animation: cardDeselect 0.2s ease-out;
+        }
+
+        /* Touch feedback for mobile */
+        @media (max-width: 768px) {
+            .selection-card:active {
+                transform: scale(0.98);
+                transition: transform 0.1s ease;
+            }
+
+            .selection-card:active .selection-icon {
+                transform: scale(0.9);
             }
         }
     </style>
 @endpush
 
 @section('content')
+    {{-- Updated: 2025-08-02 05:05:35 by gerrymulyadi709 --}}
+
     <div class="cart-container">
         <div class="cart-header">
             <h1 class="cart-title">Keranjang Belanja</h1>
             <p class="cart-subtitle">Kelola produk yang akan Anda beli dengan mudah</p>
         </div>
 
-        @if ($cartItems->isEmpty())
+        @if (isset($error))
             <div class="cart-card">
-                <div class="empty-cart">
-                    <svg class="empty-cart-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    <h3>Keranjang Anda Kosong</h3>
-                    <p>Mulai berbelanja dan tambahkan produk ke keranjang Anda</p>
-                    <a href="{{ route('products.index') }}" class="btn btn-primary btn-large">
-                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                        </svg>
-                        Mulai Belanja
-                    </a>
+                <div class="p-6">
+                    <div class="px-4 py-3 text-red-700 bg-red-100 border border-red-400 rounded">
+                        {{ $error }}
+                    </div>
                 </div>
             </div>
-        @else
+        @endif
+
+        @if (isset($invalidItems) && $invalidItems->count() > 0)
+            <div class="cart-card">
+                <div class="p-6 border-b bg-yellow-50">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-2 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                clip-rule="evenodd"></path>
+                        </svg>
+                        <p class="font-medium text-yellow-800">
+                            Beberapa item dalam keranjang tidak tersedia atau stok habis.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        @if (isset($cartItems) && $cartItems->count() > 0)
             <div class="cart-grid">
                 <!-- Products Section -->
                 <div class="cart-card">
@@ -907,7 +1109,7 @@
                         <h2 class="card-title">
                             🛒 Daftar Produk
                         </h2>
-                        <span class="px-3 py-1 text-sm bg-green-100 rounded-full text-green-800 ml-auto">
+                        <span class="px-3 py-1 ml-auto text-sm text-green-800 bg-green-100 rounded-full">
                             {{ $cartItems->count() }} item
                         </span>
                     </div>
@@ -934,12 +1136,27 @@
                                 $itemOriginalTotal = $originalPrice * $item->quantity;
                                 $itemDiscountTotal = $itemDiscount * $item->quantity;
                                 $itemFinalTotal = $finalPrice * $item->quantity;
+
+                                // Get product image with fallback
+                                $productImage = null;
+                                if ($item->product) {
+                                    if ($item->product->product_images && $item->product->product_images->count() > 0) {
+                                        $primaryImage = $item->product->product_images->where('is_primary', 1)->first();
+                                        if ($primaryImage) {
+                                            $productImage = asset($primaryImage->image_url);
+                                        } else {
+                                            $productImage = asset($item->product->product_images->first()->image_url);
+                                        }
+                                    } elseif ($item->product->image_url) {
+                                        $productImage = asset($item->product->image_url);
+                                    }
+                                }
                             @endphp
-                            <div class="product-item" id="cart-item-{{ $item->id }}">
+                            <div class="product-item {{ !$item->hasValidProduct() || !$item->hasValidStock() ? 'bg-gray-50 opacity-75' : '' }}"
+                                id="cart-item-{{ $item->id }}">
                                 <div class="product-image-container">
-                                    @if ($item->product && $item->product->image_url)
-                                        <img src="{{ asset($item->product->image_url) }}"
-                                            alt="{{ $item->product->name ?? $item->name }}" class="product-image"
+                                    @if ($productImage)
+                                        <img src="{{ $productImage }}" alt="{{ $item->product_name }}" class="product-image"
                                             loading="lazy"
                                             onerror="this.onerror=null; this.src='{{ asset('images/produk/placeholder.png') }}';">
                                     @else
@@ -954,7 +1171,18 @@
                                 </div>
 
                                 <div class="product-info">
-                                    <div class="product-name">{{ $item->product->name ?? $item->name }}</div>
+                                    <div class="product-name">{{ $item->product_name }}</div>
+                                    @if ($item->product && $item->product->category)
+                                        <p class="text-sm text-gray-500">{{ $item->product->category->name }}</p>
+                                    @endif
+
+                                    @if (!$item->hasValidProduct())
+                                        <p class="text-sm font-medium text-red-600">Produk tidak tersedia</p>
+                                    @elseif(!$item->hasValidStock())
+                                        <p class="text-sm font-medium text-orange-600">Stok tidak mencukupi (tersedia:
+                                            {{ $item->product->stock }})</p>
+                                    @endif
+
                                     <div class="product-price">
                                         @if ($itemDiscount > 0)
                                             <span
@@ -976,7 +1204,7 @@
                                         <button type="button" class="quantity-btn decrement-btn"
                                             data-item-id="{{ $item->id }}"
                                             data-url="{{ route('cart.update', $item->id) }}"
-                                            {{ $item->quantity <= 1 ? 'disabled' : '' }}>
+                                            {{ $item->quantity <= 1 || !$item->canDecrement() ? 'disabled' : '' }}>
                                             <svg width="16" height="16" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -987,7 +1215,7 @@
                                         <button type="button" class="quantity-btn increment-btn"
                                             data-item-id="{{ $item->id }}"
                                             data-url="{{ route('cart.update', $item->id) }}"
-                                            {{ $item->product && $item->product->stock <= $item->quantity ? 'disabled' : '' }}>
+                                            {{ !$item->canIncrement() || ($item->product && $item->product->stock <= $item->quantity) ? 'disabled' : '' }}>
                                             <svg width="16" height="16" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -1044,7 +1272,8 @@
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div>
                                 <div class="font-medium">{{ Session::get('promo_code') }}</div>
-                                <div class="promo-description">{{ Session::get('promo_description') }}</div>
+                                <div class="promo-description">{{ Session::get('promo_description', 'Promo aktif') }}
+                                </div>
                             </div>
                             <form action="{{ route('promo.deactivate') }}" method="POST">
                                 @csrf
@@ -1062,7 +1291,7 @@
                     @endif
                 </div>
 
-                <!-- Enhanced Summary Section dengan format yang benar -->
+                <!-- Enhanced Summary Section -->
                 <div class="summary-section">
                     <h2
                         style="color: var(--primary-dark); font-size: 1.25rem; font-weight: 700; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
@@ -1103,7 +1332,7 @@
                         $discountPercentage = $subtotalAwal > 0 ? ($totalAllDiscounts / $subtotalAwal) * 100 : 0;
                     @endphp
 
-                    <!-- Subtotal Awal (tetap sama sesuai request) -->
+                    <!-- Subtotal Awal -->
                     <div class="summary-row">
                         <span class="summary-label">Subtotal Awal ({{ $cartItems->count() }} item)</span>
                         <span class="summary-value">Rp{{ number_format($subtotalAwal, 0, ',', '.') }}</span>
@@ -1146,6 +1375,12 @@
                         <span class="summary-value" id="shipping-cost-display">Rp0</span>
                     </div>
 
+                    <!-- Biaya Pembayaran -->
+                    <div class="summary-row" id="payment-fee-row" style="display: none;">
+                        <span class="summary-label">💳 Biaya Pembayaran</span>
+                        <span class="summary-value" id="payment-fee-display">Rp0</span>
+                    </div>
+
                     <!-- Pajak -->
                     <div class="summary-row">
                         <span class="summary-label">📋 Pajak (11%)</span>
@@ -1163,7 +1398,7 @@
                 <!-- Address Selection -->
                 @auth
                     @php
-                        $userAddresses = auth()->user()->addresses ?? collect();
+                        $userAddresses = $userAddresses ?? collect();
                     @endphp
 
                     <div class="cart-card">
@@ -1222,23 +1457,126 @@
                     </div>
                 @endauth
 
-                <!-- Checkout Form -->
+                <!-- Enhanced Checkout Form with Mobile Card Selection -->
                 <div class="cart-card">
+                    <div class="card-header">
+                        <h2 class="card-title">
+                            🚚 Pengiriman & Pembayaran
+                        </h2>
+                    </div>
                     <div class="card-body">
                         <form action="{{ route('checkout.index') }}" method="GET" id="checkout-form">
-                            <!-- Modern Shipping Method Dropdown -->
+
+                            @php
+                                // Fallback data untuk shipping options jika kosong
+                                $defaultShippingOptions = [
+                                    [
+                                        'id' => 'regular',
+                                        'name' => 'Pengiriman Regular',
+                                        'price' => 15000,
+                                        'description' => 'Estimasi 2-3 hari kerja',
+                                        'icon' => '🚚',
+                                    ],
+                                    [
+                                        'id' => 'express',
+                                        'name' => 'Pengiriman Express',
+                                        'price' => 25000,
+                                        'description' => 'Estimasi 1-2 hari kerja',
+                                        'icon' => '⚡',
+                                    ],
+                                    [
+                                        'id' => 'pickup',
+                                        'name' => 'Ambil Sendiri',
+                                        'price' => 0,
+                                        'description' => 'Ambil di toko Azka Garden',
+                                        'icon' => '🏪',
+                                    ],
+                                ];
+
+                                // Fallback data untuk payment methods jika kosong
+                                $defaultPaymentMethods = [
+                                    [
+                                        'id' => 'bank_transfer',
+                                        'name' => 'Transfer Bank',
+                                        'fee' => 0,
+                                        'description' => 'BCA, BNI, BRI, Mandiri',
+                                        'icon' => '🏦',
+                                    ],
+                                    [
+                                        'id' => 'ewallet',
+                                        'name' => 'E-Wallet',
+                                        'fee' => 2500,
+                                        'description' => 'GoPay, OVO, DANA',
+                                        'icon' => '📱',
+                                    ],
+                                    [
+                                        'id' => 'cod',
+                                        'name' => 'Bayar di Tempat (COD)',
+                                        'fee' => 5000,
+                                        'description' => 'Bayar saat barang diterima',
+                                        'icon' => '💵',
+                                    ],
+                                ];
+
+                                // Gunakan data dari controller jika ada, jika tidak gunakan default
+                                $finalShippingOptions =
+                                    isset($shippingOptions) && count($shippingOptions) > 0
+                                        ? $shippingOptions
+                                        : $defaultShippingOptions;
+
+                                $finalPaymentMethods =
+                                    isset($paymentMethods) && count($paymentMethods) > 0
+                                        ? $paymentMethods
+                                        : $defaultPaymentMethods;
+                            @endphp
+
+                            <!-- Mobile Card Selection for Shipping Methods -->
+                            <div class="selection-container">
+                                <label class="selection-label">
+                                    🚛 Metode Pengiriman
+                                </label>
+                                <div class="selection-grid" id="shipping-selection">
+                                    @foreach ($finalShippingOptions as $option)
+                                        <div class="selection-card" data-type="shipping"
+                                            data-value="{{ $option['id'] }}" data-price="{{ $option['price'] }}"
+                                            data-description="{{ $option['description'] ?? '' }}"
+                                            onclick="selectOption(this)">
+                                            <div class="selection-icon">{{ $option['icon'] ?? '🚚' }}</div>
+                                            <div class="selection-info">
+                                                <div class="selection-title">{{ $option['name'] }}</div>
+                                                <div class="selection-description">{{ $option['description'] ?? '' }}
+                                                </div>
+                                                <div class="selection-price {{ $option['price'] == 0 ? 'free' : '' }}">
+                                                    @if ($option['price'] > 0)
+                                                        Rp{{ number_format($option['price'], 0, ',', '.') }}
+                                                    @else
+                                                        GRATIS
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <!-- Desktop Dropdown for Shipping Methods -->
                             <div class="custom-dropdown-container">
                                 <label class="dropdown-label">
                                     🚛 Metode Pengiriman
                                 </label>
                                 <select name="shipping_method" id="shipping_method" class="custom-dropdown" required>
                                     <option value="" disabled selected>Pilih metode pengiriman...</option>
-                                    @foreach ($shippingOptions as $option)
+                                    @foreach ($finalShippingOptions as $option)
                                         <option value="{{ $option['id'] }}" data-price="{{ $option['price'] }}"
                                             data-description="{{ $option['description'] ?? '' }}">
-                                            {{ $option['name'] }} - Rp{{ number_format($option['price'], 0, ',', '.') }}
+                                            {{ $option['icon'] ?? '🚚' }} {{ $option['name'] }} -
+                                            @if ($option['price'] > 0)
+                                                Rp{{ number_format($option['price'], 0, ',', '.') }}
+                                            @else
+                                                GRATIS
+                                            @endif
                                             @if (!empty($option['description']))
-                                                | {{ $option['description'] }}
+                                                | {{ Str::limit($option['description'], 30) }}
                                             @endif
                                         </option>
                                     @endforeach
@@ -1252,19 +1590,52 @@
                                 </div>
                             </div>
 
-                            <!-- Modern Payment Method Dropdown -->
+                            <!-- Mobile Card Selection for Payment Methods -->
+                            <div class="selection-container">
+                                <label class="selection-label">
+                                    💳 Metode Pembayaran
+                                </label>
+                                <div class="selection-grid" id="payment-selection">
+                                    @foreach ($finalPaymentMethods as $method)
+                                        <div class="selection-card" data-type="payment" data-value="{{ $method['id'] }}"
+                                            data-fee="{{ $method['fee'] ?? 0 }}"
+                                            data-description="{{ $method['description'] ?? '' }}"
+                                            onclick="selectOption(this)">
+                                            <div class="selection-icon">{{ $method['icon'] ?? '💳' }}</div>
+                                            <div class="selection-info">
+                                                <div class="selection-title">{{ $method['name'] }}</div>
+                                                <div class="selection-description">{{ $method['description'] ?? '' }}
+                                                </div>
+                                                <div
+                                                    class="selection-price {{ isset($method['fee']) && $method['fee'] > 0 ? 'with-fee' : 'free' }}">
+                                                    @if (isset($method['fee']) && $method['fee'] > 0)
+                                                        +Rp{{ number_format($method['fee'], 0, ',', '.') }}
+                                                    @else
+                                                        GRATIS
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <!-- Desktop Dropdown for Payment Methods -->
                             <div class="custom-dropdown-container">
                                 <label class="dropdown-label">
                                     💳 Metode Pembayaran
                                 </label>
                                 <select name="payment_method" id="payment_method" class="custom-dropdown" required>
                                     <option value="" disabled selected>Pilih metode pembayaran...</option>
-                                    @foreach ($paymentMethods as $method)
-                                        <option value="{{ $method->code }}"
-                                            data-description="{{ $method->description ?? '' }}">
-                                            {{ $method->name }}
-                                            @if ($method->description)
-                                                | {{ $method->description }}
+                                    @foreach ($finalPaymentMethods as $method)
+                                        <option value="{{ $method['id'] }}" data-fee="{{ $method['fee'] ?? 0 }}"
+                                            data-description="{{ $method['description'] ?? '' }}">
+                                            {{ $method['icon'] ?? '💳' }} {{ $method['name'] }}
+                                            @if (isset($method['fee']) && $method['fee'] > 0)
+                                                (+Rp{{ number_format($method['fee'], 0, ',', '.') }})
+                                            @endif
+                                            @if (!empty($method['description']))
+                                                | {{ Str::limit($method['description'], 25) }}
                                             @endif
                                         </option>
                                     @endforeach
@@ -1278,25 +1649,61 @@
                                 </div>
                             </div>
 
-                            <!-- Hidden inputs dengan nilai yang sudah dihitung dengan benar -->
+                            <!-- Debug Information (hanya tampil jika dalam development mode) -->
+                            @if (config('app.debug'))
+                                <div
+                                    style="background: #f3f4f6; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.8rem; color: #6b7280;">
+                                    <strong>Debug Info:</strong><br>
+                                    Shipping Options: {{ count($finalShippingOptions) }} items<br>
+                                    Payment Methods: {{ count($finalPaymentMethods) }} items<br>
+                                    Controller Data Available:
+                                    {{ isset($shippingOptions) && isset($paymentMethods) ? 'Yes' : 'No' }}<br>
+                                    Mobile Card Selection: Active<br>
+                                    Updated: 2025-08-02 05:09:20 UTC by gerrymulyadi709
+                                </div>
+                            @endif
+
+                            <!-- Hidden inputs for form submission -->
                             <input type="hidden" name="subtotal" id="subtotal-input" value="{{ $subtotalFinal }}">
                             <input type="hidden" name="discount" id="discount-input" value="{{ $totalAllDiscounts }}">
                             <input type="hidden" name="shipping_cost" id="shipping-cost-input" value="0">
+                            <input type="hidden" name="payment_fee" id="payment-fee-input" value="0">
                             <input type="hidden" name="tax" id="tax-input" value="{{ $tax }}">
                             <input type="hidden" name="grand_total" id="grand-total-input"
                                 value="{{ $subtotalFinal + $tax }}">
                             <input type="hidden" name="selected_address_id" id="selected-address-input" value="">
+                            <input type="hidden" name="shipping_method" id="shipping-method-hidden" value="">
+                            <input type="hidden" name="payment_method" id="payment-method-hidden" value="">
 
                             <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
                                 <a href="{{ route('products.index') }}" class="btn btn-secondary" style="flex: 1;">
                                     ⬅️ Lanjut Belanja
                                 </a>
-                                <button type="submit" class="btn btn-primary btn-large" style="flex: 2;">
+                                <button type="submit" class="btn btn-primary btn-large" style="flex: 2;"
+                                    id="checkout-button">
                                     ➡️ Lanjut ke Pembayaran
                                 </button>
                             </div>
                         </form>
                     </div>
+                </div>
+            </div>
+        @else
+            <div class="cart-card">
+                <div class="empty-cart">
+                    <svg class="empty-cart-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <h3>Keranjang Anda Kosong</h3>
+                    <p>Mulai berbelanja dan tambahkan produk ke keranjang Anda</p>
+                    <a href="{{ route('products.index') }}" class="btn btn-primary btn-large">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Mulai Belanja
+                    </a>
                 </div>
             </div>
         @endif
@@ -1307,79 +1714,227 @@
 
     <script>
         /**
-         * Enhanced Cart Management System with Fixed Discount Calculation
-         * Updated: 2025-08-01 11:52:35 UTC by DenuJanuari
+         * Enhanced Cart Management System with Mobile Card Selection
+         * Updated: 2025-08-02 05:09:20 UTC by gerrymulyadi709
          */
         document.addEventListener('DOMContentLoaded', function() {
             console.log(
-                'Enhanced cart page with fixed discount calculation initialized - 2025-08-01 11:52:35 UTC by DenuJanuari'
+                'Enhanced cart page with mobile card selection initialized - 2025-08-02 05:09:20 UTC by gerrymulyadi709'
             );
 
             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
             // Price calculation elements
-            const shippingMethodSelect = document.getElementById('shipping_method');
-            const paymentMethodSelect = document.getElementById('payment_method');
+            const shippingDropdown = document.getElementById('shipping_method');
+            const paymentDropdown = document.getElementById('payment_method');
             const shippingCostDisplay = document.getElementById('shipping-cost-display');
+            const paymentFeeDisplay = document.getElementById('payment-fee-display');
+            const paymentFeeRow = document.getElementById('payment-fee-row');
             const grandTotalDisplay = document.getElementById('grand-total');
             const subtotalInput = document.getElementById('subtotal-input');
             const discountInput = document.getElementById('discount-input');
             const shippingCostInput = document.getElementById('shipping-cost-input');
+            const paymentFeeInput = document.getElementById('payment-fee-input');
             const taxInput = document.getElementById('tax-input');
             const grandTotalInput = document.getElementById('grand-total-input');
             const selectedAddressInput = document.getElementById('selected-address-input');
+            const shippingMethodHidden = document.getElementById('shipping-method-hidden');
+            const paymentMethodHidden = document.getElementById('payment-method-hidden');
 
-            // Initial values (sekarang menggunakan nilai yang sudah benar)
-            const subtotal = parseFloat(subtotalInput?.value) || 0; // Subtotal setelah semua diskon
-            const discount = parseFloat(discountInput?.value) || 0; // Total semua diskon
-            const tax = parseFloat(taxInput?.value) || 0; // Tax dari subtotal final
+            // Initial values
+            const subtotal = parseFloat(subtotalInput?.value) || 0;
+            const discount = parseFloat(discountInput?.value) || 0;
+            const tax = parseFloat(taxInput?.value) || 0;
             let shippingCost = 0;
+            let paymentFee = 0;
             let selectedAddress = null;
+            let selectedShippingMethod = null;
+            let selectedPaymentMethod = null;
+
+            // Enhanced Mobile Card Selection - Added by gerrymulyadi709 at 2025-08-02 05:09:20
+            window.selectOption = function(cardElement) {
+                const type = cardElement.dataset.type; // 'shipping' or 'payment'
+                const value = cardElement.dataset.value;
+                const containerSelector = type === 'shipping' ? '#shipping-selection' : '#payment-selection';
+
+                // Remove selection from all cards in the same group
+                document.querySelectorAll(`${containerSelector} .selection-card`).forEach(card => {
+                    card.classList.remove('selected');
+                });
+
+                // Select current card
+                cardElement.classList.add('selected');
+
+                // Update values based on type
+                if (type === 'shipping') {
+                    const price = parseFloat(cardElement.dataset.price) || 0;
+                    const description = cardElement.dataset.description || '';
+
+                    shippingCost = price;
+                    selectedShippingMethod = value;
+
+                    // Update hidden input
+                    if (shippingMethodHidden) {
+                        shippingMethodHidden.value = value;
+                    }
+
+                    // Update dropdown if exists (for desktop)
+                    if (shippingDropdown) {
+                        shippingDropdown.value = value;
+                        shippingDropdown.classList.add('selected');
+                    }
+
+                    // Show success message
+                    const methodName = cardElement.querySelector('.selection-title').textContent;
+                    showToast(`✅ ${methodName} dipilih`, 'success', 2000);
+
+                    console.log('Shipping method selected via card:', {
+                        method: value,
+                        price: price,
+                        description: description,
+                        timestamp: '2025-08-02 05:09:20',
+                        user: 'gerrymulyadi709'
+                    });
+
+                } else if (type === 'payment') {
+                    const fee = parseFloat(cardElement.dataset.fee) || 0;
+                    const description = cardElement.dataset.description || '';
+
+                    paymentFee = fee;
+                    selectedPaymentMethod = value;
+
+                    // Update hidden input
+                    if (paymentMethodHidden) {
+                        paymentMethodHidden.value = value;
+                    }
+
+                    // Update dropdown if exists (for desktop)
+                    if (paymentDropdown) {
+                        paymentDropdown.value = value;
+                        paymentDropdown.classList.add('selected');
+                    }
+
+                    // Show success message
+                    const methodName = cardElement.querySelector('.selection-title').textContent;
+                    showToast(`💳 ${methodName} dipilih`, 'success', 2000);
+
+                    console.log('Payment method selected via card:', {
+                        method: value,
+                        fee: fee,
+                        description: description,
+                        timestamp: '2025-08-02 05:09:20',
+                        user: 'gerrymulyadi709'
+                    });
+                }
+
+                // Recalculate totals
+                calculateTotals();
+
+                // Add visual feedback
+                cardElement.style.transform = 'scale(1.02)';
+                setTimeout(() => {
+                    cardElement.style.transform = '';
+                }, 200);
+            };
 
             // Format currency
             function formatCurrency(amount) {
                 return new Intl.NumberFormat('id-ID').format(amount);
             }
 
-            // Calculate totals dengan logic yang sudah diperbaiki
+            // Calculate totals
             function calculateTotals() {
-                if (shippingMethodSelect && shippingCostDisplay && grandTotalDisplay) {
-                    const selectedOption = shippingMethodSelect.options[shippingMethodSelect.selectedIndex];
-                    const baseShippingCost = parseFloat(selectedOption?.dataset?.price) || 0;
-
-                    shippingCost = baseShippingCost;
-
+                if (shippingCostDisplay && grandTotalDisplay) {
                     // Update shipping cost display
                     shippingCostDisplay.textContent = 'Rp' + formatCurrency(shippingCost);
                     if (shippingCostInput) shippingCostInput.value = shippingCost;
 
-                    // Calculate grand total: subtotal (setelah diskon) + shipping + tax
-                    const grandTotal = subtotal + shippingCost + tax;
+                    // Update payment fee display
+                    if (paymentFee > 0) {
+                        paymentFeeRow.style.display = 'flex';
+                        paymentFeeDisplay.textContent = 'Rp' + formatCurrency(paymentFee);
+                    } else {
+                        paymentFeeRow.style.display = 'none';
+                    }
+                    if (paymentFeeInput) paymentFeeInput.value = paymentFee;
+
+                    // Calculate grand total
+                    const grandTotal = subtotal + shippingCost + paymentFee + tax;
                     grandTotalDisplay.textContent = 'Rp' + formatCurrency(grandTotal);
                     if (grandTotalInput) grandTotalInput.value = grandTotal;
 
-                    console.log('Fixed total calculation:', {
+                    console.log('Total calculation with mobile card selection:', {
                         subtotalAfterAllDiscounts: subtotal,
                         totalDiscounts: discount,
                         shipping: shippingCost,
+                        paymentFee: paymentFee,
                         tax: tax,
                         grandTotal: grandTotal,
-                        timestamp: '2025-08-01 11:52:35',
-                        user: 'DenuJanuari'
+                        selectedShipping: selectedShippingMethod,
+                        selectedPayment: selectedPaymentMethod,
+                        isMobile: window.innerWidth <= 768,
+                        timestamp: '2025-08-02 05:09:20',
+                        user: 'gerrymulyadi709'
                     });
                 }
             }
 
-            // Enhanced dropdown functionality
-            function addLoadingState(dropdown) {
-                if (!dropdown) return;
-                dropdown.classList.add('loading');
-                setTimeout(() => {
-                    dropdown.classList.remove('loading');
-                }, 500);
+            // Enhanced dropdown event handlers (for desktop)
+            if (shippingDropdown) {
+                shippingDropdown.addEventListener('change', function() {
+                    const selectedOption = this.options[this.selectedIndex];
+                    shippingCost = parseFloat(selectedOption.dataset.price) || 0;
+                    selectedShippingMethod = selectedOption.value;
+
+                    // Update hidden input
+                    if (shippingMethodHidden) {
+                        shippingMethodHidden.value = selectedOption.value;
+                    }
+
+                    // Update corresponding mobile card if exists
+                    const mobileCard = document.querySelector(
+                        `[data-type="shipping"][data-value="${selectedOption.value}"]`);
+                    if (mobileCard) {
+                        selectOption(mobileCard);
+                        return; // Prevent double calculation
+                    }
+
+                    calculateTotals();
+                    this.classList.add('selected');
+
+                    const methodName = selectedOption.text.split(' - ')[0];
+                    showToast(`✅ ${methodName}`, 'success', 2000);
+                });
             }
 
-            // Select address function
+            if (paymentDropdown) {
+                paymentDropdown.addEventListener('change', function() {
+                    const selectedOption = this.options[this.selectedIndex];
+                    paymentFee = parseFloat(selectedOption.dataset.fee) || 0;
+                    selectedPaymentMethod = selectedOption.value;
+
+                    // Update hidden input
+                    if (paymentMethodHidden) {
+                        paymentMethodHidden.value = selectedOption.value;
+                    }
+
+                    // Update corresponding mobile card if exists
+                    const mobileCard = document.querySelector(
+                        `[data-type="payment"][data-value="${selectedOption.value}"]`);
+                    if (mobileCard) {
+                        selectOption(mobileCard);
+                        return; // Prevent double calculation
+                    }
+
+                    calculateTotals();
+                    this.classList.add('selected');
+
+                    const methodName = selectedOption.text.split(' | ')[0];
+                    showToast(`💳 ${methodName}`, 'success', 2000);
+                });
+            }
+
+            // Enhanced address selection
             window.selectAddress = function(addressElement) {
                 // Remove selection from all addresses
                 document.querySelectorAll('.address-card').forEach(card => {
@@ -1396,51 +1951,16 @@
                 }
 
                 selectedAddress = {
-                    id: addressId
+                    id: addressId,
+                    latitude: addressElement.dataset.latitude,
+                    longitude: addressElement.dataset.longitude
                 };
 
-                // Show feedback
-                showToast('Alamat pengiriman telah dipilih', 'success');
+                showToast('📍 Alamat pengiriman dipilih', 'success');
             };
 
-            // Initialize
+            // Initialize calculations
             calculateTotals();
-
-            // Enhanced shipping method change handler
-            if (shippingMethodSelect) {
-                shippingMethodSelect.addEventListener('change', function() {
-                    addLoadingState(this);
-
-                    const selectedOption = this.options[this.selectedIndex];
-                    const description = selectedOption.dataset.description;
-
-                    // Show description if available
-                    if (description) {
-                        console.log('Shipping method selected:', description);
-                        showToast('Metode pengiriman: ' + selectedOption.textContent.split(' - ')[0],
-                            'success', 2000);
-                    }
-
-                    calculateTotals();
-                });
-            }
-
-            // Enhanced payment method change handler
-            if (paymentMethodSelect) {
-                paymentMethodSelect.addEventListener('change', function() {
-                    addLoadingState(this);
-
-                    const selectedOption = this.options[this.selectedIndex];
-                    const description = selectedOption.dataset.description;
-
-                    // Show description if available
-                    if (description) {
-                        console.log('Payment method selected:', description);
-                        showToast('Metode pembayaran: ' + selectedOption.textContent.split(' | ')[0],
-                            'success', 2000);
-                    }
-                });
-            }
 
             // Auto-select primary address if available
             const primaryAddress = document.querySelector('.address-card.selected');
@@ -1448,7 +1968,35 @@
                 selectAddress(primaryAddress);
             }
 
-            // Toast notification
+            // Auto-select first options on page load for desktop
+            setTimeout(() => {
+                // Only auto-select for desktop
+                if (window.innerWidth > 768) {
+                    if (shippingDropdown && shippingDropdown.options.length > 1) {
+                        shippingDropdown.selectedIndex = 1;
+                        shippingDropdown.dispatchEvent(new Event('change'));
+                    }
+
+                    if (paymentDropdown && paymentDropdown.options.length > 1) {
+                        paymentDropdown.selectedIndex = 1;
+                        paymentDropdown.dispatchEvent(new Event('change'));
+                    }
+                } else {
+                    // For mobile, auto-select first cards
+                    const firstShippingCard = document.querySelector('#shipping-selection .selection-card');
+                    const firstPaymentCard = document.querySelector('#payment-selection .selection-card');
+
+                    if (firstShippingCard) {
+                        selectOption(firstShippingCard);
+                    }
+
+                    if (firstPaymentCard) {
+                        selectOption(firstPaymentCard);
+                    }
+                }
+            }, 100);
+
+            // Enhanced toast notification
             function showToast(message, type = 'success', duration = 3000) {
                 const toast = document.getElementById('toast');
                 if (toast) {
@@ -1456,14 +2004,24 @@
                     toast.className = `toast ${type}`;
                     toast.classList.add('show');
 
+                    // Mobile-specific positioning
+                    if (window.innerWidth <= 768) {
+                        toast.style.position = 'fixed';
+                        toast.style.top = '1rem';
+                        toast.style.left = '1rem';
+                        toast.style.right = '1rem';
+                        toast.style.maxWidth = 'none';
+                        toast.style.zIndex = '9999';
+                    }
+
                     setTimeout(() => {
                         toast.classList.remove('show');
                     }, duration);
                 }
             }
 
-            // Cart operations
-            function createFetchOptions(method, action = null) {
+            // Cart operations (existing functions)
+            function createFetchOptions(method, data = null) {
                 const options = {
                     method: method,
                     headers: {
@@ -1473,10 +2031,8 @@
                     }
                 };
 
-                if (action) {
-                    options.body = JSON.stringify({
-                        action: action
-                    });
+                if (data) {
+                    options.body = JSON.stringify(data);
                 }
 
                 return options;
@@ -1497,29 +2053,39 @@
                     });
             }
 
-            // Update cart quantity with proper discount recalculation
+            // Update cart quantity
             function updateCartQuantity(button, action) {
-                const url = button.dataset.url;
+                const itemId = button.dataset.itemId;
                 const row = button.closest('.product-item');
                 const quantityDisplay = row?.querySelector('.quantity-display');
                 const decrementBtn = row?.querySelector('.decrement-btn');
                 const incrementBtn = row?.querySelector('.increment-btn');
+                const currentQuantity = parseInt(quantityDisplay?.textContent) || 1;
+
+                let newQuantity;
+                if (action === 'increment') {
+                    newQuantity = currentQuantity + 1;
+                } else {
+                    newQuantity = Math.max(1, currentQuantity - 1);
+                }
 
                 // Show loading
                 const originalContent = button.innerHTML;
                 button.innerHTML = '<div class="loading"></div>';
                 button.disabled = true;
 
-                safeFetch(url, createFetchOptions('POST', action))
+                const updateData = {
+                    quantity: newQuantity
+                };
+                safeFetch(button.dataset.url, createFetchOptions('PUT', updateData))
                     .then(data => {
                         if (data.success) {
                             if (quantityDisplay) {
-                                quantityDisplay.textContent = data.quantity;
+                                quantityDisplay.textContent = data.quantity || newQuantity;
                             }
 
-                            // Update button states
                             if (decrementBtn) {
-                                decrementBtn.disabled = data.quantity <= 1;
+                                decrementBtn.disabled = (data.quantity || newQuantity) <= 1;
                             }
                             if (incrementBtn) {
                                 incrementBtn.disabled = data.stock_limit_reached || false;
@@ -1529,7 +2095,6 @@
                                 `Jumlah produk berhasil ${action === 'increment' ? 'ditambah' : 'dikurangi'}`
                             );
 
-                            // Reload page to recalculate all totals including discounts
                             setTimeout(() => {
                                 window.location.reload();
                             }, 800);
@@ -1540,7 +2105,6 @@
                         }
                     })
                     .catch(() => {
-                        // Reset button
                         button.innerHTML = originalContent;
                         button.disabled = false;
                     });
@@ -1598,19 +2162,19 @@
             const checkoutForm = document.getElementById('checkout-form');
             if (checkoutForm) {
                 checkoutForm.addEventListener('submit', function(e) {
-                        // Check shipping method
-                        if (!shippingMethodSelect?.value) {
+                        // Check shipping method (both dropdown and hidden input)
+                        const hasShippingMethod = (shippingDropdown?.value) || (shippingMethodHidden?.value);
+                        if (!hasShippingMethod) {
                             e.preventDefault();
                             showToast('Silakan pilih metode pengiriman terlebih dahulu', 'warning');
-                            shippingMethodSelect?.focus();
                             return false;
                         }
 
-                        // Check payment method
-                        if (!paymentMethodSelect?.value) {
+                        // Check payment method (both dropdown and hidden input)
+                        const hasPaymentMethod = (paymentDropdown?.value) || (paymentMethodHidden?.value);
+                        if (!hasPaymentMethod) {
                             e.preventDefault();
                             showToast('Silakan pilih metode pembayaran terlebih dahulu', 'warning');
-                            paymentMethodSelect?.focus();
                             return false;
                         }
 
@@ -1623,7 +2187,7 @@
                     @endauth
 
                     // Show processing state
-                    const submitBtn = this.querySelector('button[type="submit"]');
+                    const submitBtn = this.querySelector('#checkout-button');
                     if (submitBtn) {
                         submitBtn.disabled = true;
                         submitBtn.innerHTML = '<div class="loading"></div> Memproses...';
@@ -1633,47 +2197,7 @@
                 });
         }
 
-        // Enhanced keyboard navigation for dropdowns
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Tab') {
-                const focusedElement = document.activeElement;
-                if (focusedElement?.classList.contains('custom-dropdown')) {
-                    const container = focusedElement.closest('.custom-dropdown-container');
-                    if (container) {
-                        container.style.transform = 'translateY(-2px)';
-                    }
-                }
-            }
-        });
-
-        document.addEventListener('focusout', function(e) {
-            if (e.target?.classList.contains('custom-dropdown')) {
-                const container = e.target.closest('.custom-dropdown-container');
-                if (container) {
-                    container.style.transform = '';
-                }
-            }
-        });
-
-        // Enhanced accessibility
-        const dropdowns = document.querySelectorAll('.custom-dropdown'); dropdowns.forEach(dropdown => {
-            dropdown.addEventListener('focus', function() {
-                const description = this.options[this.selectedIndex]?.dataset?.description;
-                if (description) {
-                    this.setAttribute('aria-description', description);
-                }
-            });
-
-            dropdown.addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                const description = selectedOption?.dataset?.description;
-                if (description) {
-                    this.setAttribute('aria-description', description);
-                }
-            });
-        });
-
-        // Enhanced error handling for promo code
+        // Enhanced promo code handling
         const promoForm = document.querySelector('.promo-form');
         if (promoForm) {
             promoForm.addEventListener('submit', function(e) {
@@ -1694,7 +2218,6 @@
                     return false;
                 }
 
-                // Show loading state
                 const submitBtn = this.querySelector('button[type="submit"]');
                 if (submitBtn) {
                     submitBtn.disabled = true;
@@ -1703,86 +2226,23 @@
             });
         }
 
-        // Monitor discount changes and update display
-        function updateDiscountDisplay() {
-            const discountElements = document.querySelectorAll('.price-discount, .summary-discount');
-            discountElements.forEach(element => {
-                if (element.textContent.includes('Hemat') || element.textContent.includes('Diskon')) {
-                    element.style.animation = 'pulse 0.5s ease-in-out';
-                    setTimeout(() => {
-                        element.style.animation = '';
-                    }, 500);
-                }
-            });
-        }
-
-        // Add pulse animation for discount badges
-        const style = document.createElement('style'); style.textContent = `
-                @keyframes pulse {
-                    0% { transform: scale(1); }
-                    50% { transform: scale(1.05); }
-                    100% { transform: scale(1); }
-                }
-
-                .promo-badge, .discount-badge {
-                    animation: fadeIn 0.3s ease-in-out;
-                }
-
-                @keyframes fadeIn {
-                    from { opacity: 0; transform: translateY(-10px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-
-                .summary-discount .summary-value {
-                    font-weight: 700;
-                    color: var(--success) !important;
-                }
-
-                .summary-promo-detail {
-                    background: rgba(16, 185, 129, 0.1);
-                    padding: 0.15rem 0.4rem;
-                    border-radius: 4px;
-                    font-size: 0.75rem;
-                    color: var(--success);
-                    font-weight: 600;
-                }
-            `; document.head.appendChild(style);
-
-        // Real-time validation feedback
-        function addValidationFeedback() {
-            const requiredDropdowns = document.querySelectorAll('.custom-dropdown[required]');
-            requiredDropdowns.forEach(dropdown => {
-                dropdown.addEventListener('change', function() {
-                    if (this.value) {
-                        this.classList.add('valid');
-                        this.classList.remove('invalid');
-                    } else {
-                        this.classList.remove('valid');
-                        this.classList.add('invalid');
-                    }
-                });
-
-                // Initial validation check
-                if (dropdown.value) {
-                    dropdown.classList.add('valid');
-                }
-            });
-        }
-
-        // Initialize validation feedback
-        addValidationFeedback();
-
-        // Auto-save cart state to localStorage for recovery
+        // Auto-save cart state
         function saveCartState() {
             const cartState = {
                 subtotal: subtotal,
                 discount: discount,
                 tax: tax,
                 shippingCost: shippingCost,
+                paymentFee: paymentFee,
+                selectedAddress: selectedAddress,
+                selectedShippingMethod: selectedShippingMethod,
+                selectedPaymentMethod: selectedPaymentMethod,
                 timestamp: new Date().toISOString(),
                 itemCount: document.querySelectorAll('.product-item').length,
-                updatedBy: 'redeemself',
-                version: '2025-08-01 11:43:49'
+                isMobile: window.innerWidth <= 768,
+                selectionMethod: window.innerWidth <= 768 ? 'mobile-cards' : 'desktop-dropdown',
+                updatedBy: 'gerrymulyadi709',
+                version: '2025-08-02 05:09:20'
             };
             localStorage.setItem('azka_cart_state', JSON.stringify(cartState));
         }
@@ -1790,14 +2250,13 @@
         // Save cart state on page load
         saveCartState();
 
-        // Monitor for cart changes and auto-save
+        // Monitor for cart changes
         const cartObserver = new MutationObserver(function(mutations) {
             mutations.forEach(function(mutation) {
                 if (mutation.type === 'childList' &&
                     (mutation.target.classList.contains('product-item') ||
                         mutation.target.closest('.product-item'))) {
                     saveCartState();
-                    updateDiscountDisplay();
                 }
             });
         });
@@ -1810,38 +2269,31 @@
             });
         }
 
-        // Enhanced discount calculation logging
-        function logDiscountCalculation() {
-            const totalElements = document.querySelectorAll('.summary-discount .summary-value');
-            let totalDiscountAmount = 0;
+        // Enhanced accessibility
+        document.querySelectorAll('.selection-card').forEach(card => {
+            card.setAttribute('role', 'button');
+            card.setAttribute('tabindex', '0');
+            card.setAttribute('aria-pressed', 'false');
 
-            totalElements.forEach(element => {
-                const text = element.textContent.replace(/[^\d]/g, '');
-                if (text) {
-                    totalDiscountAmount += parseInt(text);
+            card.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    selectOption(this);
                 }
             });
 
-            console.log('Discount calculation summary:', {
-                totalDiscountDisplayed: totalDiscountAmount,
-                calculatedDiscount: discount,
-                subtotalAfterDiscount: subtotal,
-                timestamp: '2025-08-01 11:43:49',
-                user: 'redeemself'
+            // Update aria-pressed when selected
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                        const isSelected = card.classList.contains('selected');
+                        card.setAttribute('aria-pressed', isSelected.toString());
+                    }
+                });
             });
-        }
 
-        // Call discount calculation logging
-        setTimeout(logDiscountCalculation, 1000);
-
-        // Enhanced error logging
-        window.addEventListener('error', function(e) {
-            console.error('Cart page error:', {
-                message: e.message,
-                filename: e.filename,
-                lineno: e.lineno,
-                timestamp: '2025-08-01 11:43:49',
-                user: 'redeemself'
+            observer.observe(card, {
+                attributes: true
             });
         });
 
@@ -1850,102 +2302,36 @@
             window.addEventListener('load', function() {
                 setTimeout(() => {
                     const perfData = performance.getEntriesByType('navigation')[0];
-                    console.log('Cart page performance:', {
+                    console.log('Cart page performance with mobile card selection:', {
                         loadTime: perfData.loadEventEnd - perfData.loadEventStart,
                         domContentLoaded: perfData.domContentLoadedEventEnd - perfData
                             .domContentLoadedEventStart,
-                        discountCalculationTime: performance.now(),
-                        timestamp: '2025-08-01 11:43:49',
-                        user: 'redeemself'
+                        calculationTime: performance.now(),
+                        isMobile: window.innerWidth <= 768,
+                        selectionMethod: window.innerWidth <= 768 ? 'mobile-cards' :
+                            'desktop-dropdown',
+                        cardsCount: document.querySelectorAll('.selection-card').length,
+                        timestamp: '2025-08-02 05:09:20',
+                        user: 'gerrymulyadi709'
                     });
                 }, 0);
             });
         }
 
-        // Promo code auto-complete functionality
-        const promoInput = document.querySelector('.promo-input');
-        if (promoInput) {
-            // Store common promo codes for auto-suggestion
-            const commonPromoCodes = ['PROMOJULI10', 'NEWUSER', 'DISCOUNT20', 'SAVE15'];
-
-            promoInput.addEventListener('input', function() {
-                const value = this.value.toUpperCase();
-                if (value.length >= 2) {
-                    const suggestions = commonPromoCodes.filter(code =>
-                        code.startsWith(value)
-                    );
-
-                    if (suggestions.length > 0) {
-                        console.log('Promo suggestions:', suggestions);
-                    }
-                }
+        // Enhanced error logging
+        window.addEventListener('error', function(e) {
+            console.error('Cart page error with mobile card selection:', {
+                message: e.message,
+                filename: e.filename,
+                lineno: e.lineno,
+                isMobile: window.innerWidth <= 768,
+                timestamp: '2025-08-02 05:09:20',
+                user: 'gerrymulyadi709'
             });
-
-            // Auto-format promo code to uppercase
-            promoInput.addEventListener('blur', function() {
-                this.value = this.value.toUpperCase().trim();
-            });
-        }
-
-        // Cart summary animation on load
-        const summaryRows = document.querySelectorAll('.summary-row'); summaryRows.forEach((row, index) => {
-            row.style.opacity = '0';
-            row.style.transform = 'translateY(10px)';
-
-            setTimeout(() => {
-                row.style.transition = 'all 0.3s ease';
-                row.style.opacity = '1';
-                row.style.transform = 'translateY(0)';
-            }, index * 100);
         });
 
-        // Add visual feedback for successful operations
-        function addSuccessAnimation(element) {
-            if (element) {
-                element.style.transform = 'scale(1.05)';
-                element.style.transition = 'transform 0.2s ease';
-
-                setTimeout(() => {
-                    element.style.transform = 'scale(1)';
-                }, 200);
-            }
-        }
-
-        // Enhanced toast with action buttons
-        function showToastWithAction(message, type = 'success', duration = 5000, actionText = null, actionCallback =
-            null) {
-            const toast = document.getElementById('toast');
-            if (toast) {
-                let toastContent = message;
-
-                if (actionText && actionCallback) {
-                    toastContent +=
-                        ` <button onclick="(${actionCallback.toString()})()" style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; margin-left: 0.5rem; cursor: pointer;">${actionText}</button>`;
-                }
-
-                toast.innerHTML = toastContent;
-                toast.className = `toast ${type}`;
-                toast.classList.add('show');
-
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                }, duration);
-            }
-        }
-
-        // Initialize discount percentage display update
-        function updateDiscountPercentage() {
-            const totalHematElement = document.querySelector('.summary-row:has(.summary-promo-detail)');
-            if (totalHematElement) {
-                addSuccessAnimation(totalHematElement);
-            }
-        }
-
-        // Call update on page load
-        setTimeout(updateDiscountPercentage, 500);
-
         console.log(
-            'Enhanced cart functionality with detailed discount calculation loaded successfully - 2025-08-01 11:43:49 UTC by redeemself'
+            'Enhanced cart functionality with mobile card selection loaded successfully - 2025-08-02 05:09:20 UTC by gerrymulyadi709'
         );
         });
     </script>

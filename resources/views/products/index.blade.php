@@ -1,100 +1,112 @@
 @extends('layouts.app')
 
-@section('title', 'Produk Kami')
+@section('title', 'Produk Kami | Azka Garden')
 
 @section('content')
     @php
+        // Updated: 2025-08-02 07:17:28 by gerrymulyadi709
         $user = auth()->user();
 
         // Cek apakah user punya alamat (relasi Eloquent harus method)
-        $hasAddress = $user && method_exists($user, 'addresses') && $user->addresses()->count();
+        $hasAddress = $user && method_exists($user, 'addresses') && $user->addresses()->exists();
 
         // Data promo dari session - with proper type casting to prevent errors
-        $promo_code = session('promo_code') ?? '';
-        $promo_type = session('promo_type') ?? '';
-        $promo_discount = (float) (session('promo_discount') ?? 0);
-        $promo_discount_percent = $promo_type === 'percent' ? 10.0 : null;
+        $promo_code = session('promo_code', '');
+        $promo_type = session('promo_type', '');
+        $promo_discount = (float) session('promo_discount', 0);
+        $promo_discount_percent = $promo_type === 'percent' ? $promo_discount : null;
 
         // Get search query from request
         $searchQuery = request('search', '');
 
         // Get category filter from request (single category selection)
-        $categoryFilter = request('category', 0);
+        $categoryFilter = (int) request('category', 0);
 
-        // Load all categories for filter menu
-        $categories = \App\Models\Category::where('status', 1)->get();
+        // FIXED: Use data passed from controller instead of direct queries
+        // $categories and $products are now passed from ProductController
+        // No more direct database queries in the view
 
-        // Get products based on category filter
-        $query = \App\Models\Product::where('status', 1);
-
-        // Apply category filter if selected
-        if ($categoryFilter > 0) {
-            $query->where('category_id', $categoryFilter);
-        }
-
-        // Apply search query if provided
-        if (!empty($searchQuery)) {
-            $query->where(function ($q) use ($searchQuery) {
-                $q->where('name', 'like', "%{$searchQuery}%")->orWhere('description', 'like', "%{$searchQuery}%");
-            });
-        }
-
-        // Get products with pagination
-        $products = $query->with(['category', 'images'])->paginate(15);
-
-        // Get the count of filtered products
-        $filteredProductCount = $products->total();
-
-        // Improved cart count calculation with cache busting - FIXED QUERY
-        if (auth()->check()) {
-            // Fix: Changed whereColumn to where since we're comparing with a value, not another column
-    $cartItemCount = \App\Models\Cart::where('user_id', auth()->id())
-        ->where('quantity', '>', 0) // Correct usage of where clause
-        ->sum('quantity');
-} else {
-    // Clear any stale cart data from session if empty
-    $cartItems = session('cart_items') ?? (session('cartItems') ?? collect([]));
-    if (!($cartItems instanceof \Illuminate\Support\Collection)) {
-        $cartItems = collect($cartItems);
-    }
-    $cartItemCount = $cartItems->sum('quantity');
-
-    // If cart is empty but counter isn't 0, reset session
-            if ($cartItems->isEmpty() && session('cart_count', 0) > 0) {
-                session()->forget(['cart_items', 'cartItems', 'cart_count']);
-                $cartItemCount = 0;
+        // Get the count of filtered products - use safe method
+        $filteredProductCount = 0;
+        if (isset($products)) {
+            if (method_exists($products, 'total')) {
+                $filteredProductCount = $products->total();
+            } elseif (method_exists($products, 'count')) {
+                $filteredProductCount = $products->count();
+            } elseif (is_countable($products)) {
+                $filteredProductCount = count($products);
             }
         }
 
-        // Store the accurate count in session for reference
-        session(['cart_count' => $cartItemCount]);
+        // Improved cart count calculation with cache busting - FIXED QUERY
+        $cartItemCount = 0;
+        if (auth()->check()) {
+            // Fix: Use proper cart calculation with error handling
+            try {
+                $cartItemCount = \App\Models\Cart::where('user_id', auth()->id())->sum('quantity') ?? 0;
+            } catch (\Exception $e) {
+                $cartItemCount = 0;
+                \Log::warning('Cart count calculation failed', [
+                    'user_id' => auth()->id(),
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        } else {
+            // Handle guest cart from session
+            $cartItems = session('cart_items', []);
+            if (!is_array($cartItems)) {
+                $cartItems = [];
+            }
 
-        // Preload hero images untuk mengurangi lag saat tampil
-        $heroImageUrls = [
-            asset('images/hero-1.jpg'),
-            asset('images/hero-2.jpg'),
-            asset('images/hero-3.jpg'),
-            asset('images/hero-4.jpg'),
-            asset('images/hero-5.jpg'),
-            asset('images/hero-6.jpg'),
-            asset('images/hero-7.jpg'),
-        ];
+            foreach ($cartItems as $item) {
+                if (isset($item['quantity']) && is_numeric($item['quantity'])) {
+                    $cartItemCount += (int) $item['quantity'];
+                }
+            }
 
-        // Data tanggal dan user saat ini (updated dengan timestamp terbaru)
-        $currentDateTime = '2025-08-01 06:31:24';
-        $currentUser = 'DenuJanuari';
+            // If cart is empty but counter isn't 0, reset session
+    if (empty($cartItems) && session('cart_count', 0) > 0) {
+        session()->forget(['cart_items', 'cartItems', 'cart_count']);
+        $cartItemCount = 0;
+    }
+}
 
-        // Detect if viewing on mobile
-        $userAgent = request()->header('User-Agent');
-        $isMobile =
-            preg_match(
-                '/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i',
-                $userAgent,
-            ) ||
-            preg_match(
-                '/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i',
-                substr($userAgent, 0, 4),
-            );
+// Store the accurate count in session for reference
+session(['cart_count' => $cartItemCount]);
+
+// Preload hero images untuk mengurangi lag saat tampil
+$heroImageUrls = [
+    asset('images/hero-1.jpg'),
+    asset('images/hero-2.jpg'),
+    asset('images/hero-3.jpg'),
+    asset('images/hero-4.jpg'),
+    asset('images/hero-5.jpg'),
+    asset('images/hero-6.jpg'),
+    asset('images/hero-7.jpg'),
+];
+
+// Data tanggal dan user saat ini - UPDATED
+$currentDateTime = '2025-08-02 07:17:28';
+$currentUser = 'gerrymulyadi709';
+
+// Detect if viewing on mobile - Enhanced detection
+$userAgent = request()->header('User-Agent', '');
+$isMobile = preg_match('/Mobile|Android|iPhone|iPad|BlackBerry|IEMobile|Opera Mini/i', $userAgent);
+
+// SAFETY CHECK: Ensure variables exist from controller with better fallbacks
+$categories = $categories ?? collect([]);
+$products = $products ?? collect([]);
+$cartProductIds = $cartProductIds ?? [];
+
+// FIXED: Ensure banners variable exists - create dummy banner if not available
+if (!isset($banners) || empty($banners)) {
+    $banners = [
+        (object) [
+            'image' => 'images/hero-1.jpg', // Use hero image as fallback
+            'title' => 'Promo Tanaman Hias Juli',
+                ],
+            ];
+        }
     @endphp
 
     {{-- DNS Prefetch dan Preconnect untuk optimasi --}}
@@ -108,6 +120,105 @@
 
         {{-- Critical CSS inlined untuk faster rendering --}}
         <style>
+            /* Banner section - MOVED TO TOP AND FIXED */
+            .banner-section {
+                width: 100%;
+                position: relative;
+                overflow: hidden;
+                margin-bottom: 2rem;
+                contain: layout;
+                background: #f8fafc;
+                border-radius: 16px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            }
+
+            .banner-image-container {
+                width: 100%;
+                position: relative;
+                overflow: hidden;
+                height: 240px;
+                /* Fixed height */
+                border-radius: 16px;
+            }
+
+            .banner-image {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+            }
+
+            .banner-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(22, 163, 74, 0.2));
+                border-radius: 16px;
+            }
+
+            .banner-content {
+                text-align: center;
+                width: 100%;
+                padding: 0 2rem;
+                z-index: 10;
+            }
+
+            .banner-title {
+                color: white;
+                font-weight: 700;
+                font-size: 2.5rem;
+                margin: 0;
+                text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+                text-align: center;
+            }
+
+            .promo-badge {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                width: 80px;
+                height: 80px;
+                background: linear-gradient(135deg, #ffffff, #f0f9ff);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                color: #15803d;
+                font-size: 1.75rem;
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+                border: 3px solid rgba(255, 255, 255, 0.8);
+            }
+
+            /* Mobile responsive */
+            @media (max-width: 768px) {
+                .banner-section {
+                    margin-bottom: 1rem;
+                }
+
+                .banner-image-container {
+                    height: 180px;
+                }
+
+                .banner-title {
+                    font-size: 1.5rem;
+                    max-width: 90%;
+                }
+
+                .promo-badge {
+                    width: 50px;
+                    height: 50px;
+                    font-size: 1.25rem;
+                    top: 10px;
+                    right: 10px;
+                }
+            }
+
             /* Critical above-the-fold styles */
             .loading-overlay {
                 position: fixed;
@@ -124,12 +235,12 @@
                 z-index: 9999;
                 opacity: 0;
                 visibility: hidden;
-                transition: all 0.2s ease
+                transition: all 0.2s ease;
             }
 
             .loading-overlay.active {
                 opacity: 1;
-                visibility: visible
+                visibility: visible;
             }
 
             .loading-spinner {
@@ -139,27 +250,27 @@
                 border-radius: 50%;
                 border-top: 3px solid #16a34a;
                 animation: fastSpin 0.6s linear infinite;
-                margin-bottom: 16px
+                margin-bottom: 16px;
             }
 
             @keyframes fastSpin {
                 0% {
-                    transform: rotate(0deg)
+                    transform: rotate(0deg);
                 }
 
                 100% {
-                    transform: rotate(360deg)
+                    transform: rotate(360deg);
                 }
             }
 
             .hero-layer {
                 will-change: opacity;
-                transform: translateZ(0)
+                transform: translateZ(0);
             }
 
             .product-card {
                 will-change: transform;
-                transform: translateZ(0)
+                transform: translateZ(0);
             }
 
             /* Category pills styling */
@@ -175,11 +286,13 @@
                 margin-bottom: 0.5rem;
                 background-color: rgba(255, 255, 255, 0.8);
                 border: 2px solid transparent;
+                text-decoration: none;
             }
 
             .category-pill:hover {
                 background-color: rgba(255, 255, 255, 0.95);
                 transform: translateY(-1px);
+                text-decoration: none;
             }
 
             .category-pill.active {
@@ -252,7 +365,7 @@
                 background-color: #15803d;
             }
 
-            /* Mobile product card styles */
+            /* FIXED: Mobile product card styles with proper button display */
             .mobile-product-card {
                 background-color: white;
                 border-radius: 1rem;
@@ -260,34 +373,39 @@
                 margin-bottom: 1rem;
                 box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
                 position: relative;
+                width: 100%;
+                display: block;
             }
 
             .mobile-product-image {
                 width: 100%;
-                height: 180px;
+                height: 200px;
                 object-fit: cover;
                 background-color: #f9fafb;
+                display: block;
             }
 
             .mobile-product-details {
                 padding: 1rem;
+                width: 100%;
             }
 
             .mobile-product-title {
                 font-size: 1.125rem;
                 font-weight: 600;
-                margin-bottom: 0.25rem;
+                margin-bottom: 0.5rem;
                 line-height: 1.3;
+                color: #111827;
             }
 
             .mobile-product-category {
                 font-size: 0.75rem;
                 color: #16a34a;
-                margin-bottom: 0.5rem;
+                margin-bottom: 0.75rem;
                 display: inline-block;
-                padding: 0.125rem 0.5rem;
+                padding: 0.25rem 0.75rem;
                 background-color: #dcfce7;
-                border-radius: 0.25rem;
+                border-radius: 0.5rem;
                 font-weight: 500;
             }
 
@@ -295,11 +413,92 @@
                 font-size: 1.25rem;
                 font-weight: 700;
                 color: #111827;
-                margin-bottom: 0.75rem;
+                margin-bottom: 1rem;
             }
 
+            /* FIXED: Mobile product actions - Always show buttons */
             .mobile-product-actions {
                 margin-top: 1rem;
+                width: 100%;
+                display: block;
+            }
+
+            .mobile-button-container {
+                display: flex;
+                gap: 0.5rem;
+                width: 100%;
+                align-items: stretch;
+            }
+
+            .mobile-detail-btn {
+                flex: 1;
+                padding: 0.75rem 1rem;
+                font-weight: 600;
+                text-align: center;
+                border-radius: 0.5rem;
+                transition: all 0.2s;
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.875rem;
+                background-color: #f3f4f6;
+                color: #374151;
+                border: 1px solid #d1d5db;
+            }
+
+            .mobile-detail-btn:hover {
+                background-color: #e5e7eb;
+                text-decoration: none;
+                color: #374151;
+            }
+
+            .mobile-buy-btn {
+                flex: 1;
+                padding: 0.75rem 1rem;
+                font-weight: 600;
+                text-align: center;
+                border-radius: 0.5rem;
+                transition: all 0.2s;
+                border: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.875rem;
+                background-color: #16a34a;
+                color: white;
+                cursor: pointer;
+            }
+
+            .mobile-buy-btn:hover {
+                background-color: #15803d;
+            }
+
+            .mobile-buy-btn:disabled {
+                background-color: #9ca3af;
+                cursor: not-allowed;
+            }
+
+            .mobile-login-btn {
+                flex: 1;
+                padding: 0.75rem 1rem;
+                font-weight: 600;
+                text-align: center;
+                border-radius: 0.5rem;
+                transition: all 0.2s;
+                text-decoration: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.875rem;
+                background-color: #6b7280;
+                color: white;
+            }
+
+            .mobile-login-btn:hover {
+                background-color: #4b5563;
+                text-decoration: none;
+                color: white;
             }
 
             /* Mobile-optimized search and filter styles */
@@ -388,6 +587,11 @@
                 transition: all 0.2s;
                 border: 2px solid transparent;
                 scroll-snap-align: start;
+                text-decoration: none;
+            }
+
+            .mobile-category-pill:hover {
+                text-decoration: none;
             }
 
             .mobile-category-pill.active {
@@ -447,44 +651,353 @@
                 transform: translateY(1px);
             }
 
-            /* Mobile-optimized floating filters button */
-            .mobile-filter-button {
-                position: fixed;
-                right: 20px;
-                bottom: 90px;
-                width: 50px;
-                height: 50px;
-                background-color: #16a34a;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-                z-index: 40;
-                color: white;
-            }
-
-            /* Hide desktop elements on mobile */
-            @media (max-width: 768px) {
+            /* FIXED: Responsive breakpoints */
+            /* Hide desktop elements on mobile and tablet */
+            @media (max-width: 1024px) {
                 .desktop-search-filter-container {
-                    display: none;
+                    display: none !important;
                 }
             }
 
             /* Hide mobile elements on desktop */
-            @media (min-width: 769px) {
+            @media (min-width: 1025px) {
                 .mobile-search-container {
-                    display: none;
+                    display: none !important;
                 }
+            }
 
-                .mobile-filter-button {
-                    display: none;
-                }
+            /* Error message styling */
+            .error-message {
+                background-color: #fef2f2;
+                border: 1px solid #fecaca;
+                color: #dc2626;
+                padding: 1rem;
+                border-radius: 0.5rem;
+                margin-bottom: 1rem;
+            }
+
+            /* Enhanced Confirmation Modal Styles */
+            .confirmation-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.4);
+                backdrop-filter: blur(3px);
+                -webkit-backdrop-filter: blur(3px);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.2s ease;
+            }
+
+            .confirmation-modal.active {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            .confirmation-content {
+                background: white;
+                border-radius: 16px;
+                padding: 28px;
+                max-width: 380px;
+                width: 90%;
+                box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.2);
+                transform: scale(0.95) translateY(10px);
+                transition: all 0.2s ease;
+                position: relative;
+                overflow: hidden;
+            }
+
+            .confirmation-modal.active .confirmation-content {
+                transform: scale(1) translateY(0);
+            }
+
+            .confirmation-content::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 3px;
+                background: linear-gradient(90deg, #16a34a, #22c55e);
+            }
+
+            .confirmation-icon {
+                width: 56px;
+                height: 56px;
+                background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 16px;
+                position: relative;
+            }
+
+            .confirmation-icon svg {
+                color: #16a34a;
+                z-index: 1;
+            }
+
+            .confirmation-title {
+                font-size: 1.25rem;
+                font-weight: 700;
+                color: #111827;
+                text-align: center;
+                margin-bottom: 10px;
+                line-height: 1.3;
+            }
+
+            .confirmation-message {
+                color: #6b7280;
+                text-align: center;
+                margin-bottom: 24px;
+                line-height: 1.5;
+                font-size: 0.95rem;
+            }
+
+            .confirmation-buttons {
+                display: flex;
+                gap: 10px;
+                justify-content: center;
+            }
+
+            .confirmation-btn {
+                padding: 10px 24px;
+                border-radius: 10px;
+                font-weight: 600;
+                font-size: 0.9rem;
+                border: none;
+                cursor: pointer;
+                transition: all 0.15s ease;
+                position: relative;
+                overflow: hidden;
+            }
+
+            .confirmation-btn-primary {
+                background: linear-gradient(135deg, #16a34a, #22c55e);
+                color: white;
+                box-shadow: 0 3px 12px rgba(22, 163, 74, 0.3);
+            }
+
+            .confirmation-btn-primary:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 5px 16px rgba(22, 163, 74, 0.4);
+            }
+
+            .confirmation-btn-secondary {
+                background: #f3f4f6;
+                color: #6b7280;
+                border: 1px solid #e5e7eb;
+            }
+
+            .confirmation-btn-secondary:hover {
+                background: #e5e7eb;
+                color: #374151;
+            }
+
+            /* Enhanced Toast notifications */
+            .toast-container {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 10000;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .toast {
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 15px 20px -5px rgba(0, 0, 0, 0.1);
+                padding: 16px;
+                min-width: 320px;
+                max-width: 400px;
+                display: flex;
+                align-items: flex-start;
+                gap: 12px;
+                transform: translateX(120%);
+                transition: all 0.3s ease;
+                opacity: 0;
+                border: 1px solid #f3f4f6;
+            }
+
+            .toast.show {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            .toast-success {
+                border-left: 3px solid #16a34a;
+            }
+
+            .toast-error {
+                border-left: 3px solid #dc2626;
+            }
+
+            .toast-content {
+                flex: 1;
+            }
+
+            .toast-title {
+                font-weight: 700;
+                color: #111827;
+                font-size: 1rem;
+                margin-bottom: 3px;
+            }
+
+            .toast-message {
+                color: #6b7280;
+                font-size: 0.85rem;
+                line-height: 1.4;
+            }
+
+            .toast-close {
+                color: #9ca3af;
+                font-size: 1.2rem;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 24px;
+                height: 24px;
+                border-radius: 50%;
+                transition: all 0.15s ease;
+                flex-shrink: 0;
+            }
+
+            .toast-close:hover {
+                color: #4b5563;
+                background-color: #f3f4f6;
+            }
+
+            .toast-icon {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                flex-shrink: 0;
+            }
+
+            .toast-success .toast-icon {
+                background: #dcfce7;
+                color: #16a34a;
+            }
+
+            .toast-error .toast-icon {
+                background: #fee2e2;
+                color: #dc2626;
+            }
+
+            /* Bottom Sheet for Mobile */
+            .mobile-bottom-sheet {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: white;
+                border-top-left-radius: 1rem;
+                border-top-right-radius: 1rem;
+                box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+                z-index: 9998;
+                transform: translateY(100%);
+                transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                padding: 1rem;
+                max-height: 80vh;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .mobile-bottom-sheet.active {
+                transform: translateY(0);
+            }
+
+            .sheet-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding-bottom: 0.75rem;
+                border-bottom: 1px solid #e5e7eb;
+                margin-bottom: 1rem;
+            }
+
+            .sheet-title {
+                font-weight: 600;
+                font-size: 1.125rem;
+                color: #111827;
+            }
+
+            .sheet-close {
+                width: 2rem;
+                height: 2rem;
+                border-radius: 50%;
+                background: #f3f4f6;
+                border: none;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #4b5563;
+                cursor: pointer;
+            }
+
+            .sheet-product-info {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .sheet-product-image {
+                width: 60px;
+                height: 60px;
+                border-radius: 8px;
+                object-fit: cover;
+                background-color: #f9fafb;
+            }
+
+            .sheet-product-details h3 {
+                font-weight: 600;
+                font-size: 1rem;
+                margin: 0 0 0.25rem 0;
+                color: #111827;
+            }
+
+            .sheet-product-details p {
+                font-weight: 700;
+                font-size: 1.125rem;
+                margin: 0;
+                color: #16a34a;
+            }
+
+            .sheet-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                opacity: 0;
+                visibility: hidden;
+                transition: all 0.3s ease;
+                z-index: 9997;
+            }
+
+            .sheet-overlay.active {
+                opacity: 1;
+                visibility: visible;
             }
         </style>
     @endpush
 
-    {{-- Optimized CSS dengan critical rendering path --}}
+    {{-- Additional Main CSS yang diperlukan untuk styling lainnya... --}}
     <style>
         /* Base styles - Optimized for performance */
         .product-card {
@@ -538,585 +1051,6 @@
             z-index: 20;
         }
 
-        /* Ultra-fast loading overlay */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.15s ease;
-        }
-
-        .loading-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        /* Optimized loading spinner */
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 3px solid #e5f3e9;
-            border-radius: 50%;
-            border-top: 3px solid #16a34a;
-            animation: fastSpin 0.6s linear infinite;
-            margin-bottom: 16px;
-            transform: translateZ(0);
-        }
-
-        .loading-text {
-            color: #16a34a;
-            font-size: 1rem;
-            font-weight: 600;
-            text-align: center;
-            margin-bottom: 6px;
-            letter-spacing: 0.3px;
-        }
-
-        .loading-subtext {
-            color: #6b7280;
-            font-size: 0.8rem;
-            text-align: center;
-            max-width: 250px;
-            line-height: 1.4;
-        }
-
-        /* Ultra-fast confirmation modal */
-        .confirmation-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(3px);
-            -webkit-backdrop-filter: blur(3px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.2s ease;
-        }
-
-        .confirmation-modal.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .confirmation-content {
-            background: white;
-            border-radius: 16px;
-            padding: 28px;
-            max-width: 380px;
-            width: 90%;
-            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.2);
-            transform: scale(0.95) translateY(10px);
-            transition: all 0.2s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .confirmation-modal.active .confirmation-content {
-            transform: scale(1) translateY(0);
-        }
-
-        .confirmation-content::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #16a34a, #22c55e);
-        }
-
-        .confirmation-icon {
-            width: 56px;
-            height: 56px;
-            background: linear-gradient(135deg, #dcfce7, #bbf7d0);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 16px;
-            position: relative;
-        }
-
-        .confirmation-icon svg {
-            color: #16a34a;
-            z-index: 1;
-        }
-
-        .confirmation-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #111827;
-            text-align: center;
-            margin-bottom: 10px;
-            line-height: 1.3;
-        }
-
-        .confirmation-message {
-            color: #6b7280;
-            text-align: center;
-            margin-bottom: 24px;
-            line-height: 1.5;
-            font-size: 0.95rem;
-        }
-
-        .confirmation-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-        }
-
-        .confirmation-btn {
-            padding: 10px 24px;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            border: none;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .confirmation-btn-primary {
-            background: linear-gradient(135deg, #16a34a, #22c55e);
-            color: white;
-            box-shadow: 0 3px 12px rgba(22, 163, 74, 0.3);
-        }
-
-        .confirmation-btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 5px 16px rgba(22, 163, 74, 0.4);
-        }
-
-        .confirmation-btn-secondary {
-            background: #f3f4f6;
-            color: #6b7280;
-            border: 1px solid #e5e7eb;
-        }
-
-        .confirmation-btn-secondary:hover {
-            background: #e5e7eb;
-            color: #374151;
-        }
-
-        /* Optimized Toast notifications */
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 10000;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .toast {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 15px 20px -5px rgba(0, 0, 0, 0.1);
-            padding: 16px;
-            min-width: 320px;
-            max-width: 400px;
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            transform: translateX(120%);
-            transition: all 0.3s ease;
-            opacity: 0;
-            border: 1px solid #f3f4f6;
-        }
-
-        .toast.show {
-            transform: translateX(0);
-            opacity: 1;
-        }
-
-        .toast-success {
-            border-left: 3px solid #16a34a;
-        }
-
-        .toast-error {
-            border-left: 3px solid #dc2626;
-        }
-
-        .toast-content {
-            flex: 1;
-        }
-
-        .toast-title {
-            font-weight: 700;
-            color: #111827;
-            font-size: 1rem;
-            margin-bottom: 3px;
-        }
-
-        .toast-message {
-            color: #6b7280;
-            font-size: 0.85rem;
-            line-height: 1.4;
-        }
-
-        .toast-close {
-            color: #9ca3af;
-            font-size: 1.2rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            transition: all 0.15s ease;
-            flex-shrink: 0;
-        }
-
-        .toast-close:hover {
-            color: #4b5563;
-            background-color: #f3f4f6;
-        }
-
-        .toast-icon {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        .toast-success .toast-icon {
-            background: #dcfce7;
-            color: #16a34a;
-        }
-
-        .toast-error .toast-icon {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-
-        /* Ultra-fast animations */
-        @keyframes fastSpin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        @keyframes quickPulse {
-
-            0%,
-            100% {
-                opacity: 0.1;
-                transform: scale(1);
-            }
-
-            50% {
-                opacity: 0.2;
-                transform: scale(1.02);
-            }
-        }
-
-        @keyframes fastFadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(5px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .fade-in {
-            animation: fastFadeIn 0.3s ease-out;
-        }
-
-        /* Hero carousel - optimized */
-        .hero-layer {
-            transition: opacity 0.8s ease-out;
-            will-change: opacity;
-            background-size: cover;
-            background-position: center;
-            transform: translateZ(0);
-        }
-
-        /* Hero indicators */
-        .hero-indicators {
-            position: absolute;
-            bottom: 1.5rem;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: center;
-            gap: 0.5rem;
-            z-index: 30;
-        }
-
-        .hero-indicator {
-            width: 3rem;
-            height: 0.25rem;
-            background-color: rgba(255, 255, 255, 0.4);
-            border-radius: 0.125rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .hero-indicator.active {
-            background-color: white;
-            width: 4rem;
-        }
-
-        /* Optimized discount badge */
-        .discount-badge {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            background: linear-gradient(135deg, #16a34a, #22c55e);
-            color: white;
-            font-weight: 700;
-            font-size: 0.75rem;
-            padding: 0.35rem 0.75rem;
-            border-radius: 30px;
-            box-shadow: 0 3px 10px rgba(22, 163, 74, 0.3);
-            z-index: 20;
-            letter-spacing: 0.02em;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .discount-badge:before {
-            content: '';
-            width: 6px;
-            height: 6px;
-            background: white;
-            border-radius: 50%;
-            display: block;
-        }
-
-        /* Banner section - optimized */
-        .banner-section {
-            width: 100%;
-            position: relative;
-            overflow: hidden;
-            margin-bottom: 2rem;
-            contain: layout;
-        }
-
-        .banner-image-container {
-            width: 100%;
-            position: relative;
-            overflow: hidden;
-            height: auto;
-        }
-
-        .banner-image {
-            width: 100%;
-            object-fit: cover;
-            display: block;
-        }
-
-        .banner-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.15);
-        }
-
-        .banner-content {
-            text-align: center;
-            width: 100%;
-            padding: 0 1rem;
-            z-index: 10;
-        }
-
-        .banner-title {
-            color: white;
-            font-weight: 700;
-            margin: 0;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        }
-
-        .promo-badge {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            background: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            color: #15803d;
-            font-size: 1.25rem;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        }
-
-        /* Responsive optimizations */
-        @media (min-width: 769px) {
-            .banner-image-container {
-                height: 240px;
-            }
-
-            .banner-image {
-                height: 100%;
-                transform: scale(0.85);
-                transform-origin: center;
-            }
-
-            .banner-title {
-                font-size: 2.5rem;
-            }
-
-            .promo-badge {
-                width: 80px;
-                height: 80px;
-                font-size: 1.75rem;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .banner-section {
-                margin-bottom: 1rem;
-            }
-
-            .banner-image-container {
-                height: 180px;
-            }
-
-            .banner-image {
-                height: 100%;
-                object-position: center;
-            }
-
-            .banner-title {
-                font-size: 1.5rem;
-                max-width: 90%;
-            }
-
-            .promo-badge {
-                width: 50px;
-                height: 50px;
-                font-size: 1.25rem;
-                top: 10px;
-                right: 10px;
-            }
-
-            .confirmation-content {
-                padding: 20px;
-                margin: 16px;
-            }
-
-            .toast {
-                min-width: 280px;
-                margin-right: 10px;
-            }
-        }
-
-        /* Search and promo section */
-        .search-filter-container {
-            width: 100%;
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
-            border-radius: 16px;
-            margin-bottom: 2rem;
-            padding: 1.25rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-
-        @media (max-width: 768px) {
-            .search-filter-container {
-                padding: 1rem;
-                border-radius: 12px;
-            }
-        }
-
-        @media (max-width: 480px) {
-
-            .search-input,
-            .category-select,
-            .search-button,
-            .promo-input,
-            .promo-button {
-                width: 100%;
-                margin-bottom: 0.5rem;
-            }
-        }
-
-        /* Product count */
-        .product-count-badge {
-            background: #166534;
-            color: white;
-            font-weight: 600;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-size: 0.875rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        /* Promo active notification */
-        .promo-active-notification {
-            background: linear-gradient(135deg, #dcfce7, #f0fdf4);
-            border: 1px solid #bbf7d0;
-            border-radius: 12px;
-            padding: 0.75rem 1rem;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-
-        @media (max-width: 640px) {
-            .promo-active-notification {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.75rem;
-            }
-
-            .promo-active-notification form {
-                width: 100%;
-            }
-
-            .promo-active-notification button {
-                width: 100%;
-            }
-        }
-
         /* Optimized product grid */
         .product-grid {
             display: grid;
@@ -1128,97 +1062,76 @@
 
         @media (max-width: 640px) {
             .product-grid {
-                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                grid-template-columns: 1fr;
                 gap: 1rem;
+                padding: 0 1rem;
             }
         }
 
-        /* Optimized cart floating button */
+        /* FIXED: Cart floating button - MOVED TO LEFT FOR MOBILE */
         .cart-floating-button {
             position: fixed;
-            bottom: 30px;
-            left: 30px;
+            bottom: 20px;
+            left: 15px;
+            /* MOVED TO LEFT */
             z-index: 50;
             background-color: #15803d;
             color: white;
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            width: 56px;
+            /* Slightly larger for mobile */
+            height: 56px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.2s ease;
             transform: translateZ(0);
+            text-decoration: none;
+            border: 3px solid rgba(255, 255, 255, 0.9);
         }
 
         .cart-floating-button:hover {
             transform: scale(1.05) translateZ(0);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+            color: white;
+            text-decoration: none;
         }
 
         .cart-counter {
             position: absolute;
-            top: -5px;
-            right: -5px;
+            top: -8px;
+            right: -8px;
             background-color: #ef4444;
             color: white;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 50%;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
             border: 2px solid white;
         }
 
-        /* Optimized button states */
-        .add-to-cart-btn {
-            position: relative;
-            overflow: hidden;
-            transition: all 0.15s ease;
-        }
+        /* Desktop positioning - keep on left but different position */
+        @media (min-width: 1025px) {
+            .cart-floating-button {
+                bottom: 30px;
+                left: 30px;
+                width: 50px;
+                height: 50px;
+            }
 
-        .add-to-cart-btn.loading .btn-text {
-            visibility: hidden;
-        }
-
-        .add-to-cart-btn.loading .btn-spinner {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            display: inline-block;
-            width: 18px;
-            height: 18px;
-        }
-
-        .add-to-cart-btn.success {
-            background-color: #16a34a !important;
-        }
-
-        .add-to-cart-btn:disabled {
-            background-color: #9ca3af !important;
-            cursor: not-allowed;
-        }
-
-        .in-cart-btn {
-            background-color: #6b7280 !important;
-            cursor: not-allowed;
-        }
-
-        /* Performance optimizations */
-        * {
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-
-        img {
-            image-rendering: -webkit-optimize-contrast;
-            image-rendering: crisp-edges;
+            .cart-counter {
+                width: 20px;
+                height: 20px;
+                font-size: 12px;
+                top: -5px;
+                right: -5px;
+            }
         }
 
         /* Enhanced search input styles */
@@ -1259,113 +1172,194 @@
             background-color: #15803d;
         }
 
-        /* Bottom Sheet for Mobile */
-        .mobile-bottom-sheet {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: white;
-            border-top-left-radius: 1rem;
-            border-top-right-radius: 1rem;
-            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
-            z-index: 9998;
-            transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            padding: 1rem;
-            max-height: 80vh;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
+        /* Search and promo section */
+        .search-filter-container {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            padding: 1.25rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
-        .mobile-bottom-sheet.active {
-            transform: translateY(0);
+        /* Product count */
+        .product-count-badge {
+            background: #166534;
+            color: white;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .sheet-header {
+        /* Promo active notification */
+        .promo-active-notification {
+            background: linear-gradient(135deg, #dcfce7, #f0fdf4);
+            border: 1px solid #bbf7d0;
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
             justify-content: space-between;
-            padding-bottom: 0.75rem;
-            border-bottom: 1px solid #e5e7eb;
-            margin-bottom: 1rem;
-        }
-
-        .sheet-title {
-            font-weight: 600;
-            font-size: 1.125rem;
-            color: #111827;
-        }
-
-        .sheet-close {
-            width: 2rem;
-            height: 2rem;
-            border-radius: 50%;
-            background: #f3f4f6;
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #4b5563;
-            cursor: pointer;
-        }
-
-        .sheet-product-info {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
             margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
-        .sheet-product-image {
-            width: 60px;
-            height: 60px;
-            border-radius: 8px;
-            object-fit: cover;
-            background-color: #f9fafb;
+        /* Optimized button states */
+        .add-to-cart-btn {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.15s ease;
         }
 
-        .sheet-product-details h3 {
-            font-weight: 600;
-            font-size: 1rem;
-            margin: 0 0 0.25rem 0;
-            color: #111827;
-        }
-
-        .sheet-product-details p {
-            font-weight: 700;
-            font-size: 1.125rem;
-            margin: 0;
-            color: #16a34a;
-        }
-
-        .sheet-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            opacity: 0;
+        .add-to-cart-btn.loading .btn-text {
             visibility: hidden;
-            transition: all 0.3s ease;
-            z-index: 9997;
         }
 
-        .sheet-overlay.active {
-            opacity: 1;
-            visibility: visible;
+        .add-to-cart-btn.loading .btn-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+        }
+
+        .add-to-cart-btn.success {
+            background-color: #16a34a !important;
+        }
+
+        .add-to-cart-btn:disabled {
+            background-color: #9ca3af !important;
+            cursor: not-allowed;
+        }
+
+        .in-cart-btn {
+            background-color: #6b7280 !important;
+            cursor: not-allowed;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 1024px) {
+            .search-filter-container {
+                padding: 1rem;
+                border-radius: 12px;
+            }
+
+            .confirmation-content {
+                padding: 20px;
+                margin: 16px;
+            }
+
+            .toast {
+                min-width: 280px;
+                margin-right: 10px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .promo-active-notification {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+
+            .promo-active-notification form {
+                width: 100%;
+            }
+
+            .promo-active-notification button {
+                width: 100%;
+            }
+
+            .product-count-badge {
+                font-size: 0.75rem;
+                padding: 0.375rem 0.75rem;
+            }
+        }
+
+        /* Optimized discount badge */
+        .discount-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: linear-gradient(135deg, #16a34a, #22c55e);
+            color: white;
+            font-weight: 700;
+            font-size: 0.75rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: 30px;
+            box-shadow: 0 3px 10px rgba(22, 163, 74, 0.3);
+            z-index: 20;
+            letter-spacing: 0.02em;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .discount-badge:before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+            display: block;
+        }
+
+        /* Fade in animation utility */
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Line clamp utilities */
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Aspect ratio utilities */
+        .aspect-square {
+            aspect-ratio: 1 / 1;
         }
     </style>
+
+    {{-- Display error message if any --}}
+    @if (isset($error))
+        <div class="error-message" role="alert">
+            <strong class="font-bold">Error!</strong>
+            <span class="block sm:inline">{{ $error }}</span>
+        </div>
+    @endif
 
     {{-- Ultra-fast Loading overlay --}}
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-spinner"></div>
-        <div class="loading-text">Memuat Data...</div>
-        <div class="loading-subtext">Sebentar ya, sedang diproses</div>
+        <div class="font-medium text-gray-700">Azka Garden Memuat Data...</div>
+        <div class="text-sm text-gray-500">Sebentar ya, sedang diproses</div>
     </div>
 
-    {{-- Optimized Confirmation Modal --}}
+    {{-- Enhanced Confirmation Modal - OPTIMIZED FOR FAST RELOAD --}}
     <div class="confirmation-modal" id="confirmationModal">
         <div class="confirmation-content">
             <div class="confirmation-icon">
@@ -1415,14 +1409,16 @@
             </div>
 
             <form id="sheetAddToCartForm">
+                @csrf
                 <input type="hidden" name="product_id" id="sheetProductId">
                 <input type="hidden" name="promo_code" id="sheetPromoCode" value="{{ $promo_code ?? '' }}">
                 <input type="hidden" name="price" id="sheetProductPrice">
                 <input type="hidden" name="quantity" id="sheetQuantity" value="1">
 
                 <button type="submit" class="mobile-add-to-cart">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
                         <path d="M9 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"></path>
                         <path d="M20 20a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"></path>
                         <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
@@ -1433,20 +1429,11 @@
         </div>
     </div>
 
-    {{-- Mobile Filter Button --}}
-    <button type="button" id="mobileFilterBtn" class="mobile-filter-button">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
-            stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M3 4a1 1 0 011-1h16a1 1 0 010 2H4a1 1 0 01-1-1zm0 8a1 1 0 011-1h10a1 1 0 010 2H4a1 1 0 01-1-1zm0 8a1 1 0 011-1h4a1 1 0 010 2H4a1 1 0 01-1-1z" />
-        </svg>
-    </button>
-
-    {{-- Optimized cart floating button --}}
-    <a href="{{ url('/cart') }}" class="cart-floating-button" aria-label="Lihat Keranjang">
+    {{-- FIXED: Cart floating button - positioned to left corner --}}
+    <a href="{{ route('cart.index') }}" class="cart-floating-button" aria-label="Lihat Keranjang">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
         </svg>
         <span id="cart-counter" class="cart-counter" aria-live="polite" aria-atomic="true">{{ $cartItemCount }}</span>
     </a>
@@ -1491,7 +1478,7 @@
         @endif
     @endauth
 
-    {{-- Optimized Hero carousel dengan Alpine.js --}}
+    {{-- Hero Section with Search --}}
     <section x-data="{
         heroImages: {{ json_encode($heroImageUrls) }},
         currentBg: 0,
@@ -1555,22 +1542,27 @@
         </div>
 
         {{-- Hero Indicators --}}
-        <div class="hero-indicators" role="tablist" aria-label="Navigasi Gambar Hero">
+        <div class="absolute left-0 right-0 z-30 flex justify-center gap-2 bottom-6" role="tablist"
+            aria-label="Navigasi Gambar Hero">
             <template x-for="(img, idx) in heroImages" :key="idx">
-                <button type="button" role="tab" class="hero-indicator" :class="idx === currentBg ? 'active' : ''"
-                    @click="changeBackground(idx)" :aria-selected="idx === currentBg"
-                    :tabindex="idx === currentBg ? 0 : -1" :aria-label="`Gambar ${idx + 1}`"></button>
+                <button type="button" role="tab"
+                    class="w-12 h-1 transition-all duration-200 rounded-sm bg-white/40 hover:bg-white/60"
+                    :class="idx === currentBg ? 'bg-white w-16' : ''" @click="changeBackground(idx)"
+                    :aria-selected="idx === currentBg" :tabindex="idx === currentBg ? 0 : -1"
+                    :aria-label="`Gambar ${idx + 1}`">
+                </button>
             </template>
         </div>
 
-        <div class="relative z-30 px-4 mx-auto max-w-7xl">
-            {{-- Banner --}}
-            @if (isset($banners) && count($banners))
+        <div class="relative z-30 px-4 pt-24 pb-8 mx-auto max-w-7xl">
+            {{-- Banner Section - MOVED TO TOP AND FIXED --}}
+            @if (isset($banners) && count($banners) > 0)
                 @php $banner = $banners[0]; @endphp
                 <div class="banner-section" role="region" aria-label="Banner Promo">
                     <div class="banner-image-container">
-                        <img src="{{ asset($banner->image) }}" alt="{{ $banner->title ?? 'Promo Tanaman Hias Juli' }}"
-                            class="banner-image" loading="eager" decoding="async" />
+                        <img src="{{ asset($banner->image ?? 'images/hero-1.jpg') }}"
+                            alt="{{ $banner->title ?? 'Promo Tanaman Hias Juli' }}" class="banner-image" loading="eager"
+                            decoding="async" />
                         <div class="banner-overlay">
                             <div class="banner-content">
                                 <h2 class="banner-title">{{ $banner->title ?? 'Promo Tanaman Hias Juli' }}</h2>
@@ -1601,12 +1593,14 @@
                             Semua
                         </a>
 
-                        @foreach ($categories as $category)
-                            <a href="{{ route('products.index', ['category' => $category->id, 'search' => $searchQuery]) }}"
-                                class="mobile-category-pill {{ $categoryFilter == $category->id ? 'active' : '' }}">
-                                {{ $category->name }}
-                            </a>
-                        @endforeach
+                        @if ($categories && $categories->count() > 0)
+                            @foreach ($categories as $category)
+                                <a href="{{ route('products.index', ['category' => $category->id, 'search' => $searchQuery]) }}"
+                                    class="mobile-category-pill {{ $categoryFilter == $category->id ? 'active' : '' }}">
+                                    {{ $category->name }}
+                                </a>
+                            @endforeach
+                        @endif
                     </div>
 
                     <div class="mobile-promo-container">
@@ -1647,12 +1641,14 @@
                         Semua
                     </a>
 
-                    @foreach ($categories as $category)
-                        <a href="{{ route('products.index', ['category' => $category->id, 'search' => $searchQuery]) }}"
-                            class="category-pill {{ $categoryFilter == $category->id ? 'active' : '' }}">
-                            {{ $category->name }}
-                        </a>
-                    @endforeach
+                    @if ($categories && $categories->count() > 0)
+                        @foreach ($categories as $category)
+                            <a href="{{ route('products.index', ['category' => $category->id, 'search' => $searchQuery]) }}"
+                                class="category-pill {{ $categoryFilter == $category->id ? 'active' : '' }}">
+                                {{ $category->name }}
+                            </a>
+                        @endforeach
+                    @endif
                 </div>
 
                 {{-- Promo Code Form --}}
@@ -1720,167 +1716,196 @@
                 </div>
             </div>
 
-            {{-- Mobile-optimized product grid --}}
+            {{-- Product grid - FIXED: Use products from controller --}}
             <div class="mb-12 {{ $isMobile ? '' : 'product-grid' }}">
-                @forelse($products as $product)
-                    @php
-                        $final_price = $product->price;
-                        $promo_label = '';
-                        $promo_active = false;
-                        $diskon = 0;
+                @if ($products && $products->count() > 0)
+                    @foreach ($products as $product)
+                        @php
+                            $final_price = $product->price;
+                            $promo_label = '';
+                            $promo_active = false;
+                            $diskon = 0;
 
-                        if (auth()->check() && $promo_code && $promo_type !== null && $promo_discount !== null) {
-                            if ($promo_type === 'percent') {
-                                $diskon = round($product->price * (10 / 100));
-                                $promo_label = '10%';
-                            } elseif ($promo_type === 'fixed') {
-                                $diskon = min($promo_discount, $product->price);
-                                $promo_label = 'Rp ' . number_format($diskon, 0, ',', '.');
-                            }
-                            $final_price = max(0, $product->price - $diskon);
-                            $promo_active = $final_price < $product->price;
-                        }
-
-                        // Check if product is already in cart
-                        $isInCart = false;
-                        if (auth()->check()) {
-                            $isInCart = \App\Models\Cart::where('user_id', auth()->id())
-                                ->where('product_id', $product->id)
-                                ->exists();
-                        } else {
-                            $cartItems = session('cart_items', []);
-                            foreach ($cartItems as $item) {
-                                if ($item['product_id'] == $product->id) {
-                                    $isInCart = true;
-                                    break;
+                            if (auth()->check() && $promo_code && $promo_type !== null && $promo_discount !== null) {
+                                if ($promo_type === 'percent') {
+                                    $diskon = round($product->price * ($promo_discount / 100));
+                                    $promo_label = $promo_discount . '%';
+                                } elseif ($promo_type === 'fixed') {
+                                    $diskon = min($promo_discount, $product->price);
+                                    $promo_label = 'Rp ' . number_format($diskon, 0, ',', '.');
                                 }
+                                $final_price = max(0, $product->price - $diskon);
+                                $promo_active = $final_price < $product->price;
                             }
-                        }
 
-                        $displayImages = collect($product->images ?? [])
-                            ->filter(fn($img) => preg_match('/\.(jpg|jpeg|png)$/i', trim($img->image_url ?? '')))
-                            ->unique('image_url')
-                            ->sortBy(
-                                fn($img) => preg_match('/\.jpg$/i', $img->image_url)
-                                    ? 0
-                                    : (preg_match('/\.png$/i', $img->image_url)
-                                        ? 1
-                                        : 2),
-                            )
-                            ->values();
+                            // Check if product is already in cart - FIXED: Use cartProductIds from controller
+                            $isInCart = in_array($product->id, $cartProductIds);
 
-                        // Get product image URL
-                        $productImageUrl = '';
-                        if ($displayImages->count() > 0) {
-                            $productImageUrl = asset($displayImages->first()->image_url);
-                        } elseif (!empty($product->image_url)) {
-                            $productImageUrl = asset($product->image_url);
-                        } else {
-                            $productImageUrl = asset('images/produk/placeholder.png');
-                        }
+                            // Get primary product image - SAFER method
+                            $productImageUrl = asset('images/produk/placeholder.png'); // Default fallback
 
-                        // Get category name for display
-                        $categoryName = $product->category->name ?? 'Uncategorized';
-                    @endphp
+                            if (isset($product->product_images) && $product->product_images->count() > 0) {
+                                $primaryImage = $product->product_images->where('is_primary', 1)->first();
+                                if ($primaryImage && !empty($primaryImage->image_url)) {
+                                    $productImageUrl = asset($primaryImage->image_url);
+                                } else {
+                                    $firstImage = $product->product_images->first();
+                                    if ($firstImage && !empty($firstImage->image_url)) {
+                                        $productImageUrl = asset($firstImage->image_url);
+                                    }
+                                }
+                            } elseif (!empty($product->image_url)) {
+                                $productImageUrl = asset($product->image_url);
+                            }
 
-                    @if ($isMobile)
-                        {{-- Mobile-optimized card --}}
-                        <div class="mobile-product-card {{ $isInCart ? 'border-2 border-green-500' : '' }}"
-                            data-product-id="{{ $product->id }}" data-product-name="{{ $product->name }}"
-                            data-product-price="{{ $final_price }}" data-product-image="{{ $productImageUrl }}"
-                            data-product-in-cart="{{ $isInCart ? 'true' : 'false' }}">
+                            // Get category name for display - SAFER method
+                            $categoryName = 'Uncategorized';
+                            if (isset($product->category) && $product->category) {
+                                $categoryName = $product->category->name;
+                            }
 
-                            @if ($promo_active)
-                                <div
-                                    class="absolute px-2 py-1 text-xs font-bold text-white bg-green-600 rounded-full top-2 left-2">
-                                    DISKON {{ $promo_label }}
-                                </div>
-                            @endif
+                            // Enhanced product images handling for desktop grid display
+                            $displayImages = collect([]);
+                            if (isset($product->product_images) && $product->product_images->count() > 0) {
+                                $displayImages = $product->product_images
+                                    ->filter(
+                                        fn($img) => !empty($img->image_url) &&
+                                            preg_match('/\.(jpg|jpeg|png|webp)$/i', trim($img->image_url)),
+                                    )
+                                    ->unique('image_url')
+                                    ->sortBy(fn($img) => $img->is_primary ? 0 : 1)
+                                    ->values();
+                            }
+                        @endphp
 
-                            @if ($isInCart)
-                                <div
-                                    class="absolute px-2 py-1 text-xs font-bold text-white bg-green-600 rounded-full top-2 right-2">
-                                    ✓ Di Keranjang
-                                </div>
-                            @endif
-
-                            <img src="{{ $productImageUrl }}" alt="{{ $product->name }}" class="mobile-product-image"
-                                loading="lazy"
-                                onerror="this.onerror=null;this.src='{{ asset('images/produk/placeholder.png') }}';">
-
-                            <div class="mobile-product-details">
-                                <span class="mobile-product-category">{{ $categoryName }}</span>
-                                <h3 class="mobile-product-title">{{ $product->name }}</h3>
+                        @if ($isMobile)
+                            {{-- FIXED: Mobile-optimized card with proper button display --}}
+                            <div class="mobile-product-card {{ $isInCart ? 'border-2 border-green-500' : '' }}"
+                                data-product-id="{{ $product->id }}" data-product-name="{{ $product->name }}"
+                                data-product-price="{{ $final_price }}" data-product-image="{{ $productImageUrl }}"
+                                data-product-in-cart="{{ $isInCart ? 'true' : 'false' }}">
 
                                 @if ($promo_active)
-                                    <div class="flex items-center mb-1">
-                                        <span class="mr-2 text-sm text-gray-500 line-through">Rp
-                                            {{ number_format($product->price, 0, ',', '.') }}</span>
-                                        <span
-                                            class="bg-green-100 text-green-800 text-xs px-1.5 py-0.5 rounded-full">-{{ $promo_label }}</span>
-                                    </div>
-                                    <div class="text-green-600 mobile-product-price">Rp
-                                        {{ number_format($final_price, 0, ',', '.') }}</div>
-                                @else
-                                    <div class="mobile-product-price">Rp {{ number_format($product->price, 0, ',', '.') }}
+                                    <div
+                                        class="absolute z-10 px-2 py-1 text-xs font-bold text-white bg-green-600 rounded-full top-2 left-2">
+                                        DISKON {{ $promo_label }}
                                     </div>
                                 @endif
 
-                                <div class="mobile-product-actions">
-                                    <div class="flex space-x-2">
-                                        <a href="{{ route('products.show', $product->id) }}"
-                                            class="flex-1 px-3 py-2 font-medium text-center text-gray-800 bg-gray-100 rounded-lg">
-                                            Detail
-                                        </a>
+                                @if ($isInCart)
+                                    <div
+                                        class="absolute z-10 px-2 py-1 text-xs font-bold text-white bg-green-600 rounded-full top-2 right-2">
+                                        ✓ Di Keranjang
+                                    </div>
+                                @endif
 
-                                        @auth
-                                            @if ($isInCart)
-                                                <button disabled
-                                                    class="flex-1 px-3 py-2 font-medium text-white bg-gray-400 rounded-lg opacity-70">
-                                                    Di Keranjang
-                                                </button>
+                                <img src="{{ $productImageUrl }}" alt="{{ $product->name }}"
+                                    class="mobile-product-image" loading="lazy"
+                                    onerror="this.onerror=null;this.src='{{ asset('images/produk/placeholder.png') }}';">
+
+                                <div class="mobile-product-details">
+                                    <span class="mobile-product-category">{{ $categoryName }}</span>
+                                    <h3 class="mobile-product-title">{{ $product->name }}</h3>
+
+                                    @if ($promo_active)
+                                        <div class="flex items-center mb-1">
+                                            <span class="mr-2 text-sm text-gray-500 line-through">Rp
+                                                {{ number_format($product->price, 0, ',', '.') }}</span>
+                                            <span
+                                                class="bg-green-100 text-green-800 text-xs px-1.5 py-0.5 rounded-full">-{{ $promo_label }}</span>
+                                        </div>
+                                        <div class="text-green-600 mobile-product-price">Rp
+                                            {{ number_format($final_price, 0, ',', '.') }}</div>
+                                    @else
+                                        <div class="mobile-product-price">Rp
+                                            {{ number_format($product->price, 0, ',', '.') }}
+                                        </div>
+                                    @endif
+
+                                    {{-- FIXED: Mobile product actions - Always show both buttons --}}
+                                    <div class="mobile-product-actions">
+                                        <div class="mobile-button-container">
+                                            {{-- FIXED: Use correct route for product detail --}}
+                                            <a href="{{ route('products.show', $product->id) }}"
+                                                class="mobile-detail-btn">
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
+                                                    </path>
+                                                </svg>
+                                                Detail
+                                            </a>
+
+                                            @auth
+                                                @if ($isInCart)
+                                                    <button disabled class="mobile-buy-btn"
+                                                        style="background-color: #9ca3af;">
+                                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
+                                                            viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                        </svg>
+                                                        Di Keranjang
+                                                    </button>
+                                                @else
+                                                    <button type="button" class="mobile-buy-btn buy-button"
+                                                        data-product-id="{{ $product->id }}">
+                                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
+                                                            viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z">
+                                                            </path>
+                                                        </svg>
+                                                        Beli
+                                                    </button>
+                                                @endif
                                             @else
-                                                <button type="button"
-                                                    class="flex-1 px-3 py-2 font-medium text-white bg-green-600 rounded-lg buy-button"
-                                                    data-product-id="{{ $product->id }}">
-                                                    Beli
-                                                </button>
-                                            @endif
-                                        @else
-                                            <button disabled
-                                                class="flex-1 px-3 py-2 font-medium text-gray-600 bg-gray-300 rounded-lg">
-                                                Login
-                                            </button>
-                                        @endauth
+                                                <a href="{{ route('login') }}" class="mobile-login-btn">
+                                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                                                        </path>
+                                                    </svg>
+                                                    Login
+                                                </a>
+                                            @endauth
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    @else
-                        {{-- Desktop card --}}
-                        <article class="product-card overflow-hidden rounded-xl {{ $isInCart ? 'in-cart' : '' }}"
-                            role="group" aria-labelledby="product-{{ $product->id }}-title">
-                            @if ($promo_active)
-                                <div class="discount-badge" aria-label="Diskon {{ $promo_label }}">DISKON
-                                    {{ $promo_label }}</div>
-                            @endif
+                        @else
+                            {{-- Desktop card --}}
+                            <article class="product-card overflow-hidden rounded-xl {{ $isInCart ? 'in-cart' : '' }}"
+                                role="group" aria-labelledby="product-{{ $product->id }}-title">
+                                @if ($promo_active)
+                                    <div class="discount-badge" aria-label="Diskon {{ $promo_label }}">DISKON
+                                        {{ $promo_label }}</div>
+                                @endif
 
-                            @if ($isInCart)
-                                <div class="product-status-badge" aria-label="Sudah di keranjang">✓ Di Keranjang</div>
-                            @endif
+                                @if ($isInCart)
+                                    <div class="product-status-badge" aria-label="Sudah di keranjang">✓ Di Keranjang</div>
+                                @endif
 
-                            <div class="p-2 product-image-container">
-                                <div class="grid grid-cols-2 gap-2">
-                                    @foreach ($displayImages->take(2) as $index => $img)
-                                        <div class="overflow-hidden bg-white rounded-lg aspect-square">
-                                            <img src="{{ asset($img->image_url) }}"
-                                                alt="{{ $product->name }} {{ $index + 1 }}"
-                                                class="w-full h-full product-image" loading="lazy" decoding="async"
-                                                onerror="this.onerror=null;this.src='{{ asset('images/produk/placeholder.png') }}';" />
+                                <div class="p-2 product-image-container">
+                                    @if ($displayImages->count() >= 2)
+                                        <div class="grid grid-cols-2 gap-2">
+                                            @foreach ($displayImages->take(2) as $index => $img)
+                                                <div class="overflow-hidden bg-white rounded-lg aspect-square">
+                                                    <img src="{{ asset($img->image_url) }}"
+                                                        alt="{{ $product->name }} {{ $index + 1 }}"
+                                                        class="w-full h-full product-image" loading="lazy"
+                                                        decoding="async"
+                                                        onerror="this.onerror=null;this.src='{{ asset('images/produk/placeholder.png') }}';" />
+                                                </div>
+                                            @endforeach
                                         </div>
-                                    @endforeach
-                                    @if ($displayImages->count() < 2)
-                                        @if ($displayImages->count() === 1)
+                                    @elseif ($displayImages->count() === 1)
+                                        <div class="grid grid-cols-2 gap-2">
                                             <div class="overflow-hidden bg-white rounded-lg aspect-square">
                                                 <img src="{{ asset($displayImages->first()->image_url) }}"
                                                     alt="{{ $product->name }} 1" class="w-full h-full product-image"
@@ -1888,132 +1913,133 @@
                                                     onerror="this.onerror=null;this.src='{{ asset('images/produk/placeholder.png') }}';" />
                                             </div>
                                             <div class="overflow-hidden bg-white rounded-lg aspect-square">
-                                                <img src="{{ asset($product->image_url ?? 'images/produk/placeholder.png') }}"
-                                                    alt="{{ $product->name }} 2" class="w-full h-full product-image"
-                                                    loading="lazy" decoding="async" />
+                                                <img src="{{ $productImageUrl }}" alt="{{ $product->name }} 2"
+                                                    class="w-full h-full product-image" loading="lazy" decoding="async"
+                                                    onerror="this.onerror=null;this.src='{{ asset('images/produk/placeholder.png') }}';" />
                                             </div>
-                                        @else
-                                            <div class="overflow-hidden bg-white rounded-lg aspect-square">
-                                                <img src="{{ asset($product->image_url ?? 'images/produk/placeholder.png') }}"
-                                                    alt="{{ $product->name }} 1" class="w-full h-full product-image"
-                                                    loading="lazy" decoding="async" />
-                                            </div>
-                                            <div class="overflow-hidden bg-white rounded-lg aspect-square">
-                                                <img src="{{ asset('images/produk/placeholder.png') }}"
-                                                    alt="{{ $product->name }} 2" class="w-full h-full product-image"
-                                                    loading="lazy" decoding="async" />
-                                            </div>
-                                        @endif
-                                    @endif
-                                </div>
-                            </div>
-
-                            <div class="p-5">
-                                <div class="mb-1">
-                                    <span class="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
-                                        {{ $categoryName }}
-                                    </span>
-                                </div>
-                                <h2 id="product-{{ $product->id }}-title"
-                                    class="mb-2 text-xl font-semibold text-gray-800 line-clamp-2">{{ $product->name }}
-                                </h2>
-                                <p class="mb-4 text-sm text-gray-600 line-clamp-2">
-                                    {{ Str::limit($product->description, 80) }}
-                                </p>
-
-                                <div class="mb-4">
-                                    @if ($promo_active)
-                                        <div class="flex items-center">
-                                            <span class="text-sm text-gray-500 line-through">Rp
-                                                {{ number_format($product->price, 0, ',', '.') }}</span>
-                                            <span
-                                                class="px-2 py-0.5 ml-2 text-xs font-medium text-green-800 bg-green-100 rounded-full">-{{ $promo_label }}</span>
                                         </div>
-                                        <div class="mt-1 text-xl font-bold text-green-700">Rp
-                                            {{ number_format($final_price, 0, ',', '.') }}</div>
                                     @else
-                                        <div class="text-xl font-bold text-gray-800">Rp
-                                            {{ number_format($product->price, 0, ',', '.') }}</div>
+                                        <div class="overflow-hidden bg-white rounded-lg aspect-square">
+                                            <img src="{{ $productImageUrl }}" alt="{{ $product->name }}"
+                                                class="w-full h-full product-image" loading="lazy" decoding="async"
+                                                onerror="this.onerror=null;this.src='{{ asset('images/produk/placeholder.png') }}';" />
+                                        </div>
                                     @endif
                                 </div>
 
-                                <div class="grid grid-cols-2 gap-3">
-                                    <a href="{{ route('products.show', $product->id) }}"
-                                        class="flex items-center justify-center px-4 py-2.5 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-all"
-                                        aria-label="Lihat detail {{ $product->name }}">
-                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24" aria-hidden="true">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
-                                            </path>
-                                        </svg>
-                                        Detail
-                                    </a>
+                                <div class="p-5">
+                                    <div class="mb-1">
+                                        <span
+                                            class="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full">
+                                            {{ $categoryName }}
+                                        </span>
+                                    </div>
+                                    <h2 id="product-{{ $product->id }}-title"
+                                        class="mb-2 text-xl font-semibold text-gray-800 line-clamp-2">{{ $product->name }}
+                                    </h2>
+                                    <p class="mb-4 text-sm text-gray-600 line-clamp-2">
+                                        {{ Str::limit($product->description ?? '', 80) }}
+                                    </p>
 
-                                    @auth
-                                        @if ($isInCart)
-                                            <button
-                                                class="flex items-center justify-center w-full px-4 py-2.5 text-white bg-gray-500 rounded-lg cursor-not-allowed in-cart-btn"
-                                                disabled title="Produk sudah ada di keranjang" aria-disabled="true">
-                                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24" aria-hidden="true">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M5 13l4 4L19 7"></path>
-                                                </svg>
-                                                Di Keranjang
-                                            </button>
+                                    <div class="mb-4">
+                                        @if ($promo_active)
+                                            <div class="flex items-center">
+                                                <span class="text-sm text-gray-500 line-through">Rp
+                                                    {{ number_format($product->price, 0, ',', '.') }}</span>
+                                                <span
+                                                    class="px-2 py-0.5 ml-2 text-xs font-medium text-green-800 bg-green-100 rounded-full">-{{ $promo_label }}</span>
+                                            </div>
+                                            <div class="mt-1 text-xl font-bold text-green-700">Rp
+                                                {{ number_format($final_price, 0, ',', '.') }}</div>
                                         @else
-                                            <form method="POST" action="{{ route('products.add-to-cart', $product->id) }}"
-                                                class="add-to-cart-form"
-                                                aria-label="Tambah {{ $product->name }} ke keranjang">
-                                                @csrf
-                                                <input type="hidden" name="promo_code" value="{{ $promo_code ?? '' }}">
-                                                <input type="hidden" name="price" value="{{ $final_price }}">
-                                                <button type="submit"
-                                                    class="flex items-center justify-center w-full px-4 py-2.5 text-white bg-green-700 rounded-lg hover:bg-green-800 add-to-cart-btn transition-all">
-                                                    <span class="btn-text" aria-live="polite" aria-atomic="true">
-                                                        <svg class="inline w-5 h-5 mr-2" fill="none" stroke="currentColor"
-                                                            viewBox="0 0 24 24" aria-hidden="true">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                stroke-width="2"
-                                                                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z">
-                                                            </path>
-                                                        </svg>
-                                                        Beli
-                                                    </span>
-                                                    <div class="btn-spinner" style="display: none;" aria-hidden="true">
-                                                        <svg class="w-5 h-5 animate-spin" xmlns="http://www.w3.org/2000/svg"
-                                                            fill="none" viewBox="0 0 24 24">
-                                                            <circle class="opacity-25" cx="12" cy="12" r="10"
-                                                                stroke="currentColor" stroke-width="4"></circle>
-                                                            <path class="opacity-75" fill="currentColor"
-                                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                                            </path>
-                                                        </svg>
-                                                    </div>
-                                                </button>
-                                            </form>
+                                            <div class="text-xl font-bold text-gray-800">Rp
+                                                {{ number_format($product->price, 0, ',', '.') }}</div>
                                         @endif
-                                    @else
-                                        <button
-                                            class="flex items-center justify-center w-full px-4 py-2.5 text-gray-700 bg-gray-200 rounded-lg cursor-not-allowed"
-                                            title="Login untuk membeli" aria-disabled="true">
+                                    </div>
+
+                                    <div class="grid grid-cols-2 gap-3">
+                                        {{-- FIXED: Use correct route for product detail --}}
+                                        <a href="{{ route('products.show', $product->id) }}"
+                                            class="flex items-center justify-center px-4 py-2.5 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-all"
+                                            aria-label="Lihat detail {{ $product->name }}">
                                             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor"
                                                 viewBox="0 0 24 24" aria-hidden="true">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z">
                                                 </path>
                                             </svg>
-                                            Login
-                                        </button>
-                                    @endauth
+                                            Detail
+                                        </a>
+
+                                        @auth
+                                            @if ($isInCart)
+                                                <button
+                                                    class="flex items-center justify-center w-full px-4 py-2.5 text-white bg-gray-500 rounded-lg cursor-not-allowed in-cart-btn"
+                                                    disabled title="Produk sudah ada di keranjang" aria-disabled="true">
+                                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor"
+                                                        viewBox="0 0 24 24" aria-hidden="true">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                            d="M5 13l4 4L19 7"></path>
+                                                    </svg>
+                                                    Di Keranjang
+                                                </button>
+                                            @else
+                                                <form method="POST" action="{{ route('cart.add') }}"
+                                                    class="add-to-cart-form"
+                                                    aria-label="Tambah {{ $product->name }} ke keranjang">
+                                                    @csrf
+                                                    <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                                    <input type="hidden" name="quantity" value="1">
+                                                    <input type="hidden" name="promo_code" value="{{ $promo_code ?? '' }}">
+                                                    <input type="hidden" name="price" value="{{ $final_price }}">
+                                                    <button type="submit"
+                                                        class="flex items-center justify-center w-full px-4 py-2.5 text-white bg-green-700 rounded-lg hover:bg-green-800 add-to-cart-btn transition-all">
+                                                        <span class="btn-text" aria-live="polite" aria-atomic="true">
+                                                            <svg class="inline w-5 h-5 mr-2" fill="none"
+                                                                stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="2"
+                                                                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z">
+                                                                </path>
+                                                            </svg>
+                                                            Beli
+                                                        </span>
+                                                        <div class="btn-spinner" style="display: none;" aria-hidden="true">
+                                                            <svg class="w-5 h-5 animate-spin"
+                                                                xmlns="http://www.w3.org/2000/svg" fill="none"
+                                                                viewBox="0 0 24 24">
+                                                                <circle class="opacity-25" cx="12" cy="12"
+                                                                    r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                                <path class="opacity-75" fill="currentColor"
+                                                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                                                </path>
+                                                            </svg>
+                                                        </div>
+                                                    </button>
+                                                </form>
+                                            @endif
+                                        @else
+                                            <a href="{{ route('login') }}"
+                                                class="flex items-center justify-center w-full px-4 py-2.5 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-all"
+                                                title="Login untuk membeli">
+                                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                                                    </path>
+                                                </svg>
+                                                Login
+                                            </a>
+                                        @endauth
+                                    </div>
                                 </div>
-                            </div>
-                        </article>
-                    @endif
-                @empty
+                            </article>
+                        @endif
+                    @endforeach
+                @else
+                    {{-- Empty state when no products --}}
                     <div class="p-8 bg-white col-span-full rounded-xl">
                         <div class="flex flex-col items-center text-center">
                             <svg class="w-16 h-16 mb-4 text-gray-400" fill="none" stroke="currentColor"
@@ -2026,11 +2052,11 @@
                             <p class="text-gray-600">Coba periksa kembali nanti atau ubah filter pencarian.</p>
                         </div>
                     </div>
-                @endforelse
+                @endif
             </div>
 
-            {{-- Pagination --}}
-            @if (method_exists($products, 'links') && $products->hasPages())
+            {{-- Pagination - FIXED: Safe method check --}}
+            @if ($products && method_exists($products, 'links') && $products->hasPages())
                 <div class="p-4 mb-8 bg-white shadow rounded-xl" role="navigation" aria-label="Pagination Produk">
                     {{ $products->appends(request()->except('page'))->links() }}
                 </div>
@@ -2038,44 +2064,39 @@
         </div>
     </section>
 
-    {{-- Ultra-fast optimized JavaScript --}}
+    {{-- Enhanced JavaScript with complete functionality - OPTIMIZED FOR FAST RELOAD --}}
     <script>
         /**
-         * Ultra-fast product listing with zero-lag optimization
-         * Updated: {{ $currentDateTime }} by {{ $currentUser }}
+         * Enhanced Product Cart Integration with Fast Reload & Zero Latency
+         * Updated: 2025-08-02 07:21:19 by gerrymulyadi709
          */
 
-        // Performance optimizations
+        // Ultra-fast performance optimizations - Zero latency configuration
         const PERFORMANCE_CONFIG = {
-            LOADING_DELAY: 100, // Minimal loading overlay delay
-            TOAST_DURATION: 2500, // Shorter toast duration
-            MODAL_DELAY: 500, // Faster modal appearance
-            TRANSITION_SPEED: 150, // Ultra-fast transitions
-            DEBOUNCE_DELAY: 50 // Fast debouncing
+            LOADING_DELAY: 0, // Instant loading
+            TOAST_DURATION: 2000, // Faster toast
+            MODAL_DELAY: 100, // Instant modal
+            TRANSITION_SPEED: 100, // Faster transitions
+            DEBOUNCE_DELAY: 0 // No debounce delay
         };
 
-        // Cache DOM elements for better performance
+        // Ultra-fast DOM cache for zero latency
         const DOM_CACHE = {};
+        const ELEMENT_CACHE = new Map();
 
         function getCachedElement(id) {
-            if (!DOM_CACHE[id]) {
-                DOM_CACHE[id] = document.getElementById(id);
+            if (!ELEMENT_CACHE.has(id)) {
+                ELEMENT_CACHE.set(id, document.getElementById(id));
             }
-            return DOM_CACHE[id];
+            return ELEMENT_CACHE.get(id);
         }
 
-        // Ultra-fast DOM ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeApp);
-        } else {
-            initializeApp();
-        }
-
-        function initializeApp() {
+        // Instant DOM ready - no delay
+        const initializeApp = () => {
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             const isMobile = {{ $isMobile ? 'true' : 'false' }};
 
-            // Preload critical functions
+            // Instant preload critical elements
             const loadingOverlay = getCachedElement('loadingOverlay');
             const toastContainer = getCachedElement('toastContainer');
             const confirmationModal = getCachedElement('confirmationModal');
@@ -2087,29 +2108,32 @@
             const closeSheetBtn = getCachedElement('closeSheet');
             const sheetAddToCartForm = getCachedElement('sheetAddToCartForm');
             const sheetProductInfo = getCachedElement('sheetProductInfo');
-            const mobileFilterBtn = getCachedElement('mobileFilterBtn');
 
             // Global variables for mobile sheet
             let currentProductId = null;
             let currentProductPrice = 0;
 
+            // Instant loading functions - no delays
             function showLoadingOverlay() {
                 if (loadingOverlay) {
-                    loadingOverlay.classList.add('active');
+                    loadingOverlay.style.opacity = '1';
+                    loadingOverlay.style.visibility = 'visible';
                 }
             }
 
             function hideLoadingOverlay() {
                 if (loadingOverlay) {
-                    loadingOverlay.classList.remove('active');
+                    loadingOverlay.style.opacity = '0';
+                    loadingOverlay.style.visibility = 'hidden';
                 }
             }
 
+            // Ultra-fast toast - instant display
             function showToast(type, title, message, duration = PERFORMANCE_CONFIG.TOAST_DURATION) {
                 if (!toastContainer) return;
 
                 const toast = document.createElement('div');
-                toast.className = `toast toast-${type}`;
+                toast.className = `toast toast-${type} show`; // Add show class immediately
                 toast.innerHTML = `
                     <div class="toast-icon">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2127,26 +2151,20 @@
 
                 toastContainer.appendChild(toast);
 
-                // Fast event binding
+                // Instant close handler
                 toast.querySelector('.toast-close').onclick = () => {
-                    toast.classList.remove('show');
-                    setTimeout(() => toast.remove(), PERFORMANCE_CONFIG.TRANSITION_SPEED);
+                    toast.remove();
                 };
 
-                // Ultra-fast animation
-                requestAnimationFrame(() => {
-                    toast.classList.add('show');
-                });
-
-                // Auto-remove
+                // Auto-remove - faster
                 setTimeout(() => {
                     if (toast.parentNode) {
-                        toast.classList.remove('show');
-                        setTimeout(() => toast.remove(), PERFORMANCE_CONFIG.TRANSITION_SPEED);
+                        toast.remove();
                     }
                 }, duration);
             }
 
+            // Ultra-fast confirmation modal - instant display
             function showConfirmationModal(title, message, onConfirm) {
                 if (!confirmationModal) return;
 
@@ -2160,18 +2178,27 @@
                 titleEl.textContent = title;
                 messageEl.textContent = message;
 
+                // Instant show
+                confirmationModal.style.opacity = '1';
+                confirmationModal.style.visibility = 'visible';
                 confirmationModal.classList.add('active');
 
                 // Ultra-fast event handlers
                 const handleOk = () => {
+                    confirmationModal.style.opacity = '0';
+                    confirmationModal.style.visibility = 'hidden';
                     confirmationModal.classList.remove('active');
                     cleanup();
                     if (onConfirm) onConfirm();
                 };
 
                 const handleCancel = () => {
+                    confirmationModal.style.opacity = '0';
+                    confirmationModal.style.visibility = 'hidden';
                     confirmationModal.classList.remove('active');
                     cleanup();
+                    // FIXED: Stay on products page when continuing shopping
+                    window.location.href = "{{ route('products.index') }}";
                 };
 
                 const cleanup = () => {
@@ -2191,59 +2218,31 @@
                 confirmationModal.addEventListener('click', handleBackdrop);
             }
 
+            // Instant cart counter update
             function updateCartCounter(newCount = null) {
                 const counter = getCachedElement('cart-counter');
                 if (!counter) return;
 
                 if (newCount !== null) {
                     counter.textContent = newCount;
-
-                    // Also update localStorage and session
+                    // Instant localStorage update
                     try {
                         localStorage.setItem('cartItemCount', newCount);
-
-                        // Use a fetch request to update the server-side session too
-                        fetch('/update-cart-count', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': csrfToken,
-                            },
-                            body: JSON.stringify({
-                                count: newCount
-                            })
-                        }).catch(e => console.warn('Failed to update server cart count'));
                     } catch (e) {
-                        console.warn('localStorage not available');
+                        // Silent fail
                     }
                 } else {
-                    // Force accurate count from server rather than relying on stale data
-                    fetch('/get-cart-count', {
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                            }
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            counter.textContent = data.count;
-                            localStorage.setItem('cartItemCount', data.count);
-                        })
-                        .catch(() => {
-                            // Fallback to session value
-                            const count = {{ $cartItemCount }};
-                            counter.textContent = count;
-                        });
+                    const count = {{ $cartItemCount }};
+                    counter.textContent = count;
                 }
             }
 
-            // Mobile bottom sheet functions
+            // Mobile bottom sheet functions - instant
             function showBottomSheet(productId, productName, productPrice, productImage) {
                 if (!quantitySheet || !sheetOverlay) return;
 
-                // Reset quantity to 1
                 if (quantityInput) quantityInput.value = 1;
 
-                // Update sheet content
                 if (sheetProductInfo) {
                     sheetProductInfo.innerHTML = `
                         <img src="${productImage}" alt="${productName}" class="sheet-product-image">
@@ -2254,7 +2253,6 @@
                     `;
                 }
 
-                // Set form values
                 const productIdInput = getCachedElement('sheetProductId');
                 const productPriceInput = getCachedElement('sheetProductPrice');
                 const quantityValueInput = getCachedElement('sheetQuantity');
@@ -2263,15 +2261,12 @@
                 if (productPriceInput) productPriceInput.value = productPrice;
                 if (quantityValueInput) quantityValueInput.value = 1;
 
-                // Store current product info
                 currentProductId = productId;
                 currentProductPrice = productPrice;
 
-                // Show the sheet and overlay
+                // Instant show
                 quantitySheet.classList.add('active');
                 sheetOverlay.classList.add('active');
-
-                // Add body scroll lock
                 document.body.style.overflow = 'hidden';
             }
 
@@ -2280,16 +2275,12 @@
 
                 quantitySheet.classList.remove('active');
                 sheetOverlay.classList.remove('active');
-
-                // Remove body scroll lock
                 document.body.style.overflow = '';
-
-                // Reset current product
                 currentProductId = null;
                 currentProductPrice = 0;
             }
 
-            // Setup quantity controls
+            // Setup quantity controls - instant response
             function setupQuantityControls() {
                 if (!quantityInput || !decreaseBtn || !increaseBtn) return;
 
@@ -2316,8 +2307,8 @@
                     updateSheetQuantity();
                 });
 
-                closeSheetBtn.addEventListener('click', hideBottomSheet);
-                sheetOverlay.addEventListener('click', hideBottomSheet);
+                if (closeSheetBtn) closeSheetBtn.addEventListener('click', hideBottomSheet);
+                if (sheetOverlay) sheetOverlay.addEventListener('click', hideBottomSheet);
             }
 
             function updateSheetQuantity() {
@@ -2327,14 +2318,16 @@
                 }
             }
 
-            // Setup mobile buy buttons
+            // FIXED: Setup mobile buy buttons - instant
             function setupMobileBuyButtons() {
                 if (!isMobile) return;
 
-                const buyButtons = document.querySelectorAll('.buy-button');
-                buyButtons.forEach(button => {
-                    button.addEventListener('click', function() {
-                        const productCard = this.closest('.mobile-product-card');
+                // Use event delegation for better performance
+                document.addEventListener('click', function(e) {
+                    if (e.target.closest('.buy-button')) {
+                        e.preventDefault();
+                        const button = e.target.closest('.buy-button');
+                        const productCard = button.closest('.mobile-product-card');
                         if (!productCard) return;
 
                         const productId = productCard.dataset.productId;
@@ -2346,25 +2339,23 @@
                         if (inCart) return;
 
                         showBottomSheet(productId, productName, productPrice, productImage);
-                    });
+                    }
                 });
             }
 
-            // Setup bottom sheet form submission
+            // Setup bottom sheet form submission - instant processing
             function setupSheetFormSubmission() {
                 if (!sheetAddToCartForm) return;
 
                 sheetAddToCartForm.addEventListener('submit', function(e) {
                     e.preventDefault();
 
-                    showLoadingOverlay();
-
                     const formData = new FormData(this);
                     const productId = formData.get('product_id');
                     const quantity = formData.get('quantity');
 
-                    // Send request to add to cart
-                    fetch(`/products/${productId}/add-to-cart`, {
+                    // Ultra-fast request
+                    fetch('{{ route('cart.add') }}', {
                             method: 'POST',
                             headers: {
                                 'X-CSRF-TOKEN': csrfToken,
@@ -2372,61 +2363,49 @@
                             },
                             body: formData
                         })
-                        .then(response => {
-                            if (!response.ok) throw new Error('Network response was not ok');
-                            return response.json();
-                        })
+                        .then(response => response.json())
                         .then(data => {
-                            hideLoadingOverlay();
                             hideBottomSheet();
 
                             if (data.success) {
-                                // Update cart counter
-                                updateCartCounter(data.data?.cart_count);
-
-                                // Show success message
+                                updateCartCounter(data.cart_count);
                                 showToast('success', 'Berhasil!',
-                                `Ditambahkan ${quantity} produk ke keranjang`);
+                                    `Ditambahkan ${quantity} produk ke keranjang`);
 
-                                // Update product card status
+                                // Instant update UI
                                 const productCard = document.querySelector(
                                     `.mobile-product-card[data-product-id="${productId}"]`);
                                 if (productCard) {
                                     productCard.classList.add('border-2', 'border-green-500');
                                     productCard.dataset.productInCart = 'true';
 
-                                    // Add the "in cart" badge if it doesn't exist
                                     if (!productCard.querySelector('.absolute.top-2.right-2')) {
                                         const badge = document.createElement('div');
                                         badge.className =
-                                            'absolute top-2 right-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full';
+                                            'absolute top-2 right-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded-full z-10';
                                         badge.textContent = '✓ Di Keranjang';
                                         productCard.appendChild(badge);
                                     }
 
-                                    // Replace buy button
-                                    const buyButtonContainer = productCard.querySelector(
-                                        '.mobile-product-actions .flex');
-                                    if (buyButtonContainer) {
-                                        const buyButton = buyButtonContainer.querySelector('.buy-button');
-                                        if (buyButton) {
-                                            buyButton.outerHTML = `
-                                            <button disabled 
-                                                    class="flex-1 px-3 py-2 font-medium text-white bg-gray-400 rounded-lg opacity-70">
-                                                Di Keranjang
-                                            </button>
-                                        `;
-                                        }
+                                    // Update buy button
+                                    const buyButton = productCard.querySelector('.buy-button');
+                                    if (buyButton) {
+                                        buyButton.outerHTML = `<button disabled class="mobile-buy-btn" style="background-color: #9ca3af;">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                            </svg>
+                                            Di Keranjang
+                                        </button>`;
                                     }
                                 }
 
-                                // Show confirmation modal after a short delay
+                                // Instant modal - CHANGED TO STAY ON PAGE
                                 setTimeout(() => {
                                     showConfirmationModal(
                                         'Produk berhasil ditambahkan!',
-                                        'Mau lihat keranjang sekarang?',
+                                        'Mau lanjut belanja atau lihat keranjang?',
                                         () => {
-                                            window.location.href = "{{ url('/cart') }}";
+                                            window.location.href = "{{ route('cart.index') }}";
                                         }
                                     );
                                 }, PERFORMANCE_CONFIG.MODAL_DELAY);
@@ -2436,100 +2415,130 @@
                             }
                         })
                         .catch(error => {
-                            console.error('Error:', error);
-                            hideLoadingOverlay();
                             hideBottomSheet();
                             showToast('error', 'Gagal', 'Terjadi kesalahan, silakan coba lagi');
                         });
                 });
             }
 
-            // Setup mobile filter button
-            function setupMobileFilterButton() {
-                if (mobileFilterBtn) {
-                    mobileFilterBtn.addEventListener('click', function() {
-                        // Smooth scroll to the search container
-                        const mobileSearchContainer = document.querySelector('.mobile-search-container');
-                        if (mobileSearchContainer) {
-                            mobileSearchContainer.scrollIntoView({
-                                behavior: 'smooth'
-                            });
+            // Setup add to cart forms - OPTIMIZED FOR FAST RELOAD
+            function setupAddToCartForms() {
+                const forms = document.querySelectorAll('.add-to-cart-form');
 
-                            // Focus the search input after scrolling
-                            setTimeout(() => {
-                                const searchInput = mobileSearchContainer.querySelector(
-                                    '.mobile-search-input');
-                                if (searchInput) searchInput.focus();
-                            }, 400);
-                        }
+                forms.forEach(form => {
+                    form.addEventListener('submit', function(e) {
+                        e.preventDefault();
+
+                        const button = this.querySelector('.add-to-cart-btn');
+                        const btnText = button.querySelector('.btn-text');
+                        const btnSpinner = button.querySelector('.btn-spinner');
+
+                        // Instant loading state
+                        button.disabled = true;
+                        button.classList.add('loading');
+                        if (btnText) btnText.style.visibility = 'hidden';
+                        if (btnSpinner) btnSpinner.style.display = 'inline-block';
+
+                        const formData = new FormData(this);
+
+                        fetch(this.action, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': csrfToken,
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                },
+                                body: formData
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    updateCartCounter(data.cart_count);
+                                    showToast('success', 'Berhasil!', data.message ||
+                                        'Produk berhasil ditambahkan ke keranjang!');
+
+                                    // Instant button update
+                                    button.classList.remove('loading');
+                                    button.classList.add('in-cart-btn');
+                                    button.disabled = true;
+                                    if (btnText) {
+                                        btnText.innerHTML =
+                                            `<svg class="inline w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Di Keranjang`;
+                                        btnText.style.visibility = 'visible';
+                                    }
+                                    if (btnSpinner) btnSpinner.style.display = 'none';
+
+                                    // Instant visual update
+                                    const productCard = this.closest(
+                                        '.product-card, .mobile-product-card');
+                                    if (productCard) {
+                                        productCard.classList.add('in-cart');
+                                        if (!productCard.querySelector('.product-status-badge')) {
+                                            const badge = document.createElement('div');
+                                            badge.className = 'product-status-badge';
+                                            badge.textContent = '✓ Di Keranjang';
+                                            productCard.appendChild(badge);
+                                        }
+                                    }
+
+                                    // CHANGED: FAST RELOAD - Stay on page with instant modal
+                                    setTimeout(() => {
+                                        showConfirmationModal(
+                                            'Produk berhasil ditambahkan!',
+                                            'Mau lanjut belanja atau lihat keranjang?',
+                                            () => {
+                                                window.location.href =
+                                                    "{{ route('cart.index') }}";
+                                            }
+                                        );
+                                    }, PERFORMANCE_CONFIG.MODAL_DELAY);
+                                } else {
+                                    throw new Error(data.message ||
+                                        'Gagal menambahkan produk ke keranjang');
+                                }
+                            })
+                            .catch(error => {
+                                // Instant reset
+                                button.disabled = false;
+                                button.classList.remove('loading');
+                                if (btnText) btnText.style.visibility = 'visible';
+                                if (btnSpinner) btnSpinner.style.display = 'none';
+
+                                showToast('error', 'Gagal', error.message ||
+                                    'Terjadi kesalahan, silakan coba lagi');
+                            });
                     });
-                }
+                });
             }
 
-            // Setup horizontal scroll indicators for category filters
-            function setupCategoryScrollHints() {
-                const categoryFilters = document.querySelector('.mobile-category-filters');
-                if (categoryFilters) {
-                    // Check if scrollable
-                    const isScrollable = categoryFilters.scrollWidth > categoryFilters.clientWidth;
-
-                    if (isScrollable) {
-                        // Add subtle animation to hint at scrollability
-                        setTimeout(() => {
-                            categoryFilters.scrollLeft = 20;
-                            setTimeout(() => {
-                                categoryFilters.scrollLeft = 0;
-                            }, 300);
-                        }, 1000);
-                    }
-
-                    // Add active class to the selected filter
-                    const activePill = categoryFilters.querySelector('.mobile-category-pill.active');
-                    if (activePill) {
-                        // Scroll active pill into view (with offset)
-                        setTimeout(() => {
-                            activePill.scrollIntoView({
-                                behavior: 'smooth',
-                                block: 'nearest',
-                                inline: 'center'
-                            });
-                        }, 100);
-                    }
-                }
-            }
-
-            // Initialize all mobile features
+            // Initialize all mobile features - instant
             function initializeMobileFeatures() {
                 setupQuantityControls();
                 setupMobileBuyButtons();
                 setupSheetFormSubmission();
-                setupMobileFilterButton();
-                setupCategoryScrollHints();
             }
 
+            // Ultra-fast initialization
             function init() {
-                // Force refresh cart count on page load
+                setupAddToCartForms();
                 updateCartCounter();
 
-                // Mobile-specific initialization
                 if (isMobile) {
                     initializeMobileFeatures();
-                } else {
-                    // Desktop-specific initializations can go here
                 }
 
-                // Hide initial loading
                 hideLoadingOverlay();
-
-                console.log('Product listing initialized - {{ $currentDateTime }} by {{ $currentUser }}');
+                console.log('Ultra-fast product listing with route fix - 2025-08-02 07:21:19 by gerrymulyadi709');
             }
 
-            // Fast initialization
-            if (document.readyState === 'complete') {
-                init();
-            } else {
-                window.addEventListener('load', init);
-            }
+            // Instant execution
+            init();
+        };
+
+        // Instant initialization - no waiting
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
         }
     </script>
 @endsection

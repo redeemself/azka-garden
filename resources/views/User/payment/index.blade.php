@@ -6,48 +6,59 @@
     <div class="container">
         <div class="row">
             <div class="col-md-12">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h2>
-                        <i class="fas fa-credit-card me-2"></i>
-                        Riwayat Pembayaran
-                    </h2>
+                <!-- Header Section -->
+                <div class="mb-4 d-flex justify-content-between align-items-center">
+                    <h2><i class="fas fa-credit-card me-2"></i> Riwayat Pembayaran</h2>
                     <a href="{{ route('cart.index') }}" class="btn btn-primary">
-                        <i class="fas fa-shopping-cart me-2"></i>
-                        Kembali ke Keranjang
+                        <i class="fas fa-shopping-cart me-2"></i> Kembali ke Keranjang
                     </a>
                 </div>
 
+                <!-- Payment Summary -->
+                <div class="mb-4 card">
+                    <div class="card-header">
+                        <h5>Ringkasan Pembayaran</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Subtotal:</strong> Rp{{ number_format($subtotal, 0, ',', '.') }}</p>
+                        <p><strong>Diskon:</strong> Rp{{ number_format($totalDiscount, 0, ',', '.') }}</p>
+                        <p><strong>Biaya Pengiriman:</strong> Rp{{ number_format($shippingCost, 0, ',', '.') }}</p>
+                        <p><strong>Pajak (11%):</strong> Rp{{ number_format($tax, 0, ',', '.') }}</p>
+                        <h5><strong>Total Pembayaran:</strong> Rp{{ number_format($grandTotal, 0, ',', '.') }}</h5>
+                    </div>
+                </div>
+
                 <!-- Payment Statistics -->
-                <div class="row mb-4">
+                <div class="mb-4 row">
                     <div class="col-md-3">
                         <div class="card">
-                            <div class="card-body text-center">
+                            <div class="text-center card-body">
                                 <h3 class="text-primary">{{ $paymentStats['total_payments'] }}</h3>
-                                <p class="mb-0">Total Pembayaran</p>
+                                <p>Total Pembayaran</p>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="card">
-                            <div class="card-body text-center">
+                            <div class="text-center card-body">
                                 <h3 class="text-success">{{ $paymentStats['completed_payments'] }}</h3>
-                                <p class="mb-0">Selesai</p>
+                                <p>Selesai</p>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="card">
-                            <div class="card-body text-center">
+                            <div class="text-center card-body">
                                 <h3 class="text-warning">{{ $paymentStats['pending_payments'] }}</h3>
-                                <p class="mb-0">Menunggu</p>
+                                <p>Menunggu</p>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="card">
-                            <div class="card-body text-center">
+                            <div class="text-center card-body">
                                 <h3 class="text-info">Rp{{ number_format($paymentStats['total_amount'], 0, ',', '.') }}</h3>
-                                <p class="mb-0">Total Dibayar</p>
+                                <p>Total Dibayar</p>
                             </div>
                         </div>
                     </div>
@@ -56,7 +67,7 @@
                 <!-- Payment List -->
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="mb-0">Daftar Pembayaran</h5>
+                        <h5>Daftar Pembayaran</h5>
                     </div>
                     <div class="card-body">
                         @if ($payments->count() > 0)
@@ -111,13 +122,12 @@
 
                             {{ $payments->links() }}
                         @else
-                            <div class="text-center py-4">
-                                <i class="fas fa-credit-card fa-3x text-muted mb-3"></i>
+                            <div class="py-4 text-center">
+                                <i class="mb-3 fas fa-credit-card fa-3x text-muted"></i>
                                 <h5>Belum Ada Pembayaran</h5>
                                 <p class="text-muted">Anda belum melakukan pembayaran apapun</p>
                                 <a href="{{ route('products.index') }}" class="btn btn-primary">
-                                    <i class="fas fa-shopping-bag me-2"></i>
-                                    Mulai Belanja
+                                    <i class="fas fa-shopping-bag me-2"></i> Mulai Belanja
                                 </a>
                             </div>
                         @endif

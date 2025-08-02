@@ -1,47 +1,45 @@
 <?php
-// app/Models/InterfaceModel.php
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\InterfaceMethod;
 
 /**
- * 
+ * InterfaceModel - Fallback Interface Model
  *
- * @property int $id
- * @property string $name
- * @property string|null $description
- * @property string|null $created_at
- * @property string|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, InterfaceMethod> $methods
- * @property-read int|null $methods_count
- * @method static \Illuminate\Database\Eloquent\Builder<static>|InterfaceModel newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|InterfaceModel newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|InterfaceModel query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|InterfaceModel whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|InterfaceModel whereDescription($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|InterfaceModel whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|InterfaceModel whereName($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|InterfaceModel whereUpdatedAt($value)
- * @mixin \Eloquent
+ * Created: 2025-08-02 02:50:25 UTC by gerrymulyadi709
+ * This is a fallback model to prevent Cart relationship errors
  */
 class InterfaceModel extends Model
 {
-    // Nama tabel di database
+    use HasFactory;
+
     protected $table = 'interfaces';
 
-    // Kita tidak punya kolom created_at / updated_at di migration ini
-    public $timestamps = false;
+    protected $fillable = [
+        'name',
+        'type',
+        'status'
+    ];
 
-    // Kolom yang bisa di‐mass assign
-    protected $fillable = ['name', 'description'];
+    protected $casts = [
+        'status' => 'boolean'
+    ];
 
     /**
-     * Relasi ke method‐method di interface ini.
+     * Get carts using this interface
      */
-    public function methods()
+    public function carts()
     {
-        return $this->hasMany(InterfaceMethod::class, 'interface_id');
+        return $this->hasMany(Cart::class, 'interface_id');
+    }
+
+    /**
+     * Get products using this interface
+     */
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'interface_id');
     }
 }

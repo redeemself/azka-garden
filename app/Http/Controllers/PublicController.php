@@ -85,7 +85,10 @@ class PublicController extends Controller
             $query->where('name', 'like', '%' . $search . '%');
         }
 
-        $products   = $query->get();
+        // PERBAIKAN: Gunakan paginate() daripada get() untuk menampilkan produk
+        // Ini akan menyediakan method total(), links(), dll yang diperlukan view
+        $products = $query->paginate(12)->withQueryString();
+
         $banners    = Banner::where('status', 1)->get();
         $promotions = Promotion::active()->get();
         $faqs       = Faq::where('status', 1)->orderBy('order')->get();
@@ -93,7 +96,7 @@ class PublicController extends Controller
 
         return view('products.index', [
             'products'   => $products,
-            'categories' => $categories, // <-- Dikirim ke view agar tidak error
+            'categories' => $categories,
             'banners'    => $banners,
             'promotions' => $promotions,
             'faqs'       => $faqs,
