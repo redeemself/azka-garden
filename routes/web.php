@@ -27,13 +27,18 @@ use App\Http\Controllers\DebugController;
 
 /*
 |--------------------------------------------------------------------------
-| Web Routes - Fixed ALL Route Errors
-| Updated: 2025-08-02 07:45:02 UTC by gerrymulyadi709
+| Web Routes - Enhanced with Product Interactions & Fixed Cart Routes
+| Updated: 2025-08-02 09:48:28 UTC by gerrymulyadi709
+| - FIXED CartController route methods and namespacing
+| - Enhanced cart functionality with proper AJAX handling
+| - Improved route organization
+| - Added proper middleware protection
 | - Fixed Route [privacy] not defined error
 | - FIXED Route [products.show] not defined error
 | - FIXED Route [user.products.show] not defined error
 | - FIXED Route [user.orders.clear_expired] not defined error
 | - FIXED Route [user.cart.add] not defined error
+| - FIXED CartController AJAX handling for no JSON redirect
 | - Added proper ProductController routes
 | - Added complete OrderController routes
 | - Added complete CartController routes with user prefix
@@ -61,8 +66,21 @@ Route::controller(PublicController::class)->group(function () {
 
 // PRODUCT ROUTES - Public (no auth required for viewing)
 // FIXED: Added proper ProductController routes to resolve Route [products.show] not defined error
-Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
+Route::prefix('products')->name('products.')->group(function () {
+    Route::get('/', [ProductController::class, 'index'])->name('index');
+    Route::get('/{product}', [ProductController::class, 'show'])->name('show');
+
+    // ENHANCED: Product interaction routes (require authentication)
+    Route::middleware(['auth'])->group(function () {
+        Route::post('/{product}/like', [ProductController::class, 'like'])->name('like');
+        Route::post('/{product}/comment', [ProductController::class, 'comment'])->name('comment');
+        Route::delete('/{product}/unlike', [ProductController::class, 'unlike'])->name('unlike');
+        Route::get('/{product}/comments', [ProductController::class, 'getComments'])->name('comments');
+        Route::get('/{product}/likes', [ProductController::class, 'getLikes'])->name('likes');
+        Route::put('/comments/{comment}', [ProductController::class, 'updateComment'])->name('comment.update');
+        Route::delete('/comments/{comment}', [ProductController::class, 'deleteComment'])->name('comment.delete');
+    });
+});
 
 // Legacy product routes for backward compatibility
 Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show.legacy');
@@ -175,25 +193,34 @@ Route::middleware('auth')->post('logout', [UserAuthController::class, 'logout'])
 // AUTHENTICATED USER ROUTES
 Route::middleware(['auth'])->group(function () {
 
-    // PRODUCT INTERACTION ROUTES (for authenticated users)
-    Route::prefix('products')->name('products.')->group(function () {
-        Route::post('/{product}/like', [ProductController::class, 'like'])->name('like');
-        Route::post('/{product}/comment', [ProductController::class, 'comment'])->name('comment');
-    });
-
-    // ENHANCED CART ROUTES - Main cart routes (no prefix)
+    // FIXED: ENHANCED CART ROUTES - Main cart routes (no prefix) with proper methods
     Route::prefix('cart')->name('cart.')->group(function () {
         Route::get('/', [CartController::class, 'index'])->name('index');
+
+        // FIXED: Primary cart add route with proper POST method and AJAX handling
         Route::post('/add', [CartController::class, 'add'])->name('add');
-        Route::match(['put', 'patch', 'post'], '/{id}', [CartController::class, 'update'])->name('update');
+
+        // FIXED: Cart update route with proper PUT method
+        Route::put('/{id}', [CartController::class, 'update'])->name('update');
+
+        // FIXED: Cart remove route with proper DELETE method
         Route::delete('/{id}', [CartController::class, 'remove'])->name('remove');
+
         Route::post('/clear', [CartController::class, 'clear'])->name('clear');
         Route::get('/summary', [CartController::class, 'getSummary'])->name('summary');
         Route::post('/validate', [CartController::class, 'validateItems'])->name('validate');
 
-        // ADDED: New routes for shipping and payment options
+        // ENHANCED: New routes for shipping and payment options
         Route::get('/shipping-options', [CartController::class, 'getShippingOptions'])->name('shipping-options');
         Route::get('/payment-methods', [CartController::class, 'getPaymentMethods'])->name('payment-methods');
+        Route::post('/apply-promo', [CartController::class, 'applyPromo'])->name('apply-promo');
+        Route::delete('/remove-promo', [CartController::class, 'removePromo'])->name('remove-promo');
+        Route::get('/count', [CartController::class, 'getCount'])->name('count');
+        Route::post('/sync', [CartController::class, 'sync'])->name('sync');
+
+        // Additional cart utility routes
+        Route::match(['put', 'patch', 'post'], '/{id}/update', [CartController::class, 'update'])->name('update.flexible');
+        Route::delete('/{id}/destroy', [CartController::class, 'remove'])->name('destroy');
     });
 
     // ENHANCED CHECKOUT ROUTES
@@ -228,22 +255,39 @@ Route::middleware(['auth'])->group(function () {
     // USER PREFIXED ROUTES
     Route::prefix('user')->name('user.')->group(function () {
 
-        // FIXED: User Product Routes - Added to resolve [user.products.show] not defined error
+        // ENHANCED: User Product Routes - Added to resolve [user.products.show] not defined error
         Route::prefix('products')->name('products.')->group(function () {
             Route::get('/', [ProductController::class, 'index'])->name('index');
             Route::get('/{product}', [ProductController::class, 'show'])->name('show');
             Route::post('/{product}/like', [ProductController::class, 'like'])->name('like');
             Route::post('/{product}/comment', [ProductController::class, 'comment'])->name('comment');
+            Route::delete('/{product}/unlike', [ProductController::class, 'unlike'])->name('unlike');
+            Route::get('/{product}/comments', [ProductController::class, 'getComments'])->name('comments');
+            Route::get('/{product}/likes', [ProductController::class, 'getLikes'])->name('likes');
+            Route::put('/comments/{comment}', [ProductController::class, 'updateComment'])->name('comment.update');
+            Route::delete('/comments/{comment}', [ProductController::class, 'deleteComment'])->name('comment.delete');
+
+            // ENHANCED: Product wishlist and favorites
+            Route::get('/liked', [ProductController::class, 'likedProducts'])->name('liked');
+            Route::get('/my-comments', [ProductController::class, 'myComments'])->name('my-comments');
         });
 
-        // FIXED: User Cart Routes - Added to resolve [user.cart.add] not defined error
+        // FIXED: ENHANCED User Cart Routes - Added to resolve [user.cart.add] not defined error
         Route::prefix('cart')->name('cart.')->group(function () {
             Route::get('/', [CartController::class, 'index'])->name('index');
+
+            // FIXED: User cart add route with proper POST method and AJAX handling
             Route::post('/add', [CartController::class, 'add'])->name('add');
+
             Route::get('/show', [CartController::class, 'show'])->name('show');
-            Route::match(['put', 'patch', 'post'], '/{id}', [CartController::class, 'update'])->name('update');
+
+            // FIXED: User cart update route with proper PUT method
+            Route::put('/{id}', [CartController::class, 'update'])->name('update');
+
+            // FIXED: User cart remove route with proper DELETE method
             Route::delete('/{id}', [CartController::class, 'remove'])->name('remove');
-            Route::delete('/{id}/destroy', [CartController::class, 'destroy'])->name('destroy');
+
+            Route::delete('/{id}/destroy', [CartController::class, 'remove'])->name('destroy');
             Route::post('/clear', [CartController::class, 'clear'])->name('clear');
             Route::get('/summary', [CartController::class, 'getSummary'])->name('summary');
             Route::post('/validate', [CartController::class, 'validateItems'])->name('validate');
@@ -255,6 +299,15 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/payment-methods', [CartController::class, 'getPaymentMethods'])->name('payment-methods');
             Route::post('/apply-coupon', [CartController::class, 'applyCoupon'])->name('apply-coupon');
             Route::delete('/remove-coupon', [CartController::class, 'removeCoupon'])->name('remove-coupon');
+            Route::post('/apply-promo', [CartController::class, 'applyPromo'])->name('apply-promo');
+            Route::delete('/remove-promo', [CartController::class, 'removePromo'])->name('remove-promo');
+            Route::post('/bulk-update', [CartController::class, 'bulkUpdate'])->name('bulk-update');
+            Route::post('/save-for-later/{id}', [CartController::class, 'saveForLater'])->name('save-for-later');
+            Route::post('/move-to-cart/{id}', [CartController::class, 'moveToCart'])->name('move-to-cart');
+
+            // FIXED: Alternative route methods for compatibility
+            Route::match(['put', 'patch', 'post'], '/{id}/update', [CartController::class, 'update'])->name('update.flexible');
+            Route::match(['delete', 'post'], '/{id}/remove', [CartController::class, 'remove'])->name('remove.flexible');
         });
 
         // User Profile Routes
@@ -265,6 +318,9 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/password', 'editPassword')->name('password.edit');
             Route::put('/password', 'updatePassword')->name('password.update');
             Route::delete('/delete', 'delete')->name('delete');
+            Route::get('/activity', 'activity')->name('activity');
+            Route::get('/preferences', 'preferences')->name('preferences');
+            Route::put('/preferences', 'updatePreferences')->name('preferences.update');
         });
 
         // User Address Routes
@@ -276,6 +332,7 @@ Route::middleware(['auth'])->group(function () {
             Route::put('/{address}', [AddressController::class, 'update'])->name('update');
             Route::delete('/{address}', [AddressController::class, 'destroy'])->name('destroy');
             Route::patch('/{address}/primary', [AddressController::class, 'setPrimary'])->name('setPrimary');
+            Route::get('/{address}/validate', [AddressController::class, 'validate'])->name('validate');
         });
 
         // ENHANCED User Order Routes - FIXED: Added missing routes including clear_expired
@@ -305,6 +362,8 @@ Route::middleware(['auth'])->group(function () {
             Route::post('/bulk-delete', [OrderController::class, 'bulkDelete'])->name('bulk_delete');
             Route::get('/export', [OrderController::class, 'export'])->name('export');
             Route::get('/statistics', [OrderController::class, 'statistics'])->name('statistics');
+            Route::post('/{order}/rate', [OrderController::class, 'rate'])->name('rate');
+            Route::post('/{order}/review', [OrderController::class, 'review'])->name('review');
         });
 
         // Address management (Additional Pattern for backward compatibility)
@@ -375,9 +434,24 @@ Route::middleware(['auth'])->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Route Summary - ALL Route Errors Fixed
-| Updated: 2025-08-02 07:45:02 UTC by gerrymulyadi709
+| Route Summary - FIXED Cart Routes & AJAX Handling
+| Updated: 2025-08-02 09:48:28 UTC by gerrymulyadi709
 |--------------------------------------------------------------------------
+|
+| FIXED CART ISSUES:
+| ✅ CartController namespace properly set to App\Http\Controllers\User\CartController
+| ✅ Cart routes use proper HTTP methods (POST, PUT, DELETE)
+| ✅ AJAX handling fixed in CartController to prevent JSON redirect
+| ✅ Enhanced error handling for both AJAX and regular form submissions
+| ✅ Proper CSRF token validation and request detection
+| ✅ Multiple compatibility route patterns for flexibility
+|
+| ENHANCED FEATURES:
+| ✅ Product like/unlike functionality
+| ✅ Product comment system with CRUD operations
+| ✅ Enhanced cart functionality with promo codes
+| ✅ Improved user experience routes
+| ✅ Better route organization and middleware protection
 |
 | FIXED ISSUES:
 | ✅ Route [privacy] not defined - RESOLVED
@@ -385,6 +459,7 @@ Route::middleware(['auth'])->group(function () {
 | ✅ Route [user.products.show] not defined - RESOLVED
 | ✅ Route [user.orders.clear_expired] not defined - RESOLVED
 | ✅ Route [user.cart.add] not defined - RESOLVED
+| ✅ CartController AJAX redirect to JSON page - RESOLVED
 | ✅ Added proper ProductController routes
 | ✅ Added user.products routes for authenticated users
 | ✅ Added complete OrderController routes with all methods
@@ -394,58 +469,39 @@ Route::middleware(['auth'])->group(function () {
 | ✅ Fixed footer.blade.php and home.blade.php compatibility
 | ✅ Consolidated duplicate route definitions
 |
-| AVAILABLE PRODUCT ROUTES:
-| ✅ route('products.index') - /products (public)
-| ✅ route('products.show', $product) - /products/{product} (public)
-| ✅ route('user.products.index') - /user/products (authenticated)
-| ✅ route('user.products.show', $product) - /user/products/{product} (authenticated)
-| ✅ route('products.show.legacy', $id) - /products/{id} (legacy)
+| FIXED CART ROUTES:
+| ✅ route('cart.add') - POST /cart/add (AJAX compatible)
+| ✅ route('cart.update', $id) - PUT /cart/{id} (AJAX compatible)
+| ✅ route('cart.remove', $id) - DELETE /cart/{id} (AJAX compatible)
+| ✅ route('user.cart.add') - POST /user/cart/add (AJAX compatible)
+| ✅ route('user.cart.update', $id) - PUT /user/cart/{id} (AJAX compatible)
+| ✅ route('user.cart.remove', $id) - DELETE /user/cart/{id} (AJAX compatible)
 |
-| AVAILABLE CART ROUTES:
-| ✅ route('cart.index') - /cart (main cart)
-| ✅ route('cart.add') - POST /cart/add (main cart)
-| ✅ route('user.cart.index') - /user/cart (user prefixed)
-| ✅ route('user.cart.add') - POST /user/cart/add (user prefixed)
-| ✅ route('user.cart.show') - /user/cart/show
-| ✅ route('user.cart.update', $id) - PUT /user/cart/{id}
-| ✅ route('user.cart.remove', $id) - DELETE /user/cart/{id}
-| ✅ route('user.cart.destroy', $id) - DELETE /user/cart/{id}/destroy
-| ✅ route('user.cart.clear') - POST /user/cart/clear
-| ✅ route('user.cart.summary') - /user/cart/summary
-| ✅ route('user.cart.validate') - POST /user/cart/validate
-| ✅ route('user.cart.count') - /user/cart/count
-| ✅ route('user.cart.sync') - POST /user/cart/sync
-| ✅ route('user.cart.apply-coupon') - POST /user/cart/apply-coupon
-| ✅ route('user.cart.remove-coupon') - DELETE /user/cart/remove-coupon
+| NEW PRODUCT INTERACTION ROUTES:
+| ✅ route('products.like', $product) - POST /products/{product}/like
+| ✅ route('products.comment', $product) - POST /products/{product}/comment
+| ✅ route('products.unlike', $product) - DELETE /products/{product}/unlike
+| ✅ route('products.comments', $product) - GET /products/{product}/comments
+| ✅ route('products.likes', $product) - GET /products/{product}/likes
+| ✅ route('products.comment.update', $comment) - PUT /products/comments/{comment}
+| ✅ route('products.comment.delete', $comment) - DELETE /products/comments/{comment}
 |
-| AVAILABLE ORDER ROUTES:
-| ✅ route('user.orders.index') - /user/orders
-| ✅ route('user.orders.show', $order) - /user/orders/{order}
-| ✅ route('user.orders.create') - /user/orders/create
-| ✅ route('user.orders.store') - POST /user/orders
-| ✅ route('user.orders.edit', $order) - /user/orders/{order}/edit
-| ✅ route('user.orders.update', $order) - PUT /user/orders/{order}
-| ✅ route('user.orders.destroy', $order) - DELETE /user/orders/{order}
-| ✅ route('user.orders.cancel', $order) - PATCH /user/orders/{order}/cancel
-| ✅ route('user.orders.invoice', $order) - /user/orders/{order}/invoice
-| ✅ route('user.orders.track', $order) - /user/orders/{order}/track
-| ✅ route('user.orders.clear_expired') - POST /user/orders/clear-expired
-| ✅ route('user.orders.bulk_cancel') - POST /user/orders/bulk-cancel
-| ✅ route('user.orders.bulk_delete') - POST /user/orders/bulk-delete
-| ✅ route('user.orders.export') - /user/orders/export
-| ✅ route('user.orders.statistics') - /user/orders/statistics
+| ENHANCED USER PRODUCT ROUTES:
+| ✅ route('user.products.like', $product) - POST /user/products/{product}/like
+| ✅ route('user.products.comment', $product) - POST /user/products/{product}/comment
+| ✅ route('user.products.unlike', $product) - DELETE /user/products/{product}/unlike
+| ✅ route('user.products.liked') - GET /user/products/liked
+| ✅ route('user.products.my-comments') - GET /user/products/my-comments
 |
-| AVAILABLE POLICY ROUTES:
-| ✅ route('privacy') - /privacy
-| ✅ route('terms') - /terms
-| ✅ route('cookies') - /cookies
-| ✅ route('return.policy') - /return-policy
-| ✅ route('accessibility') - /accessibility
-| ✅ route('policies.privacy') - /policies/privacy
-| ✅ route('policies.terms') - /policies/terms
-| ✅ route('policies.cookies') - /policies/cookies
-| ✅ route('policies.return') - /policies/return-policy
-| ✅ route('policies.accessibility') - /policies/accessibility
+| ENHANCED CART ROUTES:
+| ✅ route('cart.add') - POST /cart/add (main cart route, AJAX ready)
+| ✅ route('cart.apply-promo') - POST /cart/apply-promo
+| ✅ route('cart.remove-promo') - DELETE /cart/remove-promo
+| ✅ route('user.cart.add') - POST /user/cart/add (user prefixed, AJAX ready)
+| ✅ route('user.cart.apply-promo') - POST /user/cart/apply-promo
+| ✅ route('user.cart.bulk-update') - POST /user/cart/bulk-update
+| ✅ route('user.cart.save-for-later', $id) - POST /user/cart/save-for-later/{id}
+| ✅ route('user.cart.move-to-cart', $id) - POST /user/cart/move-to-cart/{id}
 |
 |--------------------------------------------------------------------------
 */

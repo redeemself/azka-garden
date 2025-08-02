@@ -17,14 +17,15 @@ use Illuminate\Http\JsonResponse;
 
 /**
  * CartController - Database Integration for Shipping & Payment
- * 
- * Updated: 2025-08-02 03:38:02 UTC by gerrymulyadi709
- * 
+ *
+ * Updated: 2025-08-02 09:46:02 UTC by gerrymulyadi709
+ *
  * FIXES:
  * ✅ Integration with shipping_methods table
  * ✅ Integration with payment_methods table
  * ✅ Proper data loading from database
  * ✅ Enhanced error handling with fallbacks
+ * ✅ FIXED AJAX handling - no JSON redirect
  */
 class CartController extends Controller
 {
@@ -53,7 +54,7 @@ class CartController extends Controller
                 Log::warning('Invalid cart items found', [
                     'user_id' => Auth::id(),
                     'invalid_items' => $invalidItems->pluck('id')->toArray(),
-                    'timestamp' => '2025-08-02 03:38:02'
+                    'timestamp' => '2025-08-02 09:46:02'
                 ]);
             }
 
@@ -73,7 +74,7 @@ class CartController extends Controller
                 Log::warning('Failed to load user addresses', [
                     'user_id' => Auth::id(),
                     'error' => $e->getMessage(),
-                    'timestamp' => '2025-08-02 03:38:02'
+                    'timestamp' => '2025-08-02 09:46:02'
                 ]);
                 $userAddresses = collect([]);
             }
@@ -95,7 +96,7 @@ class CartController extends Controller
         } catch (\Exception $e) {
             Log::error('Error in CartController@index: ' . $e->getMessage(), [
                 'user_id' => Auth::id(),
-                'timestamp' => '2025-08-02 03:38:02',
+                'timestamp' => '2025-08-02 09:46:02',
                 'stack_trace' => $e->getTraceAsString()
             ]);
 
@@ -124,6 +125,483 @@ class CartController extends Controller
     }
 
     /**
+     * Add product to cart - FIXED AJAX Handling
+     * Updated: 2025-08-02 09:46:02 by gerrymulyadi709
+     * FIXED: Proper AJAX detection and JSON response handling
+     */
+    public function add(Request $request): JsonResponse|RedirectResponse
+    {
+        // Enhanced logging for debugging
+        Log::info('Cart add request received', [
+            'user_id' => Auth::id(),
+            'request_data' => $request->all(),
+            'is_ajax' => $request->ajax(),
+            'wants_json' => $request->wantsJson(),
+            'content_type' => $request->header('Content-Type'),
+            'x_requested_with' => $request->header('X-Requested-With'),
+            'timestamp' => '2025-08-02 09:46:02'
+        ]);
+
+        if (!Auth::check()) {
+            Log::warning('Unauthenticated cart add attempt', [
+                'ip' => $request->ip(),
+                'timestamp' => '2025-08-02 09:46:02'
+            ]);
+
+            // FIXED: Proper AJAX detection
+            if ($request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Silakan login terlebih dahulu untuk menambahkan produk ke keranjang.',
+                    'redirect' => route('login')
+                ], 401);
+            }
+
+            return redirect()->route('login')
+                ->with('error', 'Silakan login terlebih dahulu untuk menambahkan produk ke keranjang.');
+        }
+
+        // Start database transaction
+        DB::beginTransaction();
+
+        try {
+            // Enhanced validation with custom error messages
+            $validated = $request->validate([
+                'product_id' => 'required|integer|exists:products,id',
+                'quantity' => 'integer|min:1|max:999',
+                'price' => 'nullable|numeric|min:0',
+                'promo_code' => 'nullable|string|max:50',
+                'note' => 'nullable|string|max:255'
+            ], [
+                'product_id.required' => 'ID produk harus diisi.',
+                'product_id.exists' => 'Produk tidak ditemukan.',
+                'quantity.min' => 'Jumlah minimal adalah 1.',
+                'quantity.max' => 'Jumlah maksimal adalah 999.',
+                'price.numeric' => 'Harga harus berupa angka.',
+                'note.max' => 'Catatan maksimal 255 karakter.'
+            ]);
+
+            Log::info('Cart add validation passed', [
+                'validated_data' => $validated,
+                'user_id' => Auth::id(),
+                'timestamp' => '2025-08-02 09:46:02'
+            ]);
+
+            $productId = $validated['product_id'];
+            $quantity = $validated['quantity'] ?? 1;
+
+            // Get product with enhanced loading
+            $product = Product::with(['category', 'product_images'])
+                ->where('id', $productId)
+                ->first();
+
+            if (!$product) {
+                Log::error('Product not found after validation', [
+                    'product_id' => $productId,
+                    'user_id' => Auth::id(),
+                    'timestamp' => '2025-08-02 09:46:02'
+                ]);
+
+                DB::rollBack();
+
+                // FIXED: Proper AJAX detection
+                if ($request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Produk tidak ditemukan.'
+                    ], 404);
+                }
+
+                return back()->with('error', 'Produk tidak ditemukan.');
+            }
+
+            // Check if product is active
+            if (!$product->status) {
+                Log::warning('Attempt to add inactive product', [
+                    'product_id' => $productId,
+                    'user_id' => Auth::id(),
+                    'timestamp' => '2025-08-02 09:46:02'
+                ]);
+
+                DB::rollBack();
+                $message = 'Produk tidak tersedia atau telah dihapus.';
+
+                // FIXED: Proper AJAX detection
+                if ($request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message
+                    ], 400);
+                }
+
+                return back()->with('error', $message);
+            }
+
+            // Check stock availability
+            if ($product->stock < $quantity) {
+                Log::warning('Insufficient stock attempt', [
+                    'product_id' => $productId,
+                    'requested_quantity' => $quantity,
+                    'available_stock' => $product->stock,
+                    'user_id' => Auth::id(),
+                    'timestamp' => '2025-08-02 09:46:02'
+                ]);
+
+                DB::rollBack();
+                $message = 'Stok produk tidak mencukupi. Tersedia: ' . $product->stock;
+
+                // FIXED: Proper AJAX detection
+                if ($request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message
+                    ], 400);
+                }
+
+                return back()->with('error', $message);
+            }
+
+            $userId = Auth::id();
+
+            // Check if product already in cart
+            $existingCartItem = Cart::where('user_id', $userId)
+                ->where('product_id', $productId)
+                ->first();
+
+            if ($existingCartItem) {
+                // Update existing cart item
+                $newQuantity = $existingCartItem->quantity + $quantity;
+
+                if ($newQuantity > $product->stock) {
+                    DB::rollBack();
+                    $message = 'Jumlah melebihi stok yang tersedia. Stok: ' . $product->stock;
+
+                    // FIXED: Proper AJAX detection
+                    if ($request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                        return response()->json([
+                            'success' => false,
+                            'message' => $message
+                        ], 400);
+                    }
+
+                    return back()->with('error', $message);
+                }
+
+                $existingCartItem->update([
+                    'quantity' => $newQuantity,
+                    'price' => $validated['price'] ?? $product->price,
+                    'note' => $validated['note'] ?? $existingCartItem->note
+                ]);
+
+                $cartItem = $existingCartItem;
+                $action = 'updated';
+
+                Log::info('Cart item updated', [
+                    'cart_item_id' => $cartItem->id,
+                    'new_quantity' => $newQuantity,
+                    'user_id' => $userId,
+                    'timestamp' => '2025-08-02 09:46:02'
+                ]);
+            } else {
+                // Create new cart item
+                $cartItem = Cart::create([
+                    'user_id' => $userId,
+                    'product_id' => $productId,
+                    'quantity' => $quantity,
+                    'price' => $validated['price'] ?? $product->price,
+                    'note' => $validated['note'] ?? null,
+                    'interface_id' => 1 // Default user interface
+                ]);
+
+                $action = 'added';
+
+                Log::info('New cart item created', [
+                    'cart_item_id' => $cartItem->id,
+                    'product_id' => $productId,
+                    'quantity' => $quantity,
+                    'user_id' => $userId,
+                    'timestamp' => '2025-08-02 09:46:02'
+                ]);
+            }
+
+            // Get updated cart count
+            $cartCount = Cart::where('user_id', $userId)->sum('quantity');
+
+            // Get cart summary
+            $cartItems = Cart::where('user_id', $userId)->get();
+            $cartSummary = Cart::calculateTotal($cartItems);
+
+            // Commit transaction
+            DB::commit();
+
+            Log::info('Product added to cart successfully', [
+                'user_id' => $userId,
+                'product_id' => $productId,
+                'quantity' => $quantity,
+                'action' => $action,
+                'cart_count' => $cartCount,
+                'timestamp' => '2025-08-02 09:46:02'
+            ]);
+
+            $successMessage = $action === 'added'
+                ? 'Produk berhasil ditambahkan ke keranjang!'
+                : 'Jumlah produk di keranjang berhasil diperbarui!';
+
+            // FIXED: Proper AJAX detection and JSON response
+            if ($request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                return response()->json([
+                    'success' => true,
+                    'message' => $successMessage,
+                    'action' => $action,
+                    'cart_count' => $cartCount,
+                    'cart_item_id' => $cartItem->id,
+                    'product_name' => $product->name,
+                    'quantity' => $cartItem->quantity,
+                    'remaining_stock' => $product->stock - $quantity,
+                    'subtotal' => $cartItem->subtotal ?? ($cartItem->quantity * $cartItem->price),
+                    'formatted_subtotal' => 'Rp ' . number_format($cartItem->subtotal ?? ($cartItem->quantity * $cartItem->price), 0, ',', '.'),
+                    'cart_summary' => $cartSummary,
+                    'data' => [
+                        'cart_count' => $cartCount,
+                        'product_name' => $product->name,
+                        'quantity' => $cartItem->quantity
+                    ]
+                ]);
+            }
+
+            // Regular form submission - redirect with flash message
+            return back()->with('success', $successMessage);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+
+            Log::error('Cart add validation failed', [
+                'errors' => $e->errors(),
+                'request_data' => $request->all(),
+                'user_id' => Auth::id(),
+                'timestamp' => '2025-08-02 09:46:02'
+            ]);
+
+            // FIXED: Proper AJAX detection
+            if ($request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data tidak valid',
+                    'errors' => $e->errors()
+                ], 422);
+            }
+
+            return back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Critical error in CartController@add', [
+                'error_message' => $e->getMessage(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'user_id' => Auth::id(),
+                'request_data' => $request->all(),
+                'timestamp' => '2025-08-02 09:46:02',
+                'stack_trace' => $e->getTraceAsString()
+            ]);
+
+            $errorMessage = 'Gagal menambahkan produk ke keranjang. Silakan coba lagi.';
+
+            // FIXED: Proper AJAX detection
+            if ($request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage,
+                    'debug_info' => config('app.debug') ? [
+                        'error' => $e->getMessage(),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine()
+                    ] : null
+                ], 500);
+            }
+
+            return back()->with('error', $errorMessage);
+        }
+    }
+
+    /**
+     * Update cart item quantity - FIXED AJAX Handling
+     */
+    public function update(Request $request, int $id): JsonResponse|RedirectResponse
+    {
+        if (!Auth::check()) {
+            // FIXED: Proper AJAX detection
+            if ($request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized'
+                ], 401);
+            }
+
+            return redirect()->route('login');
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $validated = $request->validate([
+                'quantity' => 'required|integer|min:1|max:999'
+            ]);
+
+            $cartItem = Cart::where('user_id', Auth::id())
+                ->where('id', $id)
+                ->firstOrFail();
+
+            if (!$cartItem->hasValidProduct()) {
+                DB::rollBack();
+                $message = 'Produk tidak lagi tersedia.';
+
+                // FIXED: Proper AJAX detection
+                if ($request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message
+                    ], 400);
+                }
+
+                return back()->with('error', $message);
+            }
+
+            if ($cartItem->product->stock < $validated['quantity']) {
+                DB::rollBack();
+                $message = 'Stok tidak mencukupi. Tersedia: ' . $cartItem->product->stock;
+
+                // FIXED: Proper AJAX detection
+                if ($request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $message
+                    ], 400);
+                }
+
+                return back()->with('error', $message);
+            }
+
+            $cartItem->update(['quantity' => $validated['quantity']]);
+
+            $cartCount = Cart::where('user_id', Auth::id())->sum('quantity');
+            $cartItems = Cart::where('user_id', Auth::id())->get();
+            $cartSummary = Cart::calculateTotal($cartItems);
+
+            DB::commit();
+
+            $successMessage = 'Jumlah produk berhasil diperbarui.';
+
+            // FIXED: Proper AJAX detection
+            if ($request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                return response()->json([
+                    'success' => true,
+                    'message' => $successMessage,
+                    'cart_count' => $cartCount,
+                    'quantity' => $validated['quantity'],
+                    'item_subtotal' => $cartItem->subtotal ?? ($cartItem->quantity * $cartItem->price),
+                    'formatted_item_subtotal' => 'Rp ' . number_format($cartItem->subtotal ?? ($cartItem->quantity * $cartItem->price), 0, ',', '.'),
+                    'cart_summary' => $cartSummary
+                ]);
+            }
+
+            return back()->with('success', $successMessage);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Error in CartController@update', [
+                'error' => $e->getMessage(),
+                'cart_id' => $id,
+                'user_id' => Auth::id(),
+                'timestamp' => '2025-08-02 09:46:02'
+            ]);
+
+            $errorMessage = 'Gagal memperbarui keranjang.';
+
+            // FIXED: Proper AJAX detection
+            if ($request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage
+                ], 500);
+            }
+
+            return back()->with('error', $errorMessage);
+        }
+    }
+
+    /**
+     * Remove item from cart - FIXED AJAX Handling
+     */
+    public function remove(Request $request, int $id): JsonResponse|RedirectResponse
+    {
+        if (!Auth::check()) {
+            // FIXED: Proper AJAX detection
+            if ($request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized'
+                ], 401);
+            }
+
+            return redirect()->route('login');
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $cartItem = Cart::where('user_id', Auth::id())
+                ->where('id', $id)
+                ->firstOrFail();
+
+            $productName = $cartItem->product_name ?? 'Produk';
+            $cartItem->delete();
+
+            $cartCount = Cart::where('user_id', Auth::id())->sum('quantity');
+            $cartItems = Cart::where('user_id', Auth::id())->get();
+            $cartSummary = Cart::calculateTotal($cartItems);
+
+            DB::commit();
+
+            $successMessage = "Produk \"{$productName}\" berhasil dihapus dari keranjang.";
+
+            // FIXED: Proper AJAX detection
+            if ($request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                return response()->json([
+                    'success' => true,
+                    'message' => $successMessage,
+                    'cart_count' => $cartCount,
+                    'cart_summary' => $cartSummary
+                ]);
+            }
+
+            return back()->with('success', $successMessage);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Error in CartController@remove', [
+                'error' => $e->getMessage(),
+                'cart_id' => $id,
+                'user_id' => Auth::id(),
+                'timestamp' => '2025-08-02 09:46:02'
+            ]);
+
+            $errorMessage = 'Gagal menghapus item dari keranjang.';
+
+            // FIXED: Proper AJAX detection
+            if ($request->wantsJson() || $request->ajax() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage
+                ], 500);
+            }
+
+            return back()->with('error', $errorMessage);
+        }
+    }
+
+    // ... rest of existing methods remain exactly the same ...
+
+    /**
      * Get shipping methods from database
      */
     private function getShippingMethodsFromDatabase(): array
@@ -135,7 +613,7 @@ class CartController extends Controller
 
             if ($shippingMethods->isEmpty()) {
                 Log::warning('No active shipping methods found in database', [
-                    'timestamp' => '2025-08-02 03:38:02'
+                    'timestamp' => '2025-08-02 09:46:02'
                 ]);
                 return $this->getFallbackShippingOptions();
             }
@@ -154,7 +632,7 @@ class CartController extends Controller
         } catch (\Exception $e) {
             Log::error('Error loading shipping methods from database', [
                 'error' => $e->getMessage(),
-                'timestamp' => '2025-08-02 03:38:02'
+                'timestamp' => '2025-08-02 09:46:02'
             ]);
             return $this->getFallbackShippingOptions();
         }
@@ -172,7 +650,7 @@ class CartController extends Controller
 
             if ($paymentMethods->isEmpty()) {
                 Log::warning('No active payment methods found in database', [
-                    'timestamp' => '2025-08-02 03:38:02'
+                    'timestamp' => '2025-08-02 09:46:02'
                 ]);
                 return $this->getFallbackPaymentMethods();
             }
@@ -190,7 +668,7 @@ class CartController extends Controller
         } catch (\Exception $e) {
             Log::error('Error loading payment methods from database', [
                 'error' => $e->getMessage(),
-                'timestamp' => '2025-08-02 03:38:02'
+                'timestamp' => '2025-08-02 09:46:02'
             ]);
             return $this->getFallbackPaymentMethods();
         }
@@ -292,368 +770,7 @@ class CartController extends Controller
         ];
     }
 
-    // ... rest of the existing methods remain the same ...
-
-    /**
-     * Add product to cart - FIXED Database Schema
-     */
-    public function add(Request $request): JsonResponse
-    {
-        // Enhanced logging for debugging
-        Log::info('Cart add request received', [
-            'user_id' => Auth::id(),
-            'request_data' => $request->all(),
-            'timestamp' => '2025-08-02 03:38:02'
-        ]);
-
-        if (!Auth::check()) {
-            Log::warning('Unauthenticated cart add attempt', [
-                'ip' => $request->ip(),
-                'timestamp' => '2025-08-02 03:38:02'
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Silakan login terlebih dahulu untuk menambahkan produk ke keranjang.',
-                'redirect' => route('login')
-            ], 401);
-        }
-
-        // Start database transaction
-        DB::beginTransaction();
-
-        try {
-            // Enhanced validation with custom error messages
-            $validated = $request->validate([
-                'product_id' => 'required|integer|exists:products,id',
-                'quantity' => 'integer|min:1|max:999',
-                'price' => 'nullable|numeric|min:0',
-                'note' => 'nullable|string|max:255'
-            ], [
-                'product_id.required' => 'ID produk harus diisi.',
-                'product_id.exists' => 'Produk tidak ditemukan.',
-                'quantity.min' => 'Jumlah minimal adalah 1.',
-                'quantity.max' => 'Jumlah maksimal adalah 999.',
-                'price.numeric' => 'Harga harus berupa angka.',
-                'note.max' => 'Catatan maksimal 255 karakter.'
-            ]);
-
-            Log::info('Cart add validation passed', [
-                'validated_data' => $validated,
-                'user_id' => Auth::id(),
-                'timestamp' => '2025-08-02 03:38:02'
-            ]);
-
-            $productId = $validated['product_id'];
-            $quantity = $validated['quantity'] ?? 1;
-
-            // Get product with enhanced loading
-            $product = Product::with(['category', 'product_images'])
-                ->where('id', $productId)
-                ->first();
-
-            if (!$product) {
-                Log::error('Product not found after validation', [
-                    'product_id' => $productId,
-                    'user_id' => Auth::id(),
-                    'timestamp' => '2025-08-02 03:38:02'
-                ]);
-
-                DB::rollBack();
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Produk tidak ditemukan.'
-                ], 404);
-            }
-
-            // Check if product is active
-            if (!$product->status) {
-                Log::warning('Attempt to add inactive product', [
-                    'product_id' => $productId,
-                    'user_id' => Auth::id(),
-                    'timestamp' => '2025-08-02 03:38:02'
-                ]);
-
-                DB::rollBack();
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Produk tidak tersedia atau telah dihapus.'
-                ], 400);
-            }
-
-            // Check stock availability
-            if ($product->stock < $quantity) {
-                Log::warning('Insufficient stock attempt', [
-                    'product_id' => $productId,
-                    'requested_quantity' => $quantity,
-                    'available_stock' => $product->stock,
-                    'user_id' => Auth::id(),
-                    'timestamp' => '2025-08-02 03:38:02'
-                ]);
-
-                DB::rollBack();
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Stok produk tidak mencukupi. Tersedia: ' . $product->stock
-                ], 400);
-            }
-
-            $userId = Auth::id();
-
-            // Check if product already in cart
-            $existingCartItem = Cart::where('user_id', $userId)
-                ->where('product_id', $productId)
-                ->first();
-
-            if ($existingCartItem) {
-                // Update existing cart item
-                $newQuantity = $existingCartItem->quantity + $quantity;
-
-                if ($newQuantity > $product->stock) {
-                    DB::rollBack();
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Jumlah melebihi stok yang tersedia. Stok: ' . $product->stock
-                    ], 400);
-                }
-
-                $existingCartItem->update([
-                    'quantity' => $newQuantity,
-                    'price' => $validated['price'] ?? $product->price,
-                    'note' => $validated['note'] ?? $existingCartItem->note
-                ]);
-
-                $cartItem = $existingCartItem;
-                $action = 'updated';
-
-                Log::info('Cart item updated', [
-                    'cart_item_id' => $cartItem->id,
-                    'new_quantity' => $newQuantity,
-                    'user_id' => $userId,
-                    'timestamp' => '2025-08-02 03:38:02'
-                ]);
-            } else {
-                // Create new cart item
-                $cartItem = Cart::create([
-                    'user_id' => $userId,
-                    'product_id' => $productId,
-                    'quantity' => $quantity,
-                    'price' => $validated['price'] ?? $product->price,
-                    'note' => $validated['note'] ?? null,
-                    'interface_id' => 1 // Default user interface
-                ]);
-
-                $action = 'added';
-
-                Log::info('New cart item created', [
-                    'cart_item_id' => $cartItem->id,
-                    'product_id' => $productId,
-                    'quantity' => $quantity,
-                    'user_id' => $userId,
-                    'timestamp' => '2025-08-02 03:38:02'
-                ]);
-            }
-
-            // Get updated cart count
-            $cartCount = Cart::where('user_id', $userId)->sum('quantity');
-
-            // Get cart summary
-            $cartItems = Cart::where('user_id', $userId)->get();
-            $cartSummary = Cart::calculateTotal($cartItems);
-
-            // Commit transaction
-            DB::commit();
-
-            Log::info('Product added to cart successfully', [
-                'user_id' => $userId,
-                'product_id' => $productId,
-                'quantity' => $quantity,
-                'action' => $action,
-                'cart_count' => $cartCount,
-                'timestamp' => '2025-08-02 03:38:02'
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => $action === 'added'
-                    ? 'Produk berhasil ditambahkan ke keranjang!'
-                    : 'Jumlah produk di keranjang berhasil diperbarui!',
-                'action' => $action,
-                'cart_count' => $cartCount,
-                'cart_item_id' => $cartItem->id,
-                'product_name' => $product->name,
-                'quantity' => $cartItem->quantity,
-                'subtotal' => $cartItem->subtotal,
-                'formatted_subtotal' => $cartItem->formatted_subtotal,
-                'cart_summary' => $cartSummary,
-                'data' => [
-                    'cart_count' => $cartCount,
-                    'product_name' => $product->name,
-                    'quantity' => $cartItem->quantity
-                ]
-            ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            DB::rollBack();
-
-            Log::error('Cart add validation failed', [
-                'errors' => $e->errors(),
-                'request_data' => $request->all(),
-                'user_id' => Auth::id(),
-                'timestamp' => '2025-08-02 03:38:02'
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Data tidak valid',
-                'errors' => $e->errors()
-            ], 422);
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            Log::error('Critical error in CartController@add', [
-                'error_message' => $e->getMessage(),
-                'error_file' => $e->getFile(),
-                'error_line' => $e->getLine(),
-                'user_id' => Auth::id(),
-                'request_data' => $request->all(),
-                'timestamp' => '2025-08-02 03:38:02',
-                'stack_trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menambahkan produk ke keranjang. Silakan coba lagi.',
-                'debug_info' => config('app.debug') ? [
-                    'error' => $e->getMessage(),
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine()
-                ] : null
-            ], 500);
-        }
-    }
-
-    /**
-     * Update cart item quantity
-     */
-    public function update(Request $request, int $id): JsonResponse
-    {
-        if (!Auth::check()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized'
-            ], 401);
-        }
-
-        DB::beginTransaction();
-
-        try {
-            $validated = $request->validate([
-                'quantity' => 'required|integer|min:1|max:999'
-            ]);
-
-            $cartItem = Cart::where('user_id', Auth::id())
-                ->where('id', $id)
-                ->firstOrFail();
-
-            if (!$cartItem->hasValidProduct()) {
-                DB::rollBack();
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Produk tidak lagi tersedia.'
-                ], 400);
-            }
-
-            if ($cartItem->product->stock < $validated['quantity']) {
-                DB::rollBack();
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Stok tidak mencukupi. Tersedia: ' . $cartItem->product->stock
-                ], 400);
-            }
-
-            $cartItem->update(['quantity' => $validated['quantity']]);
-
-            $cartCount = Cart::where('user_id', Auth::id())->sum('quantity');
-            $cartItems = Cart::where('user_id', Auth::id())->get();
-            $cartSummary = Cart::calculateTotal($cartItems);
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Jumlah produk berhasil diperbarui.',
-                'cart_count' => $cartCount,
-                'item_subtotal' => $cartItem->subtotal,
-                'formatted_item_subtotal' => $cartItem->formatted_subtotal,
-                'cart_summary' => $cartSummary
-            ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            Log::error('Error in CartController@update', [
-                'error' => $e->getMessage(),
-                'cart_id' => $id,
-                'user_id' => Auth::id(),
-                'timestamp' => '2025-08-02 03:38:02'
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memperbarui keranjang.'
-            ], 500);
-        }
-    }
-
-    /**
-     * Remove item from cart
-     */
-    public function remove(int $id): JsonResponse
-    {
-        if (!Auth::check()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized'
-            ], 401);
-        }
-
-        DB::beginTransaction();
-
-        try {
-            $cartItem = Cart::where('user_id', Auth::id())
-                ->where('id', $id)
-                ->firstOrFail();
-
-            $productName = $cartItem->product_name;
-            $cartItem->delete();
-
-            $cartCount = Cart::where('user_id', Auth::id())->sum('quantity');
-            $cartItems = Cart::where('user_id', Auth::id())->get();
-            $cartSummary = Cart::calculateTotal($cartItems);
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => "Produk \"{$productName}\" berhasil dihapus dari keranjang.",
-                'cart_count' => $cartCount,
-                'cart_summary' => $cartSummary
-            ]);
-        } catch (\Exception $e) {
-            DB::rollBack();
-
-            Log::error('Error in CartController@remove', [
-                'error' => $e->getMessage(),
-                'cart_id' => $id,
-                'user_id' => Auth::id(),
-                'timestamp' => '2025-08-02 03:38:02'
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menghapus item dari keranjang.'
-            ], 500);
-        }
-    }
+    // ... rest of existing methods (clear, getSummary, validateItems, etc.) remain exactly the same ...
 
     /**
      * Clear all cart items
@@ -673,7 +790,7 @@ class CartController extends Controller
             Log::info('Cart cleared', [
                 'user_id' => Auth::id(),
                 'deleted_items' => $deletedCount,
-                'timestamp' => '2025-08-02 03:38:02'
+                'timestamp' => '2025-08-02 09:46:02'
             ]);
 
             return response()->json([
@@ -686,7 +803,7 @@ class CartController extends Controller
             Log::error('Error in CartController@clear', [
                 'error' => $e->getMessage(),
                 'user_id' => Auth::id(),
-                'timestamp' => '2025-08-02 03:38:02'
+                'timestamp' => '2025-08-02 09:46:02'
             ]);
 
             return response()->json([
@@ -717,14 +834,20 @@ class CartController extends Controller
                 'cart_summary' => $cartSummary,
                 'items_count' => $cartItems->count(),
                 'items' => $cartItems->map(function ($item) {
-                    return $item->summary;
+                    return $item->summary ?? [
+                        'id' => $item->id,
+                        'product_name' => $item->product_name ?? 'Unknown Product',
+                        'quantity' => $item->quantity,
+                        'price' => $item->price,
+                        'subtotal' => $item->quantity * $item->price
+                    ];
                 })
             ]);
         } catch (\Exception $e) {
             Log::error('Error in CartController@getSummary', [
                 'error' => $e->getMessage(),
                 'user_id' => Auth::id(),
-                'timestamp' => '2025-08-02 03:38:02'
+                'timestamp' => '2025-08-02 09:46:02'
             ]);
 
             return response()->json([
@@ -781,7 +904,7 @@ class CartController extends Controller
             Log::error('Error in CartController@validateItems', [
                 'error' => $e->getMessage(),
                 'user_id' => Auth::id(),
-                'timestamp' => '2025-08-02 03:38:02'
+                'timestamp' => '2025-08-02 09:46:02'
             ]);
 
             return response()->json([
@@ -806,7 +929,7 @@ class CartController extends Controller
         } catch (\Exception $e) {
             Log::error('Error in CartController@getShippingOptions', [
                 'error' => $e->getMessage(),
-                'timestamp' => '2025-08-02 03:38:02'
+                'timestamp' => '2025-08-02 09:46:02'
             ]);
 
             return response()->json([
@@ -832,7 +955,7 @@ class CartController extends Controller
         } catch (\Exception $e) {
             Log::error('Error in CartController@getPaymentMethods', [
                 'error' => $e->getMessage(),
-                'timestamp' => '2025-08-02 03:38:02'
+                'timestamp' => '2025-08-02 09:46:02'
             ]);
 
             return response()->json([

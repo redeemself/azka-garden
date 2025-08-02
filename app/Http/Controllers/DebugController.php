@@ -12,9 +12,9 @@ use ReflectionClass;
 
 /**
  * DebugController - System Diagnostics
- * 
+ *
  * Updated: 2025-08-02 02:48:14 UTC by gerrymulyadi709
- * 
+ *
  * FEATURES:
  * ✅ Fixed return type declarations
  * ✅ Complete controller diagnostics

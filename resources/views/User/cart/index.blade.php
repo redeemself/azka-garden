@@ -28,11 +28,608 @@
             --success: #10b981;
             --error: #ef4444;
             --warning: #f59e0b;
+            --info: #3b82f6;
             --border-radius: 12px;
             --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
 
+        /* Enhanced Alert/Warning Styles */
+        .alert-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 1rem;
+        }
+
+        .alert-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .alert-modal {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-xl);
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.9) translateY(20px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            border: 2px solid transparent;
+        }
+
+        .alert-overlay.show .alert-modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .alert-header {
+            padding: 1.5rem 1.5rem 1rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            position: relative;
+        }
+
+        .alert-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+            animation: pulse 2s infinite;
+        }
+
+        .alert-icon.success {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+        }
+
+        .alert-icon.error {
+            background: linear-gradient(135deg, var(--error), #dc2626);
+            color: white;
+        }
+
+        .alert-icon.warning {
+            background: linear-gradient(135deg, var(--warning), #d97706);
+            color: white;
+        }
+
+        .alert-icon.info {
+            background: linear-gradient(135deg, var(--info), #2563eb);
+            color: white;
+        }
+
+        .alert-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--gray-800);
+            margin: 0;
+            flex: 1;
+        }
+
+        .alert-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: var(--gray-100);
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--gray-600);
+        }
+
+        .alert-close:hover {
+            background: var(--gray-200);
+            transform: scale(1.1);
+        }
+
+        .alert-body {
+            padding: 1.5rem;
+        }
+
+        .alert-message {
+            color: var(--gray-700);
+            line-height: 1.6;
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .alert-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .alert-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            min-width: 80px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .alert-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .alert-btn:hover::before {
+            left: 100%;
+        }
+
+        .alert-btn.primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+
+        .alert-btn.primary:hover {
+            background: linear-gradient(135deg, var(--primary-dark), #166534);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .alert-btn.secondary {
+            background: var(--gray-100);
+            color: var(--gray-700);
+            border: 1px solid var(--gray-300);
+        }
+
+        .alert-btn.secondary:hover {
+            background: var(--gray-200);
+            transform: translateY(-1px);
+        }
+
+        .alert-btn.danger {
+            background: linear-gradient(135deg, var(--error), #dc2626);
+            color: white;
+        }
+
+        .alert-btn.danger:hover {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Enhanced Alert Types */
+        .alert-modal.success {
+            border-color: var(--success);
+        }
+
+        .alert-modal.error {
+            border-color: var(--error);
+        }
+
+        .alert-modal.warning {
+            border-color: var(--warning);
+        }
+
+        .alert-modal.info {
+            border-color: var(--info);
+        }
+
+        /* Modern Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 9999;
+            max-width: 400px;
+            width: 100%;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-xl);
+            margin-bottom: 1rem;
+            overflow: hidden;
+            transform: translateX(100%);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: auto;
+            border-left: 4px solid var(--gray-300);
+            position: relative;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            border-left-color: var(--success);
+        }
+
+        .toast.error {
+            border-left-color: var(--error);
+        }
+
+        .toast.warning {
+            border-left-color: var(--warning);
+        }
+
+        .toast.info {
+            border-left-color: var(--info);
+        }
+
+        .toast-content {
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .toast-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .toast.success .toast-icon {
+            background: var(--success);
+            color: white;
+        }
+
+        .toast.error .toast-icon {
+            background: var(--error);
+            color: white;
+        }
+
+        .toast.warning .toast-icon {
+            background: var(--warning);
+            color: white;
+        }
+
+        .toast.info .toast-icon {
+            background: var(--info);
+            color: white;
+        }
+
+        .toast-message {
+            flex: 1;
+            color: var(--gray-800);
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .toast-close {
+            background: none;
+            border: none;
+            color: var(--gray-500);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .toast-close:hover {
+            background: var(--gray-100);
+            color: var(--gray-700);
+        }
+
+        .toast-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: var(--gray-300);
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .toast-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
+            width: 100%;
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform linear;
+        }
+
+        /* Inline Alert Styles */
+        .inline-alert {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--gray-300);
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(-10px);
+            animation: slideInAlert 0.5s ease forwards;
+        }
+
+        .inline-alert.success {
+            border-left-color: var(--success);
+            background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+        }
+
+        .inline-alert.error {
+            border-left-color: var(--error);
+            background: linear-gradient(135deg, #fef2f2 0%, #fef1f1 100%);
+        }
+
+        .inline-alert.warning {
+            border-left-color: var(--warning);
+            background: linear-gradient(135deg, #fffbeb 0%, #fefce8 100%);
+        }
+
+        .inline-alert.info {
+            border-left-color: var(--info);
+            background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%);
+        }
+
+        .inline-alert-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+            margin-top: 0.125rem;
+        }
+
+        .inline-alert.success .inline-alert-icon {
+            background: var(--success);
+            color: white;
+        }
+
+        .inline-alert.error .inline-alert-icon {
+            background: var(--error);
+            color: white;
+        }
+
+        .inline-alert.warning .inline-alert-icon {
+            background: var(--warning);
+            color: white;
+        }
+
+        .inline-alert.info .inline-alert-icon {
+            background: var(--info);
+            color: white;
+        }
+
+        .inline-alert-content {
+            flex: 1;
+        }
+
+        .inline-alert-title {
+            font-weight: 600;
+            color: var(--gray-800);
+            margin-bottom: 0.25rem;
+            font-size: 0.95rem;
+        }
+
+        .inline-alert-message {
+            color: var(--gray-700);
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .inline-alert-dismiss {
+            background: none;
+            border: none;
+            color: var(--gray-500);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            margin-top: 0.125rem;
+        }
+
+        .inline-alert-dismiss:hover {
+            background: var(--gray-100);
+            color: var(--gray-700);
+        }
+
+        /* Confirmation Dialog */
+        .confirm-dialog {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-xl);
+            max-width: 400px;
+            width: 100%;
+            transform: scale(0.9) translateY(20px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .alert-overlay.show .confirm-dialog {
+            transform: scale(1) translateY(0);
+        }
+
+        .confirm-header {
+            padding: 1.5rem 1.5rem 1rem;
+            text-align: center;
+        }
+
+        .confirm-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            background: linear-gradient(135deg, var(--warning), #d97706);
+            color: white;
+            animation: bounce 1s infinite;
+        }
+
+        .confirm-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--gray-800);
+            margin-bottom: 0.5rem;
+        }
+
+        .confirm-message {
+            color: var(--gray-600);
+            line-height: 1.5;
+        }
+
+        .confirm-actions {
+            padding: 1rem 1.5rem 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+
+        /* Animations */
+        @keyframes slideInAlert {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes bounce {
+
+            0%,
+            20%,
+            53%,
+            80%,
+            100% {
+                transform: translateY(0);
+            }
+
+            40%,
+            43% {
+                transform: translateY(-8px);
+            }
+
+            70% {
+                transform: translateY(-4px);
+            }
+
+            90% {
+                transform: translateY(-2px);
+            }
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            10%,
+            30%,
+            50%,
+            70%,
+            90% {
+                transform: translateX(-5px);
+            }
+
+            20%,
+            40%,
+            60%,
+            80% {
+                transform: translateX(5px);
+            }
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .alert-modal {
+                margin: 1rem;
+                max-width: none;
+                width: calc(100% - 2rem);
+            }
+
+            .alert-actions {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .alert-btn {
+                width: 100%;
+            }
+
+            .toast-container {
+                top: 1rem;
+                right: 1rem;
+                left: 1rem;
+                max-width: none;
+            }
+
+            .confirm-dialog {
+                margin: 1rem;
+                max-width: none;
+                width: calc(100% - 2rem);
+            }
+
+            .confirm-actions {
+                flex-direction: column;
+            }
+        }
+
+        /* Rest of the existing styles... */
         body {
             background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 50%, #dcfce7 100%);
             background-attachment: fixed;
@@ -785,36 +1382,6 @@
             font-size: 1.1rem;
         }
 
-        /* Toast */
-        .toast {
-            position: fixed;
-            top: 2rem;
-            right: 2rem;
-            background: var(--success);
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-lg);
-            z-index: 1000;
-            opacity: 0;
-            transform: translateX(100%);
-            transition: all 0.3s ease;
-            max-width: 300px;
-        }
-
-        .toast.show {
-            opacity: 1;
-            transform: translateX(0);
-        }
-
-        .toast.error {
-            background: var(--error);
-        }
-
-        .toast.warning {
-            background: var(--warning);
-        }
-
         /* Loading Animation */
         .loading {
             display: inline-block;
@@ -903,15 +1470,6 @@
                 font-size: 0.9rem;
                 padding: 0.75rem 1rem;
                 box-sizing: border-box;
-            }
-
-            .toast {
-                right: 1rem;
-                left: 1rem;
-                max-width: none;
-                position: fixed;
-                top: 1rem;
-                z-index: 9999;
             }
 
             /* Hide dropdown on mobile */
@@ -1066,7 +1624,32 @@
 @endpush
 
 @section('content')
-    {{-- Updated: 2025-08-02 05:05:35 by gerrymulyadi709 --}}
+    {{-- Updated: 2025-08-02 10:40:37 by gerrymulyadi709 --}}
+
+    <!-- Enhanced Alert/Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Enhanced Alert/Modal Overlay -->
+    <div class="alert-overlay" id="alert-overlay">
+        <div class="alert-modal" id="alert-modal">
+            <div class="alert-header">
+                <div class="alert-icon" id="alert-icon">❓</div>
+                <h3 class="alert-title" id="alert-title">Peringatan</h3>
+                <button class="alert-close" id="alert-close" onclick="closeAlert()">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="alert-body">
+                <div class="alert-message" id="alert-message">Pesan peringatan akan muncul di sini.</div>
+                <div class="alert-actions" id="alert-actions">
+                    <button class="alert-btn secondary" onclick="closeAlert()">Batal</button>
+                    <button class="alert-btn primary" id="alert-confirm" onclick="confirmAlert()">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="cart-container">
         <div class="cart-header">
@@ -1074,30 +1657,38 @@
             <p class="cart-subtitle">Kelola produk yang akan Anda beli dengan mudah</p>
         </div>
 
+        <!-- Enhanced Error Alert -->
         @if (isset($error))
-            <div class="cart-card">
-                <div class="p-6">
-                    <div class="px-4 py-3 text-red-700 bg-red-100 border border-red-400 rounded">
-                        {{ $error }}
-                    </div>
+            <div class="inline-alert error" role="alert">
+                <div class="inline-alert-icon">❌</div>
+                <div class="inline-alert-content">
+                    <div class="inline-alert-title">Terjadi Kesalahan</div>
+                    <div class="inline-alert-message">{{ $error }}</div>
                 </div>
+                <button class="inline-alert-dismiss" onclick="this.parentElement.style.display='none'">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
         @endif
 
+        <!-- Enhanced Invalid Items Alert -->
         @if (isset($invalidItems) && $invalidItems->count() > 0)
-            <div class="cart-card">
-                <div class="p-6 border-b bg-yellow-50">
-                    <div class="flex items-center">
-                        <svg class="w-5 h-5 mr-2 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                clip-rule="evenodd"></path>
-                        </svg>
-                        <p class="font-medium text-yellow-800">
-                            Beberapa item dalam keranjang tidak tersedia atau stok habis.
-                        </p>
+            <div class="inline-alert warning" role="alert">
+                <div class="inline-alert-icon">⚠️</div>
+                <div class="inline-alert-content">
+                    <div class="inline-alert-title">Perhatian: Item Tidak Tersedia</div>
+                    <div class="inline-alert-message">
+                        Beberapa item dalam keranjang tidak tersedia atau stok habis.
+                        <strong>{{ $invalidItems->count() }} item</strong> perlu diperiksa kembali.
                     </div>
                 </div>
+                <button class="inline-alert-dismiss" onclick="this.parentElement.style.display='none'">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
             </div>
         @endif
 
@@ -1177,10 +1768,25 @@
                                     @endif
 
                                     @if (!$item->hasValidProduct())
-                                        <p class="text-sm font-medium text-red-600">Produk tidak tersedia</p>
+                                        <div class="inline-alert error"
+                                            style="margin: 0.5rem 0; padding: 0.5rem; font-size: 0.8rem;">
+                                            <div class="inline-alert-icon"
+                                                style="width: 16px; height: 16px; font-size: 0.7rem;">❌</div>
+                                            <div class="inline-alert-content">
+                                                <div class="inline-alert-message">Produk tidak tersedia</div>
+                                            </div>
+                                        </div>
                                     @elseif(!$item->hasValidStock())
-                                        <p class="text-sm font-medium text-orange-600">Stok tidak mencukupi (tersedia:
-                                            {{ $item->product->stock }})</p>
+                                        <div class="inline-alert warning"
+                                            style="margin: 0.5rem 0; padding: 0.5rem; font-size: 0.8rem;">
+                                            <div class="inline-alert-icon"
+                                                style="width: 16px; height: 16px; font-size: 0.7rem;">⚠️</div>
+                                            <div class="inline-alert-content">
+                                                <div class="inline-alert-message">
+                                                    Stok tidak mencukupi (tersedia: {{ $item->product->stock }})
+                                                </div>
+                                            </div>
+                                        </div>
                                     @endif
 
                                     <div class="product-price">
@@ -1256,7 +1862,7 @@
                                         <svg width="20" height="20" fill="none" stroke="currentColor"
                                             viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-                                            1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>
                                     </button>
                                 </div>
@@ -1649,20 +2255,6 @@
                                 </div>
                             </div>
 
-                            <!-- Debug Information (hanya tampil jika dalam development mode) -->
-                            @if (config('app.debug'))
-                                <div
-                                    style="background: #f3f4f6; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.8rem; color: #6b7280;">
-                                    <strong>Debug Info:</strong><br>
-                                    Shipping Options: {{ count($finalShippingOptions) }} items<br>
-                                    Payment Methods: {{ count($finalPaymentMethods) }} items<br>
-                                    Controller Data Available:
-                                    {{ isset($shippingOptions) && isset($paymentMethods) ? 'Yes' : 'No' }}<br>
-                                    Mobile Card Selection: Active<br>
-                                    Updated: 2025-08-02 05:09:20 UTC by gerrymulyadi709
-                                </div>
-                            @endif
-
                             <!-- Hidden inputs for form submission -->
                             <input type="hidden" name="subtotal" id="subtotal-input" value="{{ $subtotalFinal }}">
                             <input type="hidden" name="discount" id="discount-input" value="{{ $totalAllDiscounts }}">
@@ -1709,20 +2301,258 @@
         @endif
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="toast"></div>
-
     <script>
         /**
-         * Enhanced Cart Management System with Mobile Card Selection
-         * Updated: 2025-08-02 05:09:20 UTC by gerrymulyadi709
+         * Enhanced Cart Management System with Modern Alert System
+         * Updated: 2025-08-02 11:44:02 UTC by gerrymulyadi709
          */
         document.addEventListener('DOMContentLoaded', function() {
             console.log(
-                'Enhanced cart page with mobile card selection initialized - 2025-08-02 05:09:20 UTC by gerrymulyadi709'
+                'Enhanced cart page with modern alert system initialized - 2025-08-02 11:44:02 UTC by gerrymulyadi709'
             );
 
             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
+            // Alert and Toast Management System
+            let currentAlert = null;
+            let toastCounter = 0;
+
+            /**
+             * Enhanced Alert System
+             */
+            window.showAlert = function(options = {}) {
+                const {
+                    type = 'info',
+                        title = 'Peringatan',
+                        message = '',
+                        icon = '❓',
+                        showCancel = true,
+                        confirmText = 'OK',
+                        cancelText = 'Batal',
+                        onConfirm = null,
+                        onCancel = null,
+                        autoClose = false,
+                        autoCloseDelay = 5000
+                } = options;
+
+                // Close existing alert
+                if (currentAlert) {
+                    closeAlert();
+                }
+
+                const overlay = document.getElementById('alert-overlay');
+                const modal = document.getElementById('alert-modal');
+                const alertIcon = document.getElementById('alert-icon');
+                const alertTitle = document.getElementById('alert-title');
+                const alertMessage = document.getElementById('alert-message');
+                const alertActions = document.getElementById('alert-actions');
+
+                // Set alert type and content
+                modal.className = `alert-modal ${type}`;
+                alertIcon.className = `alert-icon ${type}`;
+                alertIcon.textContent = icon;
+                alertTitle.textContent = title;
+                alertMessage.innerHTML = message;
+
+                // Configure buttons
+                alertActions.innerHTML = '';
+
+                if (showCancel) {
+                    const cancelBtn = document.createElement('button');
+                    cancelBtn.className = 'alert-btn secondary';
+                    cancelBtn.textContent = cancelText;
+                    cancelBtn.onclick = () => {
+                        if (onCancel) onCancel();
+                        closeAlert();
+                    };
+                    alertActions.appendChild(cancelBtn);
+                }
+
+                const confirmBtn = document.createElement('button');
+                confirmBtn.className = `alert-btn ${type === 'error' ? 'danger' : 'primary'}`;
+                confirmBtn.textContent = confirmText;
+                confirmBtn.onclick = () => {
+                    if (onConfirm) onConfirm();
+                    closeAlert();
+                };
+                alertActions.appendChild(confirmBtn);
+
+                // Show alert
+                overlay.classList.add('show');
+                document.body.style.overflow = 'hidden';
+
+                // Auto-close if specified
+                if (autoClose) {
+                    setTimeout(() => {
+                        closeAlert();
+                    }, autoCloseDelay);
+                }
+
+                // Focus management
+                confirmBtn.focus();
+
+                // Store current alert
+                currentAlert = {
+                    overlay,
+                    onConfirm,
+                    onCancel
+                };
+
+                // Accessibility
+                overlay.setAttribute('role', 'dialog');
+                overlay.setAttribute('aria-modal', 'true');
+                overlay.setAttribute('aria-labelledby', 'alert-title');
+                overlay.setAttribute('aria-describedby', 'alert-message');
+
+                console.log('Alert shown:', {
+                    type,
+                    title,
+                    message: message.substring(0, 50) + '...',
+                    timestamp: new Date().toISOString(),
+                    user: 'gerrymulyadi709'
+                });
+
+                return currentAlert;
+            };
+
+            window.closeAlert = function() {
+                const overlay = document.getElementById('alert-overlay');
+                if (overlay && overlay.classList.contains('show')) {
+                    overlay.classList.remove('show');
+                    document.body.style.overflow = '';
+                    currentAlert = null;
+                }
+            };
+
+            window.confirmAlert = function() {
+                if (currentAlert && currentAlert.onConfirm) {
+                    currentAlert.onConfirm();
+                }
+                closeAlert();
+            };
+
+            /**
+             * Enhanced Toast System
+             */
+            window.showToast = function(message, type = 'success', duration = 4000, options = {}) {
+                const {
+                    title = '',
+                        closable = true,
+                        position = 'top-right',
+                        showProgress = true
+                } = options;
+
+                toastCounter++;
+                const toastId = `toast-${toastCounter}`;
+
+                const icons = {
+                    success: '✅',
+                    error: '❌',
+                    warning: '⚠️',
+                    info: 'ℹ️'
+                };
+
+                const toast = document.createElement('div');
+                toast.id = toastId;
+                toast.className = `toast ${type}`;
+                toast.setAttribute('role', 'alert');
+                toast.setAttribute('aria-live', 'polite');
+
+                toast.innerHTML = `
+                    <div class="toast-content">
+                        <div class="toast-icon">${icons[type] || 'ℹ️'}</div>
+                        <div class="toast-message">
+                            ${title ? `<strong>${title}</strong><br>` : ''}${message}
+                        </div>
+                        ${closable ? `
+                                    <button class="toast-close" onclick="removeToast('${toastId}')">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                    </button>
+                                ` : ''}
+                    </div>
+                    ${showProgress ? `
+                                <div class="toast-progress">
+                                    <div class="toast-progress-bar" style="transition: transform ${duration}ms linear;"></div>
+                                </div>
+                            ` : ''}
+                `;
+
+                const container = document.getElementById('toast-container');
+                container.appendChild(toast);
+
+                // Trigger animation
+                setTimeout(() => {
+                    toast.classList.add('show');
+
+                    if (showProgress) {
+                        const progressBar = toast.querySelector('.toast-progress-bar');
+                        if (progressBar) {
+                            progressBar.style.transform = 'scaleX(0)';
+                        }
+                    }
+                }, 100);
+
+                // Auto remove
+                const removeTimeout = setTimeout(() => {
+                    removeToast(toastId);
+                }, duration);
+
+                // Store timeout for manual removal
+                toast.removeTimeout = removeTimeout;
+
+                console.log('Toast shown:', {
+                    id: toastId,
+                    type,
+                    message: message.substring(0, 50) + '...',
+                    duration,
+                    timestamp: new Date().toISOString(),
+                    user: 'gerrymulyadi709'
+                });
+
+                return toastId;
+            };
+
+            window.removeToast = function(toastId) {
+                const toast = document.getElementById(toastId);
+                if (toast) {
+                    if (toast.removeTimeout) {
+                        clearTimeout(toast.removeTimeout);
+                    }
+
+                    toast.classList.remove('show');
+                    setTimeout(() => {
+                        if (toast.parentNode) {
+                            toast.parentNode.removeChild(toast);
+                        }
+                    }, 300);
+                }
+            };
+
+            /**
+             * Confirmation Dialog
+             */
+            window.showConfirm = function(message, onConfirm, options = {}) {
+                const {
+                    title = 'Konfirmasi',
+                        type = 'warning',
+                        icon = '⚠️',
+                        confirmText = 'Ya, Lanjutkan',
+                        cancelText = 'Batal'
+                } = options;
+
+                return showAlert({
+                    type,
+                    title,
+                    message,
+                    icon,
+                    showCancel: true,
+                    confirmText,
+                    cancelText,
+                    onConfirm
+                });
+            };
 
             // Price calculation elements
             const shippingDropdown = document.getElementById('shipping_method');
@@ -1751,9 +2581,9 @@
             let selectedShippingMethod = null;
             let selectedPaymentMethod = null;
 
-            // Enhanced Mobile Card Selection - Added by gerrymulyadi709 at 2025-08-02 05:09:20
+            // Enhanced Mobile Card Selection
             window.selectOption = function(cardElement) {
-                const type = cardElement.dataset.type; // 'shipping' or 'payment'
+                const type = cardElement.dataset.type;
                 const value = cardElement.dataset.value;
                 const containerSelector = type === 'shipping' ? '#shipping-selection' : '#payment-selection';
 
@@ -1773,28 +2603,17 @@
                     shippingCost = price;
                     selectedShippingMethod = value;
 
-                    // Update hidden input
                     if (shippingMethodHidden) {
                         shippingMethodHidden.value = value;
                     }
 
-                    // Update dropdown if exists (for desktop)
                     if (shippingDropdown) {
                         shippingDropdown.value = value;
                         shippingDropdown.classList.add('selected');
                     }
 
-                    // Show success message
                     const methodName = cardElement.querySelector('.selection-title').textContent;
-                    showToast(`✅ ${methodName} dipilih`, 'success', 2000);
-
-                    console.log('Shipping method selected via card:', {
-                        method: value,
-                        price: price,
-                        description: description,
-                        timestamp: '2025-08-02 05:09:20',
-                        user: 'gerrymulyadi709'
-                    });
+                    showToast(`${methodName} dipilih`, 'success', 2000);
 
                 } else if (type === 'payment') {
                     const fee = parseFloat(cardElement.dataset.fee) || 0;
@@ -1803,34 +2622,22 @@
                     paymentFee = fee;
                     selectedPaymentMethod = value;
 
-                    // Update hidden input
                     if (paymentMethodHidden) {
                         paymentMethodHidden.value = value;
                     }
 
-                    // Update dropdown if exists (for desktop)
                     if (paymentDropdown) {
                         paymentDropdown.value = value;
                         paymentDropdown.classList.add('selected');
                     }
 
-                    // Show success message
                     const methodName = cardElement.querySelector('.selection-title').textContent;
-                    showToast(`💳 ${methodName} dipilih`, 'success', 2000);
-
-                    console.log('Payment method selected via card:', {
-                        method: value,
-                        fee: fee,
-                        description: description,
-                        timestamp: '2025-08-02 05:09:20',
-                        user: 'gerrymulyadi709'
-                    });
+                    showToast(`${methodName} dipilih`, 'success', 2000);
                 }
 
-                // Recalculate totals
                 calculateTotals();
 
-                // Add visual feedback
+                // Visual feedback
                 cardElement.style.transform = 'scale(1.02)';
                 setTimeout(() => {
                     cardElement.style.transform = '';
@@ -1845,11 +2652,9 @@
             // Calculate totals
             function calculateTotals() {
                 if (shippingCostDisplay && grandTotalDisplay) {
-                    // Update shipping cost display
                     shippingCostDisplay.textContent = 'Rp' + formatCurrency(shippingCost);
                     if (shippingCostInput) shippingCostInput.value = shippingCost;
 
-                    // Update payment fee display
                     if (paymentFee > 0) {
                         paymentFeeRow.style.display = 'flex';
                         paymentFeeDisplay.textContent = 'Rp' + formatCurrency(paymentFee);
@@ -1858,52 +2663,35 @@
                     }
                     if (paymentFeeInput) paymentFeeInput.value = paymentFee;
 
-                    // Calculate grand total
                     const grandTotal = subtotal + shippingCost + paymentFee + tax;
                     grandTotalDisplay.textContent = 'Rp' + formatCurrency(grandTotal);
                     if (grandTotalInput) grandTotalInput.value = grandTotal;
-
-                    console.log('Total calculation with mobile card selection:', {
-                        subtotalAfterAllDiscounts: subtotal,
-                        totalDiscounts: discount,
-                        shipping: shippingCost,
-                        paymentFee: paymentFee,
-                        tax: tax,
-                        grandTotal: grandTotal,
-                        selectedShipping: selectedShippingMethod,
-                        selectedPayment: selectedPaymentMethod,
-                        isMobile: window.innerWidth <= 768,
-                        timestamp: '2025-08-02 05:09:20',
-                        user: 'gerrymulyadi709'
-                    });
                 }
             }
 
-            // Enhanced dropdown event handlers (for desktop)
+            // Enhanced dropdown event handlers
             if (shippingDropdown) {
                 shippingDropdown.addEventListener('change', function() {
                     const selectedOption = this.options[this.selectedIndex];
                     shippingCost = parseFloat(selectedOption.dataset.price) || 0;
                     selectedShippingMethod = selectedOption.value;
 
-                    // Update hidden input
                     if (shippingMethodHidden) {
                         shippingMethodHidden.value = selectedOption.value;
                     }
 
-                    // Update corresponding mobile card if exists
                     const mobileCard = document.querySelector(
                         `[data-type="shipping"][data-value="${selectedOption.value}"]`);
                     if (mobileCard) {
                         selectOption(mobileCard);
-                        return; // Prevent double calculation
+                        return;
                     }
 
                     calculateTotals();
                     this.classList.add('selected');
 
                     const methodName = selectedOption.text.split(' - ')[0];
-                    showToast(`✅ ${methodName}`, 'success', 2000);
+                    showToast(`${methodName} dipilih`, 'success', 2000);
                 });
             }
 
@@ -1913,35 +2701,31 @@
                     paymentFee = parseFloat(selectedOption.dataset.fee) || 0;
                     selectedPaymentMethod = selectedOption.value;
 
-                    // Update hidden input
                     if (paymentMethodHidden) {
                         paymentMethodHidden.value = selectedOption.value;
                     }
 
-                    // Update corresponding mobile card if exists
                     const mobileCard = document.querySelector(
                         `[data-type="payment"][data-value="${selectedOption.value}"]`);
                     if (mobileCard) {
                         selectOption(mobileCard);
-                        return; // Prevent double calculation
+                        return;
                     }
 
                     calculateTotals();
                     this.classList.add('selected');
 
                     const methodName = selectedOption.text.split(' | ')[0];
-                    showToast(`💳 ${methodName}`, 'success', 2000);
+                    showToast(`${methodName} dipilih`, 'success', 2000);
                 });
             }
 
             // Enhanced address selection
             window.selectAddress = function(addressElement) {
-                // Remove selection from all addresses
                 document.querySelectorAll('.address-card').forEach(card => {
                     card.classList.remove('selected');
                 });
 
-                // Select current address
                 addressElement.classList.add('selected');
 
                 const addressId = addressElement.dataset.addressId;
@@ -1956,7 +2740,7 @@
                     longitude: addressElement.dataset.longitude
                 };
 
-                showToast('📍 Alamat pengiriman dipilih', 'success');
+                showToast('Alamat pengiriman dipilih', 'success', 2000);
             };
 
             // Initialize calculations
@@ -1968,9 +2752,8 @@
                 selectAddress(primaryAddress);
             }
 
-            // Auto-select first options on page load for desktop
+            // Auto-select first options on page load
             setTimeout(() => {
-                // Only auto-select for desktop
                 if (window.innerWidth > 768) {
                     if (shippingDropdown && shippingDropdown.options.length > 1) {
                         shippingDropdown.selectedIndex = 1;
@@ -1982,7 +2765,6 @@
                         paymentDropdown.dispatchEvent(new Event('change'));
                     }
                 } else {
-                    // For mobile, auto-select first cards
                     const firstShippingCard = document.querySelector('#shipping-selection .selection-card');
                     const firstPaymentCard = document.querySelector('#payment-selection .selection-card');
 
@@ -1996,31 +2778,7 @@
                 }
             }, 100);
 
-            // Enhanced toast notification
-            function showToast(message, type = 'success', duration = 3000) {
-                const toast = document.getElementById('toast');
-                if (toast) {
-                    toast.textContent = message;
-                    toast.className = `toast ${type}`;
-                    toast.classList.add('show');
-
-                    // Mobile-specific positioning
-                    if (window.innerWidth <= 768) {
-                        toast.style.position = 'fixed';
-                        toast.style.top = '1rem';
-                        toast.style.left = '1rem';
-                        toast.style.right = '1rem';
-                        toast.style.maxWidth = 'none';
-                        toast.style.zIndex = '9999';
-                    }
-
-                    setTimeout(() => {
-                        toast.classList.remove('show');
-                    }, duration);
-                }
-            }
-
-            // Cart operations (existing functions)
+            // Cart operations with enhanced alerts
             function createFetchOptions(method, data = null) {
                 const options = {
                     method: method,
@@ -2048,12 +2806,19 @@
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        showToast('Terjadi kesalahan pada sistem. Silakan coba lagi.', 'error');
+                        showAlert({
+                            type: 'error',
+                            title: 'Terjadi Kesalahan',
+                            message: 'Sistem mengalami gangguan. Silakan coba lagi atau hubungi customer service.',
+                            icon: '❌',
+                            showCancel: false,
+                            confirmText: 'Mengerti'
+                        });
                         throw error;
                     });
             }
 
-            // Update cart quantity
+            // Update cart quantity with enhanced alerts
             function updateCartQuantity(button, action) {
                 const itemId = button.dataset.itemId;
                 const row = button.closest('.product-item');
@@ -2077,6 +2842,7 @@
                 const updateData = {
                     quantity: newQuantity
                 };
+
                 safeFetch(button.dataset.url, createFetchOptions('PUT', updateData))
                     .then(data => {
                         if (data.success) {
@@ -2092,16 +2858,23 @@
                             }
 
                             showToast(
-                                `Jumlah produk berhasil ${action === 'increment' ? 'ditambah' : 'dikurangi'}`
+                                `Jumlah produk berhasil ${action === 'increment' ? 'ditambah' : 'dikurangi'}`,
+                                'success'
                             );
 
                             setTimeout(() => {
                                 window.location.reload();
                             }, 800);
                         } else {
-                            showToast(data.message ||
-                                `Gagal ${action === 'increment' ? 'menambah' : 'mengurangi'} jumlah produk`,
-                                'error');
+                            showAlert({
+                                type: 'warning',
+                                title: 'Perubahan Gagal',
+                                message: data.message ||
+                                    `Gagal ${action === 'increment' ? 'menambah' : 'mengurangi'} jumlah produk`,
+                                icon: '⚠️',
+                                showCancel: false,
+                                confirmText: 'Mengerti'
+                            });
                         }
                     })
                     .catch(() => {
@@ -2124,37 +2897,70 @@
                 });
             });
 
-            // Remove item
+            // Remove item with enhanced confirmation
             document.querySelectorAll('.remove-btn').forEach(button => {
                 button.addEventListener('click', function() {
-                    if (confirm('Apakah Anda yakin ingin menghapus item ini dari keranjang?')) {
-                        const url = this.dataset.url;
-                        const row = this.closest('.product-item');
+                    const row = this.closest('.product-item');
+                    const productName = row?.querySelector('.product-name')?.textContent ||
+                        'item ini';
 
-                        safeFetch(url, createFetchOptions('DELETE'))
-                            .then(data => {
-                                if (data.success) {
-                                    if (row) {
-                                        row.style.transition = 'all 0.3s';
-                                        row.style.opacity = '0';
+                    showConfirm(
+                        `Apakah Anda yakin ingin menghapus <strong>"${productName}"</strong> dari keranjang?<br><br>Tindakan ini tidak dapat dibatalkan.`,
+                        () => {
+                            const url = this.dataset.url;
 
-                                        setTimeout(() => {
-                                            row.remove();
-                                            showToast(
-                                                'Produk berhasil dihapus dari keranjang'
-                                            );
+                            // Show loading toast
+                            const loadingToastId = showToast('Menghapus item...', 'info',
+                                30000, {
+                                    closable: false,
+                                    showProgress: false
+                                });
+
+                            safeFetch(url, createFetchOptions('DELETE'))
+                                .then(data => {
+                                    removeToast(loadingToastId);
+
+                                    if (data.success) {
+                                        if (row) {
+                                            row.style.transition = 'all 0.3s';
+                                            row.style.opacity = '0';
+                                            row.style.transform = 'translateX(-100%)';
 
                                             setTimeout(() => {
-                                                window.location.reload();
-                                            }, 1000);
-                                        }, 300);
+                                                row.remove();
+                                                showToast(
+                                                    'Produk berhasil dihapus dari keranjang',
+                                                    'success'
+                                                );
+
+                                                setTimeout(() => {
+                                                    window.location
+                                                        .reload();
+                                                }, 1000);
+                                            }, 300);
+                                        }
+                                    } else {
+                                        showAlert({
+                                            type: 'error',
+                                            title: 'Penghapusan Gagal',
+                                            message: data.message ||
+                                                'Gagal menghapus produk dari keranjang',
+                                            icon: '❌',
+                                            showCancel: false,
+                                            confirmText: 'Mengerti'
+                                        });
                                     }
-                                } else {
-                                    showToast(data.message ||
-                                        'Gagal menghapus produk dari keranjang', 'error');
-                                }
-                            });
-                    }
+                                })
+                                .catch(() => {
+                                    removeToast(loadingToastId);
+                                });
+                        }, {
+                            title: 'Konfirmasi Penghapusan',
+                            confirmText: 'Ya, Hapus',
+                            cancelText: 'Batal',
+                            type: 'warning'
+                        }
+                    );
                 });
             });
 
@@ -2162,35 +2968,51 @@
             const checkoutForm = document.getElementById('checkout-form');
             if (checkoutForm) {
                 checkoutForm.addEventListener('submit', function(e) {
-                        // Check shipping method (both dropdown and hidden input)
+                        let errors = [];
+
+                        // Check shipping method
                         const hasShippingMethod = (shippingDropdown?.value) || (shippingMethodHidden?.value);
                         if (!hasShippingMethod) {
-                            e.preventDefault();
-                            showToast('Silakan pilih metode pengiriman terlebih dahulu', 'warning');
-                            return false;
+                            errors.push('• Metode pengiriman belum dipilih');
                         }
 
-                        // Check payment method (both dropdown and hidden input)
+                        // Check payment method
                         const hasPaymentMethod = (paymentDropdown?.value) || (paymentMethodHidden?.value);
                         if (!hasPaymentMethod) {
-                            e.preventDefault();
-                            showToast('Silakan pilih metode pembayaran terlebih dahulu', 'warning');
-                            return false;
+                            errors.push('• Metode pembayaran belum dipilih');
                         }
 
                         @auth
                         if (!selectedAddressInput?.value) {
-                            e.preventDefault();
-                            showToast('Silakan pilih alamat pengiriman terlebih dahulu', 'warning');
-                            return false;
+                            errors.push('• Alamat pengiriman belum dipilih');
                         }
                     @endauth
+
+                    if (errors.length > 0) {
+                        e.preventDefault();
+
+                        showAlert({
+                            type: 'warning',
+                            title: 'Informasi Belum Lengkap',
+                            message: `Silakan lengkapi informasi berikut:<br><br>${errors.join('<br>')}`,
+                            icon: '⚠️',
+                            showCancel: false,
+                            confirmText: 'Mengerti'
+                        });
+
+                        return false;
+                    }
 
                     // Show processing state
                     const submitBtn = this.querySelector('#checkout-button');
                     if (submitBtn) {
                         submitBtn.disabled = true;
                         submitBtn.innerHTML = '<div class="loading"></div> Memproses...';
+
+                        showToast('Memproses checkout...', 'info', 30000, {
+                            closable: false,
+                            showProgress: false
+                        });
                     }
 
                     return true;
@@ -2206,15 +3028,29 @@
 
                 if (!promoCode) {
                     e.preventDefault();
-                    showToast('Silakan masukkan kode promo', 'warning');
-                    promoInput?.focus();
+                    showAlert({
+                        type: 'warning',
+                        title: 'Kode Promo Kosong',
+                        message: 'Silakan masukkan kode promo terlebih dahulu.',
+                        icon: '⚠️',
+                        showCancel: false,
+                        confirmText: 'Mengerti',
+                        onConfirm: () => promoInput?.focus()
+                    });
                     return false;
                 }
 
                 if (promoCode.length < 3) {
                     e.preventDefault();
-                    showToast('Kode promo minimal 3 karakter', 'warning');
-                    promoInput?.focus();
+                    showAlert({
+                        type: 'warning',
+                        title: 'Kode Promo Tidak Valid',
+                        message: 'Kode promo minimal terdiri dari 3 karakter.',
+                        icon: '⚠️',
+                        showCancel: false,
+                        confirmText: 'Mengerti',
+                        onConfirm: () => promoInput?.focus()
+                    });
                     return false;
                 }
 
@@ -2222,9 +3058,28 @@
                 if (submitBtn) {
                     submitBtn.disabled = true;
                     submitBtn.innerHTML = '<div class="loading"></div> Memproses...';
+
+                    showToast('Memverifikasi kode promo...', 'info', 30000, {
+                        closable: false,
+                        showProgress: false
+                    });
                 }
             });
         }
+
+        // Keyboard navigation for alerts
+        document.addEventListener('keydown', function(e) {
+            if (currentAlert && e.key === 'Escape') {
+                closeAlert();
+            }
+        });
+
+        // Click outside to close alert
+        document.getElementById('alert-overlay').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeAlert();
+            }
+        });
 
         // Auto-save cart state
         function saveCartState() {
@@ -2242,32 +3097,17 @@
                 isMobile: window.innerWidth <= 768,
                 selectionMethod: window.innerWidth <= 768 ? 'mobile-cards' : 'desktop-dropdown',
                 updatedBy: 'gerrymulyadi709',
-                version: '2025-08-02 05:09:20'
+                version: '2025-08-02 11:44:02'
             };
             localStorage.setItem('azka_cart_state', JSON.stringify(cartState));
         }
 
-        // Save cart state on page load
         saveCartState();
 
-        // Monitor for cart changes
-        const cartObserver = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.type === 'childList' &&
-                    (mutation.target.classList.contains('product-item') ||
-                        mutation.target.closest('.product-item'))) {
-                    saveCartState();
-                }
-            });
+        // Show welcome toast
+        showToast('Keranjang belanja siap digunakan', 'info', 3000, {
+            title: 'Selamat Berbelanja!'
         });
-
-        const cartContainer = document.querySelector('.card-body');
-        if (cartContainer) {
-            cartObserver.observe(cartContainer, {
-                childList: true,
-                subtree: true
-            });
-        }
 
         // Enhanced accessibility
         document.querySelectorAll('.selection-card').forEach(card => {
@@ -2282,7 +3122,6 @@
                 }
             });
 
-            // Update aria-pressed when selected
             const observer = new MutationObserver(function(mutations) {
                 mutations.forEach(function(mutation) {
                     if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
@@ -2302,36 +3141,22 @@
             window.addEventListener('load', function() {
                 setTimeout(() => {
                     const perfData = performance.getEntriesByType('navigation')[0];
-                    console.log('Cart page performance with mobile card selection:', {
+                    console.log('Cart page performance with modern alert system:', {
                         loadTime: perfData.loadEventEnd - perfData.loadEventStart,
                         domContentLoaded: perfData.domContentLoadedEventEnd - perfData
                             .domContentLoadedEventStart,
                         calculationTime: performance.now(),
                         isMobile: window.innerWidth <= 768,
-                        selectionMethod: window.innerWidth <= 768 ? 'mobile-cards' :
-                            'desktop-dropdown',
-                        cardsCount: document.querySelectorAll('.selection-card').length,
-                        timestamp: '2025-08-02 05:09:20',
+                        alertSystemActive: true,
+                        timestamp: '2025-08-02 11:44:02',
                         user: 'gerrymulyadi709'
                     });
                 }, 0);
             });
         }
 
-        // Enhanced error logging
-        window.addEventListener('error', function(e) {
-            console.error('Cart page error with mobile card selection:', {
-                message: e.message,
-                filename: e.filename,
-                lineno: e.lineno,
-                isMobile: window.innerWidth <= 768,
-                timestamp: '2025-08-02 05:09:20',
-                user: 'gerrymulyadi709'
-            });
-        });
-
         console.log(
-            'Enhanced cart functionality with mobile card selection loaded successfully - 2025-08-02 05:09:20 UTC by gerrymulyadi709'
+            'Enhanced cart functionality with modern alert system loaded successfully - 2025-08-02 11:44:02 UTC by gerrymulyadi709'
         );
         });
     </script>
